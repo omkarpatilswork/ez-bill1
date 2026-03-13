@@ -1,6 +1,6 @@
 import {
   LayoutDashboard, Receipt, PlusCircle, Users, CheckSquare,
-  Building2, BarChart3, LogOut, ChevronDown,
+  Building2, BarChart3, LogOut, ChevronDown, PieChart,
 } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { NavLink } from '@/components/NavLink';
