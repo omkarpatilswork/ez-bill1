@@ -11,6 +11,7 @@ import Dashboard from "./pages/Dashboard";
 import NewExpense from "./pages/expenses/NewExpense";
 import MyExpenses from "./pages/expenses/MyExpenses";
 import ExpenseDetail from "./pages/expenses/ExpenseDetail";
+import Analytics from "./pages/expenses/Analytics";
 import ManagerDashboard from "./pages/manager/ManagerDashboard";
 import PendingApprovals from "./pages/manager/PendingApprovals";
 import FinanceDashboard from "./pages/finance/FinanceDashboard";
@@ -33,6 +34,7 @@ const App = () => (
           <Route path="/expenses/new" element={<ProtectedRoute><AppLayout><NewExpense /></AppLayout></ProtectedRoute>} />
           <Route path="/expenses/:id" element={<ProtectedRoute><AppLayout><ExpenseDetail /></AppLayout></ProtectedRoute>} />
           <Route path="/expenses" element={<ProtectedRoute><AppLayout><MyExpenses /></AppLayout></ProtectedRoute>} />
+          <Route path="/analytics" element={<ProtectedRoute><AppLayout><Analytics /></AppLayout></ProtectedRoute>} />
           <Route path="/manager" element={<ProtectedRoute><AppLayout><ManagerDashboard /></AppLayout></ProtectedRoute>} />
           <Route path="/manager/approvals" element={<ProtectedRoute><AppLayout><PendingApprovals /></AppLayout></ProtectedRoute>} />
           <Route path="/finance" element={<ProtectedRoute><AppLayout><FinanceDashboard /></AppLayout></ProtectedRoute>} />
