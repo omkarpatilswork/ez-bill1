@@ -95,26 +95,26 @@ export default function AllExpenses() {
   };
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-3xl font-bold">All Expenses</h1>
+    <div className="space-y-4 sm:space-y-6">
+      <h1 className="text-2xl sm:text-3xl font-bold">All Expenses</h1>
 
-      <div className="flex gap-4 items-center flex-wrap">
+      <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 sm:items-center">
         <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-48"><SelectValue placeholder="Filter status" /></SelectTrigger>
+          <SelectTrigger className="w-full sm:w-48 min-h-[44px]"><SelectValue placeholder="Filter status" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Statuses</SelectItem>
             {STATUSES.map(s => <SelectItem key={s} value={s}>{s.replace('_', ' ').replace(/\b\w/g, c => c.toUpperCase())}</SelectItem>)}
           </SelectContent>
         </Select>
         {selectedIds.size > 0 && (
-          <div className="flex gap-2">
-            <Button size="sm" onClick={() => handleBatchAction('approved')} disabled={processing}>
+          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+            <Button size="sm" className="w-full sm:w-auto min-h-[44px]" onClick={() => handleBatchAction('approved')} disabled={processing}>
               <CheckCircle className="mr-1 h-4 w-4" /> Approve ({selectedIds.size})
             </Button>
-            <Button size="sm" variant="destructive" onClick={() => handleBatchAction('rejected')} disabled={processing}>
+            <Button size="sm" variant="destructive" className="w-full sm:w-auto min-h-[44px]" onClick={() => handleBatchAction('rejected')} disabled={processing}>
               <XCircle className="mr-1 h-4 w-4" /> Reject ({selectedIds.size})
             </Button>
-            <Button size="sm" variant="outline" onClick={handleMarkReimbursed} disabled={processing}>
+            <Button size="sm" variant="outline" className="w-full sm:w-auto min-h-[44px]" onClick={handleMarkReimbursed} disabled={processing}>
               Mark Reimbursed ({selectedIds.size})
             </Button>
           </div>
@@ -126,55 +126,57 @@ export default function AllExpenses() {
           {loading ? (
             <p className="p-6 text-muted-foreground">Loading...</p>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-12"><Checkbox checked={selectedIds.size === expenses.length && expenses.length > 0} onCheckedChange={c => setSelectedIds(c ? new Set(expenses.map(e => e.id)) : new Set())} /></TableHead>
-                  <TableHead>Title</TableHead>
-                  <TableHead>Amount</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {expenses.map(exp => (
-                  <TableRow key={exp.id}>
-                    <TableCell><Checkbox checked={selectedIds.has(exp.id)} onCheckedChange={() => toggleSelect(exp.id)} /></TableCell>
-                    <TableCell className="font-medium">{exp.title}</TableCell>
-                    <TableCell>${Number(exp.amount).toFixed(2)}</TableCell>
-                    <TableCell>{new Date(exp.expense_date).toLocaleDateString()}</TableCell>
-                    <TableCell><StatusBadge status={exp.status as ExpenseStatus} /></TableCell>
-                    <TableCell>
-                      <Button size="sm" variant="ghost" onClick={() => setReviewExpense(exp)}>Review</Button>
-                    </TableCell>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-12"><Checkbox checked={selectedIds.size === expenses.length && expenses.length > 0} onCheckedChange={c => setSelectedIds(c ? new Set(expenses.map(e => e.id)) : new Set())} /></TableHead>
+                    <TableHead>Title</TableHead>
+                    <TableHead>Amount</TableHead>
+                    <TableHead className="hidden sm:table-cell">Date</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Actions</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {expenses.map(exp => (
+                    <TableRow key={exp.id}>
+                      <TableCell><Checkbox checked={selectedIds.has(exp.id)} onCheckedChange={() => toggleSelect(exp.id)} /></TableCell>
+                      <TableCell className="font-medium">{exp.title}</TableCell>
+                      <TableCell>${Number(exp.amount).toFixed(2)}</TableCell>
+                      <TableCell className="hidden sm:table-cell">{new Date(exp.expense_date).toLocaleDateString()}</TableCell>
+                      <TableCell><StatusBadge status={exp.status as ExpenseStatus} /></TableCell>
+                      <TableCell>
+                        <Button size="sm" variant="ghost" className="min-h-[44px]" onClick={() => setReviewExpense(exp)}>Review</Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           )}
         </CardContent>
       </Card>
 
       <Dialog open={!!reviewExpense} onOpenChange={() => { setReviewExpense(null); setComments(''); }}>
-        <DialogContent>
+        <DialogContent className="max-w-[95vw] sm:max-w-lg">
           <DialogHeader><DialogTitle>Review: {reviewExpense?.title}</DialogTitle></DialogHeader>
           {reviewExpense && (
             <div className="space-y-4">
-              <div className="grid gap-2 grid-cols-2 text-sm">
+              <div className="grid gap-2 grid-cols-1 sm:grid-cols-2 text-sm">
                 <div><span className="text-muted-foreground">Amount:</span> ${Number(reviewExpense.amount).toFixed(2)}</div>
                 <div><span className="text-muted-foreground">Status:</span> <StatusBadge status={reviewExpense.status as ExpenseStatus} /></div>
                 <div><span className="text-muted-foreground">Date:</span> {new Date(reviewExpense.expense_date).toLocaleDateString()}</div>
                 <div><span className="text-muted-foreground">Merchant:</span> {reviewExpense.merchant || '—'}</div>
               </div>
-              <Textarea placeholder="Comments..." value={comments} onChange={e => setComments(e.target.value)} />
+              <Textarea className="min-h-[44px]" placeholder="Comments..." value={comments} onChange={e => setComments(e.target.value)} />
             </div>
           )}
-          <DialogFooter className="gap-2">
-            <Button variant="destructive" disabled={processing} onClick={() => handleSingleAction('rejected')}>
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button variant="destructive" className="w-full sm:w-auto min-h-[44px]" disabled={processing} onClick={() => handleSingleAction('rejected')}>
               <XCircle className="mr-2 h-4 w-4" /> Reject
             </Button>
-            <Button disabled={processing} onClick={() => handleSingleAction('approved')}>
+            <Button className="w-full sm:w-auto min-h-[44px]" disabled={processing} onClick={() => handleSingleAction('approved')}>
               <CheckCircle className="mr-2 h-4 w-4" /> Approve
             </Button>
           </DialogFooter>

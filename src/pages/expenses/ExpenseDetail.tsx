@@ -5,7 +5,6 @@ import { useAuth } from '@/hooks/useAuth';
 import { StatusBadge } from '@/components/expenses/StatusBadge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { ArrowLeft } from 'lucide-react';
 import type { Expense, ExpenseStatus, ApprovalAction, AuditLog } from '@/lib/types';
@@ -48,13 +47,13 @@ export default function ExpenseDetail() {
   if (!expense) return <p className="text-destructive">Expense not found.</p>;
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6">
-      <Button variant="ghost" onClick={() => navigate(-1)}>
+    <div className="max-w-3xl mx-auto space-y-4 sm:space-y-6">
+      <Button variant="ghost" onClick={() => navigate(-1)} className="min-h-[44px]">
         <ArrowLeft className="mr-2 h-4 w-4" /> Back
       </Button>
 
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">{expense.title}</h1>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+        <h1 className="text-2xl sm:text-3xl font-bold">{expense.title}</h1>
         <StatusBadge status={expense.status as ExpenseStatus} />
       </div>
 
@@ -72,7 +71,7 @@ export default function ExpenseDetail() {
       </Card>
 
       {expense.status === 'draft' && expense.user_id === user?.id && (
-        <Button onClick={handleSubmitDraft}>Submit for Approval</Button>
+        <Button onClick={handleSubmitDraft} className="w-full sm:w-auto min-h-[44px]">Submit for Approval</Button>
       )}
 
       {approvals.length > 0 && (
@@ -98,7 +97,7 @@ export default function ExpenseDetail() {
           <CardHeader><CardTitle>Audit Trail</CardTitle></CardHeader>
           <CardContent className="space-y-2">
             {auditLogs.map(log => (
-              <div key={log.id} className="flex justify-between text-sm border-b last:border-0 pb-2">
+              <div key={log.id} className="flex flex-col sm:flex-row sm:justify-between text-sm border-b last:border-0 pb-2 gap-1">
                 <span>{log.action}</span>
                 <span className="text-muted-foreground">{new Date(log.created_at).toLocaleString()}</span>
               </div>
