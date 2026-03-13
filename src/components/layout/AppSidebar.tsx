@@ -1,6 +1,6 @@
 import {
   LayoutDashboard, Receipt, PlusCircle, Users, CheckSquare,
-  Building2, BarChart3, LogOut, ChevronDown, PieChart,
+  Building2, BarChart3, LogOut, ChevronDown, PieChart, MessageSquare,
 } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { NavLink } from '@/components/NavLink';
@@ -18,6 +18,7 @@ const employeeItems = [
   { title: 'New Expense', url: '/expenses/new', icon: PlusCircle },
   { title: 'My Expenses', url: '/expenses', icon: Receipt },
   { title: 'Analytics', url: '/analytics', icon: PieChart },
+  { title: 'Ask AI', url: '/ask-ai', icon: MessageSquare },
 ];
 
 const managerItems = [
