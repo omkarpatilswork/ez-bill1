@@ -52,7 +52,6 @@ export default function NewExpense() {
       return;
     }
 
-    // Upload receipt if provided
     if (receiptFile && expense) {
       const filePath = `${user.id}/${(expense as any).id}/${receiptFile.name}`;
       const { error: uploadError } = await supabase.storage.from('receipts').upload(filePath, receiptFile);
@@ -65,7 +64,6 @@ export default function NewExpense() {
       }
     }
 
-    // Create audit log
     await supabase.from('audit_logs').insert({
       expense_id: (expense as any).id,
       user_id: user.id,
@@ -80,7 +78,7 @@ export default function NewExpense() {
 
   return (
     <div className="max-w-2xl mx-auto">
-      <h1 className="text-3xl font-bold mb-6">New Expense</h1>
+      <h1 className="text-2xl sm:text-3xl font-bold mb-4 sm:mb-6">New Expense</h1>
       <Card>
         <CardHeader>
           <CardTitle>Expense Details</CardTitle>
@@ -90,27 +88,27 @@ export default function NewExpense() {
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="title">Title *</Label>
-                <Input id="title" value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} required />
+                <Input id="title" className="min-h-[44px]" value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} required />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="merchant">Merchant</Label>
-                <Input id="merchant" value={form.merchant} onChange={e => setForm({ ...form, merchant: e.target.value })} />
+                <Input id="merchant" className="min-h-[44px]" value={form.merchant} onChange={e => setForm({ ...form, merchant: e.target.value })} />
               </div>
             </div>
 
             <div className="grid gap-4 md:grid-cols-3">
               <div className="space-y-2">
                 <Label htmlFor="amount">Amount ($) *</Label>
-                <Input id="amount" type="number" step="0.01" min="0" value={form.amount} onChange={e => setForm({ ...form, amount: e.target.value })} required />
+                <Input id="amount" className="min-h-[44px]" type="number" step="0.01" min="0" value={form.amount} onChange={e => setForm({ ...form, amount: e.target.value })} required />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="date">Date *</Label>
-                <Input id="date" type="date" value={form.expense_date} onChange={e => setForm({ ...form, expense_date: e.target.value })} required />
+                <Input id="date" className="min-h-[44px]" type="date" value={form.expense_date} onChange={e => setForm({ ...form, expense_date: e.target.value })} required />
               </div>
               <div className="space-y-2">
                 <Label>Category</Label>
                 <Select value={form.category_id} onValueChange={v => setForm({ ...form, category_id: v })}>
-                  <SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger>
+                  <SelectTrigger className="min-h-[44px]"><SelectValue placeholder="Select..." /></SelectTrigger>
                   <SelectContent>
                     {categories.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
                   </SelectContent>
@@ -120,7 +118,7 @@ export default function NewExpense() {
 
             <div className="space-y-2">
               <Label htmlFor="cost_center">Cost Center</Label>
-              <Input id="cost_center" value={form.cost_center} onChange={e => setForm({ ...form, cost_center: e.target.value })} />
+              <Input id="cost_center" className="min-h-[44px]" value={form.cost_center} onChange={e => setForm({ ...form, cost_center: e.target.value })} />
             </div>
 
             <div className="space-y-2">
@@ -130,14 +128,14 @@ export default function NewExpense() {
 
             <div className="space-y-2">
               <Label htmlFor="receipt">Receipt (optional)</Label>
-              <Input id="receipt" type="file" accept="image/*,.pdf" onChange={e => setReceiptFile(e.target.files?.[0] || null)} />
+              <Input id="receipt" className="min-h-[44px]" type="file" accept="image/*,.pdf" onChange={e => setReceiptFile(e.target.files?.[0] || null)} />
             </div>
 
-            <div className="flex gap-3 pt-2">
-              <Button type="submit" disabled={isSubmitting}>
+            <div className="flex flex-col sm:flex-row gap-3 pt-2">
+              <Button type="submit" className="w-full sm:w-auto min-h-[44px]" disabled={isSubmitting}>
                 {isSubmitting ? 'Submitting...' : 'Submit Expense'}
               </Button>
-              <Button type="button" variant="outline" disabled={isSubmitting} onClick={e => handleSubmit(e as any, true)}>
+              <Button type="button" variant="outline" className="w-full sm:w-auto min-h-[44px]" disabled={isSubmitting} onClick={e => handleSubmit(e as any, true)}>
                 Save as Draft
               </Button>
             </div>

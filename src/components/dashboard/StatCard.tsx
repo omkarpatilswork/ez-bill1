@@ -65,24 +65,24 @@ function CircularProgress({ value, size = 48, strokeWidth = 4, variant = 'defaul
 export function StatCard({ title, value, icon: Icon, description, variant = 'default', progress }: StatCardProps) {
   return (
     <Card className={`${variantStyles[variant]} overflow-hidden border-0 shadow-md`}>
-      <CardContent className="flex items-center gap-4 p-5">
+      <CardContent className="flex items-center gap-3 sm:gap-4 p-3 sm:p-5">
         {progress !== undefined ? (
-          <div className="relative">
-            <CircularProgress value={progress} size={56} strokeWidth={5} variant={variant} />
+          <div className="relative shrink-0">
+            <CircularProgress value={progress} size={44} strokeWidth={4} variant={variant} />
             <div className="absolute inset-0 flex items-center justify-center">
-              <Icon className="h-5 w-5" />
+              <Icon className="h-4 w-4 sm:h-5 sm:w-5" />
             </div>
           </div>
         ) : (
-          <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ${iconBgStyles[variant]}`}>
-            <Icon className="h-5 w-5" />
+          <div className={`flex h-10 w-10 sm:h-12 sm:w-12 shrink-0 items-center justify-center rounded-xl ${iconBgStyles[variant]}`}>
+            <Icon className="h-4 w-4 sm:h-5 sm:w-5" />
           </div>
         )}
         <div className="min-w-0">
-          <p className={`text-xs font-medium uppercase tracking-wide ${variant === 'default' ? 'text-muted-foreground' : 'opacity-80'}`}>
+          <p className={`text-[10px] sm:text-xs font-medium uppercase tracking-wide ${variant === 'default' ? 'text-muted-foreground' : 'opacity-80'}`}>
             {title}
           </p>
-          <p className="text-2xl font-bold leading-tight truncate">{value}</p>
+          <p className="text-lg sm:text-2xl font-bold leading-tight truncate">{value}</p>
           {description && (
             <p className={`text-xs mt-0.5 ${variant === 'default' ? 'text-muted-foreground' : 'opacity-70'}`}>
               {description}

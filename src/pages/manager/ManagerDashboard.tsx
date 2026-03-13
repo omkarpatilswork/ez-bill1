@@ -13,7 +13,6 @@ export default function ManagerDashboard() {
 
   useEffect(() => {
     if (!user) return;
-    // Get expenses from direct reports
     supabase.from('profiles').select('id').eq('manager_id', user.id).then(async ({ data: reports }) => {
       if (!reports?.length) return;
       const ids = reports.map(r => (r as any).id);
@@ -27,13 +26,13 @@ export default function ManagerDashboard() {
   const totalAmount = teamExpenses.reduce((s, e) => s + Number(e.amount), 0);
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Team Dashboard</h1>
-        <Button asChild><Link to="/manager/approvals">View Pending Approvals</Link></Button>
+    <div className="space-y-4 sm:space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <h1 className="text-2xl sm:text-3xl font-bold">Team Dashboard</h1>
+        <Button asChild className="w-full sm:w-auto"><Link to="/manager/approvals">View Pending Approvals</Link></Button>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid gap-3 sm:gap-4 grid-cols-2 md:grid-cols-4">
         <StatCard title="Team Expenses" value={teamExpenses.length} icon={Users} />
         <StatCard title="Pending Approval" value={pending.length} icon={Clock} />
         <StatCard title="Approved" value={approved.length} icon={CheckCircle} />

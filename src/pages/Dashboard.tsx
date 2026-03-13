@@ -7,10 +7,9 @@ import { StatusBadge } from '@/components/expenses/StatusBadge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import {
   Receipt, Clock, CheckCircle, DollarSign, PlusCircle,
-  TrendingUp, ArrowUpRight, ArrowDownRight,
+  ArrowUpRight,
 } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -54,7 +53,6 @@ export default function Dashboard() {
   const pendingAmount = pending.reduce((s, e) => s + Number(e.amount), 0);
   const approvedAmount = approved.reduce((s, e) => s + Number(e.amount), 0);
 
-  // Monthly chart data
   const monthlyData = useMemo(() => {
     const map: Record<string, number> = {};
     allExpenses.forEach(e => {
@@ -62,13 +60,11 @@ export default function Dashboard() {
       const day = d.getDate();
       map[String(day)] = (map[String(day)] || 0) + Number(e.amount);
     });
-    // Show last 15 data points
     return Object.entries(map)
       .slice(-15)
       .map(([day, amount]) => ({ day, amount: Math.round(amount * 100) / 100 }));
   }, [allExpenses]);
 
-  // Category donut
   const categoryData = useMemo(() => {
     return categories.map(cat => ({
       name: cat.name,
@@ -87,22 +83,22 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-3xl font-bold">Dashboard</h1>
-          <p className="text-muted-foreground mt-1">
+          <h1 className="text-2xl sm:text-3xl font-bold">Dashboard</h1>
+          <p className="text-muted-foreground mt-1 text-sm sm:text-base">
             Welcome back, {profile?.full_name?.split(' ')[0] || 'there'}! Here's your expense overview.
           </p>
         </div>
-        <Button asChild size="lg" className="shadow-lg">
+        <Button asChild size="lg" className="shadow-lg w-full sm:w-auto">
           <Link to="/expenses/new"><PlusCircle className="mr-2 h-4 w-4" /> New Expense</Link>
         </Button>
       </div>
 
-      {/* Colorful Stat Cards */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      {/* Stat Cards */}
+      <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-4">
         <StatCard
           title="Total Expenses"
           value={allExpenses.length}
@@ -138,14 +134,13 @@ export default function Dashboard() {
       </div>
 
       {/* Charts Row */}
-      <div className="grid gap-6 lg:grid-cols-5">
-        {/* Spending Chart - wider */}
+      <div className="grid gap-4 sm:gap-6 grid-cols-1 lg:grid-cols-5">
         <Card className="lg:col-span-3 shadow-md border-0">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
+          <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between pb-2">
             <div>
-              <CardTitle className="text-lg">Total Spending</CardTitle>
+              <CardTitle className="text-base sm:text-lg">Total Spending</CardTitle>
               <div className="flex items-baseline gap-2 mt-1">
-                <span className="text-3xl font-bold">${total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                <span className="text-2xl sm:text-3xl font-bold">${total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                 <span className="flex items-center text-xs font-medium text-success">
                   <ArrowUpRight className="h-3 w-3 mr-0.5" />
                   7%
@@ -154,11 +149,11 @@ export default function Dashboard() {
             </div>
           </CardHeader>
           <CardContent className="pt-0">
-            <ResponsiveContainer width="100%" height={240}>
-              <BarChart data={monthlyData} barSize={16}>
+            <ResponsiveContainer width="100%" height={200}>
+              <BarChart data={monthlyData} barSize={14}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} className="opacity-20" />
-                <XAxis dataKey="day" tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={v => `$${v}`} />
+                <XAxis dataKey="day" tick={{ fontSize: 10 }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={v => `$${v}`} />
                 <Tooltip
                   formatter={(val: number) => [`$${val.toFixed(2)}`, 'Spent']}
                   contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
@@ -169,10 +164,9 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        {/* Category Donut */}
         <Card className="lg:col-span-2 shadow-md border-0">
           <CardHeader className="pb-2">
-            <CardTitle className="text-lg">Spending by Category</CardTitle>
+            <CardTitle className="text-base sm:text-lg">Spending by Category</CardTitle>
             <CardDescription>Breakdown of expenses</CardDescription>
           </CardHeader>
           <CardContent>
@@ -180,14 +174,14 @@ export default function Dashboard() {
               <p className="text-muted-foreground text-center py-8">No data yet</p>
             ) : (
               <div className="flex flex-col items-center">
-                <ResponsiveContainer width="100%" height={180}>
+                <ResponsiveContainer width="100%" height={160}>
                   <PieChart>
                     <Pie
                       data={categoryData}
                       cx="50%"
                       cy="50%"
-                      innerRadius={55}
-                      outerRadius={80}
+                      innerRadius={45}
+                      outerRadius={70}
                       dataKey="value"
                       paddingAngle={3}
                       strokeWidth={0}
@@ -199,7 +193,7 @@ export default function Dashboard() {
                     <Tooltip formatter={(val: number) => `$${val.toFixed(2)}`} />
                   </PieChart>
                 </ResponsiveContainer>
-                <div className="grid grid-cols-2 gap-x-6 gap-y-1.5 mt-2 w-full">
+                <div className="grid grid-cols-2 gap-x-4 sm:gap-x-6 gap-y-1.5 mt-2 w-full">
                   {categoryData.map((cat, i) => (
                     <div key={cat.name} className="flex items-center gap-2 text-xs">
                       <div className="h-2.5 w-2.5 rounded-full shrink-0" style={{ backgroundColor: DONUT_COLORS[i % DONUT_COLORS.length] }} />
@@ -219,7 +213,7 @@ export default function Dashboard() {
       {/* Recent Expenses */}
       <Card className="shadow-md border-0">
         <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-lg">Recent Expenses</CardTitle>
+          <CardTitle className="text-base sm:text-lg">Recent Expenses</CardTitle>
           <Button variant="ghost" size="sm" asChild>
             <Link to="/expenses" className="text-primary text-sm font-medium">
               View All <ArrowUpRight className="ml-1 h-3 w-3" />
@@ -233,32 +227,51 @@ export default function Dashboard() {
               <p>No expenses yet. Submit your first expense!</p>
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Expense</TableHead>
-                  <TableHead>Merchant</TableHead>
-                  <TableHead>Amount</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Status</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
+            <>
+              {/* Mobile card list */}
+              <div className="block sm:hidden space-y-3">
                 {expenses.slice(0, 6).map(exp => (
-                  <TableRow key={exp.id} className="hover:bg-muted/30 transition-colors">
-                    <TableCell>
-                      <Link to={`/expenses/${exp.id}`} className="font-medium hover:text-primary transition-colors">
-                        {exp.title}
-                      </Link>
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">{exp.merchant || '—'}</TableCell>
-                    <TableCell className="font-semibold">${Number(exp.amount).toFixed(2)}</TableCell>
-                    <TableCell className="text-muted-foreground">{new Date(exp.expense_date).toLocaleDateString()}</TableCell>
-                    <TableCell><StatusBadge status={exp.status as ExpenseStatus} /></TableCell>
-                  </TableRow>
+                  <Link key={exp.id} to={`/expenses/${exp.id}`} className="block rounded-lg border p-3 hover:bg-muted/30 transition-colors">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="font-medium text-sm truncate mr-2">{exp.title}</span>
+                      <StatusBadge status={exp.status as ExpenseStatus} />
+                    </div>
+                    <div className="flex items-center justify-between text-xs text-muted-foreground">
+                      <span>{exp.merchant || '—'}</span>
+                      <span className="font-semibold text-foreground">${Number(exp.amount).toFixed(2)}</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">{new Date(exp.expense_date).toLocaleDateString()}</p>
+                  </Link>
                 ))}
-              </TableBody>
-            </Table>
+              </div>
+              {/* Desktop table */}
+              <Table className="hidden sm:table">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Expense</TableHead>
+                    <TableHead>Merchant</TableHead>
+                    <TableHead>Amount</TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {expenses.slice(0, 6).map(exp => (
+                    <TableRow key={exp.id} className="hover:bg-muted/30 transition-colors">
+                      <TableCell>
+                        <Link to={`/expenses/${exp.id}`} className="font-medium hover:text-primary transition-colors">
+                          {exp.title}
+                        </Link>
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">{exp.merchant || '—'}</TableCell>
+                      <TableCell className="font-semibold">${Number(exp.amount).toFixed(2)}</TableCell>
+                      <TableCell className="text-muted-foreground">{new Date(exp.expense_date).toLocaleDateString()}</TableCell>
+                      <TableCell><StatusBadge status={exp.status as ExpenseStatus} /></TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </>
           )}
         </CardContent>
       </Card>
