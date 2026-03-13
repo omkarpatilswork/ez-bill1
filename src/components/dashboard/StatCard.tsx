@@ -1,4 +1,4 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { LucideIcon } from 'lucide-react';
 
 interface StatCardProps {
@@ -6,18 +6,89 @@ interface StatCardProps {
   value: string | number;
   icon: LucideIcon;
   description?: string;
+  variant?: 'default' | 'primary' | 'success' | 'warning' | 'info' | 'destructive';
+  progress?: number; // 0-100
 }
 
-export function StatCard({ title, value, icon: Icon, description }: StatCardProps) {
+const variantStyles = {
+  default: 'bg-card text-card-foreground',
+  primary: 'bg-primary text-primary-foreground',
+  success: 'bg-success text-success-foreground',
+  warning: 'bg-warning text-warning-foreground',
+  info: 'bg-info text-info-foreground',
+  destructive: 'bg-destructive text-destructive-foreground',
+};
+
+const iconBgStyles = {
+  default: 'bg-muted text-muted-foreground',
+  primary: 'bg-primary-foreground/20 text-primary-foreground',
+  success: 'bg-success-foreground/20 text-success-foreground',
+  warning: 'bg-warning-foreground/20 text-warning-foreground',
+  info: 'bg-info-foreground/20 text-info-foreground',
+  destructive: 'bg-destructive-foreground/20 text-destructive-foreground',
+};
+
+function CircularProgress({ value, size = 48, strokeWidth = 4, variant = 'default' }: { value: number; size?: number; strokeWidth?: number; variant?: string }) {
+  const radius = (size - strokeWidth) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const offset = circumference - (value / 100) * circumference;
+  const strokeColor = variant === 'default' ? 'hsl(var(--primary))' : 'currentColor';
+  const trackColor = variant === 'default' ? 'hsl(var(--muted))' : 'currentColor';
+
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between pb-2">
-        <CardTitle className="text-sm font-medium text-muted-foreground">{title}</CardTitle>
-        <Icon className="h-4 w-4 text-muted-foreground" />
-      </CardHeader>
-      <CardContent>
-        <div className="text-2xl font-bold">{value}</div>
-        {description && <p className="text-xs text-muted-foreground mt-1">{description}</p>}
+    <svg width={size} height={size} className="shrink-0 -rotate-90">
+      <circle
+        cx={size / 2}
+        cy={size / 2}
+        r={radius}
+        fill="none"
+        stroke={trackColor}
+        strokeWidth={strokeWidth}
+        opacity={0.2}
+      />
+      <circle
+        cx={size / 2}
+        cy={size / 2}
+        r={radius}
+        fill="none"
+        stroke={strokeColor}
+        strokeWidth={strokeWidth}
+        strokeDasharray={circumference}
+        strokeDashoffset={offset}
+        strokeLinecap="round"
+        className="transition-all duration-500"
+      />
+    </svg>
+  );
+}
+
+export function StatCard({ title, value, icon: Icon, description, variant = 'default', progress }: StatCardProps) {
+  return (
+    <Card className={`${variantStyles[variant]} overflow-hidden border-0 shadow-md`}>
+      <CardContent className="flex items-center gap-4 p-5">
+        {progress !== undefined ? (
+          <div className="relative">
+            <CircularProgress value={progress} size={56} strokeWidth={5} variant={variant} />
+            <div className="absolute inset-0 flex items-center justify-center">
+              <Icon className="h-5 w-5" />
+            </div>
+          </div>
+        ) : (
+          <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ${iconBgStyles[variant]}`}>
+            <Icon className="h-5 w-5" />
+          </div>
+        )}
+        <div className="min-w-0">
+          <p className={`text-xs font-medium uppercase tracking-wide ${variant === 'default' ? 'text-muted-foreground' : 'opacity-80'}`}>
+            {title}
+          </p>
+          <p className="text-2xl font-bold leading-tight truncate">{value}</p>
+          {description && (
+            <p className={`text-xs mt-0.5 ${variant === 'default' ? 'text-muted-foreground' : 'opacity-70'}`}>
+              {description}
+            </p>
+          )}
+        </div>
       </CardContent>
     </Card>
   );
