@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Send, Sparkles, Bot, User } from 'lucide-react';
+import { Send, Sparkles, Bot, User, Copy, Check } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -10,6 +10,28 @@ import { useToast } from '@/hooks/use-toast';
 type Msg = { role: 'user' | 'assistant'; content: string };
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ask-ai`;
+
+function CopyButton({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false);
+  const { toast } = useToast();
+
+  const handleCopy = async () => {
+    await navigator.clipboard.writeText(text);
+    setCopied(true);
+    toast({ title: 'Copied to clipboard' });
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <button
+      onClick={handleCopy}
+      className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-md hover:bg-accent text-muted-foreground hover:text-foreground"
+      title="Copy message"
+    >
+      {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+    </button>
+  );
+}
 
 export default function AskAI() {
   const { session } = useAuth();
@@ -28,7 +50,6 @@ export default function AskAI() {
 
   useEffect(() => { scrollToBottom(); }, [messages, scrollToBottom]);
 
-  // Fetch suggestions on mount
   useEffect(() => {
     if (!session?.access_token) return;
     (async () => {
@@ -46,7 +67,7 @@ export default function AskAI() {
           setSuggestions(data.suggestions || []);
         }
       } catch {
-        // Silently fail, use no suggestions
+        // Silently fail
       } finally {
         setLoadingSuggestions(false);
       }
@@ -120,7 +141,6 @@ export default function AskAI() {
           }
         }
       }
-      // Flush remaining
       if (buffer.trim()) {
         for (let raw of buffer.split('\n')) {
           if (!raw || !raw.startsWith('data: ')) continue;
@@ -155,7 +175,6 @@ export default function AskAI() {
         <p className="text-sm text-muted-foreground">Ask anything about your expenses</p>
       </div>
 
-      {/* Chat area */}
       <ScrollArea className="flex-1 rounded-lg border bg-card px-4">
         <div className="py-4 space-y-4">
           {messages.length === 0 && !isLoading && (
@@ -167,8 +186,6 @@ export default function AskAI() {
               <p className="text-sm text-muted-foreground mb-6 max-w-sm">
                 I have access to all your expense data. Ask me anything about spending, categories, trends, or specific transactions.
               </p>
-
-              {/* Suggestion chips */}
               {loadingSuggestions ? (
                 <div className="flex flex-wrap gap-2 justify-center max-w-lg">
                   {[1, 2, 3, 4].map(i => (
@@ -178,13 +195,7 @@ export default function AskAI() {
               ) : suggestions.length > 0 ? (
                 <div className="flex flex-wrap gap-2 justify-center max-w-lg">
                   {suggestions.map((s, i) => (
-                    <Button
-                      key={i}
-                      variant="outline"
-                      size="sm"
-                      className="rounded-full"
-                      onClick={() => sendMessage(s)}
-                    >
+                    <Button key={i} variant="outline" size="sm" className="rounded-full" onClick={() => sendMessage(s)}>
                       {s}
                     </Button>
                   ))}
@@ -194,24 +205,65 @@ export default function AskAI() {
           )}
 
           {messages.map((msg, i) => (
-            <div key={i} className={`flex gap-3 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+            <div key={i} className={`group flex gap-3 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
               {msg.role === 'assistant' && (
                 <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
                   <Bot className="h-4 w-4 text-primary" />
                 </div>
               )}
-              <div className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-sm ${
+              <div className={`relative max-w-[80%] rounded-2xl px-4 py-3 text-sm ${
                 msg.role === 'user'
                   ? 'bg-primary text-primary-foreground'
                   : 'bg-muted text-foreground'
               }`}>
                 {msg.role === 'assistant' ? (
-                  <div className="prose prose-sm dark:prose-invert max-w-none [&>*:first-child]:mt-0 [&>*:last-child]:mb-0">
-                    <ReactMarkdown>{msg.content}</ReactMarkdown>
+                  <div className="ai-response">
+                    <ReactMarkdown
+                      components={{
+                        h1: ({ children }) => <h3 className="text-base font-bold text-foreground mt-4 mb-2 first:mt-0">{children}</h3>,
+                        h2: ({ children }) => <h4 className="text-sm font-bold text-foreground mt-3 mb-1.5 first:mt-0">{children}</h4>,
+                        h3: ({ children }) => <h5 className="text-sm font-semibold text-foreground mt-3 mb-1 first:mt-0">{children}</h5>,
+                        p: ({ children }) => <p className="mb-2 last:mb-0 leading-relaxed">{children}</p>,
+                        ul: ({ children }) => <ul className="mb-2 last:mb-0 space-y-1 pl-4">{children}</ul>,
+                        ol: ({ children }) => <ol className="mb-2 last:mb-0 space-y-1 pl-4 list-decimal">{children}</ol>,
+                        li: ({ children }) => <li className="relative pl-2 before:content-['•'] before:absolute before:-left-0 before:text-muted-foreground list-none">{children}</li>,
+                        strong: ({ children }) => <strong className="font-semibold text-foreground">{children}</strong>,
+                        em: ({ children }) => <em className="italic text-muted-foreground">{children}</em>,
+                        table: ({ children }) => (
+                          <div className="my-2 overflow-x-auto rounded-lg border border-border">
+                            <table className="w-full text-sm">{children}</table>
+                          </div>
+                        ),
+                        thead: ({ children }) => <thead className="bg-muted/50">{children}</thead>,
+                        th: ({ children }) => <th className="px-3 py-2 text-left font-semibold text-foreground border-b border-border">{children}</th>,
+                        td: ({ children }) => <td className="px-3 py-2 border-b border-border last:border-b-0">{children}</td>,
+                        tr: ({ children }) => <tr className="hover:bg-muted/30 transition-colors">{children}</tr>,
+                        code: ({ children, className }) => {
+                          const isBlock = className?.includes('language-');
+                          return isBlock ? (
+                            <pre className="my-2 rounded-lg bg-background p-3 overflow-x-auto border border-border">
+                              <code className="text-xs">{children}</code>
+                            </pre>
+                          ) : (
+                            <code className="rounded bg-background px-1.5 py-0.5 text-xs font-mono border border-border">{children}</code>
+                          );
+                        },
+                        hr: () => <hr className="my-3 border-border" />,
+                        blockquote: ({ children }) => (
+                          <blockquote className="my-2 border-l-2 border-primary/40 pl-3 italic text-muted-foreground">{children}</blockquote>
+                        ),
+                      }}
+                    >
+                      {msg.content}
+                    </ReactMarkdown>
                   </div>
                 ) : (
                   <p className="whitespace-pre-wrap">{msg.content}</p>
                 )}
+                {/* Copy button */}
+                <div className="absolute -bottom-1 right-1 translate-y-full">
+                  <CopyButton text={msg.content} />
+                </div>
               </div>
               {msg.role === 'user' && (
                 <div className="h-8 w-8 rounded-full bg-secondary flex items-center justify-center shrink-0 mt-0.5">
@@ -239,7 +291,6 @@ export default function AskAI() {
         </div>
       </ScrollArea>
 
-      {/* Input */}
       <div className="mt-3 flex gap-2">
         <textarea
           ref={inputRef}
