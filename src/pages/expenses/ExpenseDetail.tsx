@@ -1,13 +1,28 @@
 import { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { StatusBadge } from '@/components/expenses/StatusBadge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Calendar, Building2, FolderOpen, DollarSign, FileText, CheckCircle, XCircle, Clock } from 'lucide-react';
 import type { Expense, ExpenseStatus, ApprovalAction, AuditLog } from '@/lib/types';
+
+const STATUS_FLOW: { status: ExpenseStatus; label: string; icon: typeof Clock }[] = [
+  { status: 'draft', label: 'Draft', icon: FileText },
+  { status: 'submitted', label: 'Submitted', icon: Clock },
+  { status: 'manager_approved', label: 'Manager', icon: CheckCircle },
+  { status: 'approved', label: 'Approved', icon: CheckCircle },
+  { status: 'reimbursed', label: 'Reimbursed', icon: DollarSign },
+];
+
+function getStatusStep(status: ExpenseStatus): number {
+  if (status === 'rejected') return -1;
+  const idx = STATUS_FLOW.findIndex(s => s.status === status);
+  return idx >= 0 ? idx : 0;
+}
 
 export default function ExpenseDetail() {
   const { id } = useParams<{ id: string }>();
@@ -39,52 +54,169 @@ export default function ExpenseDetail() {
     await supabase.from('audit_logs').insert({
       expense_id: expense.id, user_id: user.id, action: 'submitted', details: {},
     } as any);
-    toast({ title: 'Expense submitted for approval' });
+    toast({ title: 'Expense submitted', description: 'Your expense is now pending approval.' });
     navigate('/expenses');
   };
 
-  if (loading) return <p className="text-muted-foreground">Loading...</p>;
-  if (!expense) return <p className="text-destructive">Expense not found.</p>;
+  if (loading) return (
+    <div className="flex items-center justify-center py-20">
+      <div className="h-6 w-6 animate-spin rounded-full border-3 border-primary border-t-transparent" />
+    </div>
+  );
+  if (!expense) return (
+    <div className="text-center py-20">
+      <p className="text-destructive font-medium">Expense not found.</p>
+      <Button asChild variant="ghost" className="mt-4"><Link to="/expenses">Back to Expenses</Link></Button>
+    </div>
+  );
+
+  const currentStep = getStatusStep(expense.status as ExpenseStatus);
+  const isRejected = expense.status === 'rejected';
 
   return (
-    <div className="max-w-3xl mx-auto space-y-4 sm:space-y-6">
-      <Button variant="ghost" onClick={() => navigate(-1)} className="min-h-[44px]">
-        <ArrowLeft className="mr-2 h-4 w-4" /> Back
-      </Button>
+    <div className="max-w-3xl mx-auto space-y-5">
+      {/* Breadcrumb */}
+      <div className="flex items-center gap-2 text-sm">
+        <Button variant="ghost" size="sm" asChild className="h-8 px-2">
+          <Link to="/expenses"><ArrowLeft className="h-4 w-4 mr-1" /> Expenses</Link>
+        </Button>
+        <span className="text-muted-foreground">/</span>
+        <span className="text-muted-foreground truncate max-w-[200px]">{expense.title}</span>
+      </div>
 
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-        <h1 className="text-2xl sm:text-3xl font-bold">{expense.title}</h1>
+      {/* Title & Status */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold text-foreground">{expense.title}</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Created {new Date(expense.created_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+          </p>
+        </div>
         <StatusBadge status={expense.status as ExpenseStatus} />
       </div>
 
-      <Card>
-        <CardHeader><CardTitle>Details</CardTitle></CardHeader>
-        <CardContent className="grid gap-4 md:grid-cols-2">
-          <div><span className="text-sm text-muted-foreground">Amount</span><p className="font-semibold text-lg">${Number(expense.amount).toFixed(2)} {expense.currency}</p></div>
-          <div><span className="text-sm text-muted-foreground">Merchant</span><p>{expense.merchant || '—'}</p></div>
-          <div><span className="text-sm text-muted-foreground">Date</span><p>{new Date(expense.expense_date).toLocaleDateString()}</p></div>
-          <div><span className="text-sm text-muted-foreground">Cost Center</span><p>{expense.cost_center || '—'}</p></div>
+      {/* Status Flow Indicator */}
+      {!isRejected && (
+        <Card className="shadow-md border-0">
+          <CardContent className="py-4">
+            <div className="flex items-center justify-between">
+              {STATUS_FLOW.map((step, i) => {
+                const isActive = i <= currentStep;
+                const isCurrent = i === currentStep;
+                const StepIcon = step.icon;
+                return (
+                  <div key={step.status} className="flex items-center flex-1 last:flex-none">
+                    <div className="flex flex-col items-center gap-1">
+                      <div className={`h-8 w-8 rounded-full flex items-center justify-center transition-colors ${
+                        isCurrent ? 'bg-primary text-primary-foreground ring-2 ring-primary/30' :
+                        isActive ? 'bg-success text-success-foreground' : 'bg-muted text-muted-foreground'
+                      }`}>
+                        <StepIcon className="h-4 w-4" />
+                      </div>
+                      <span className={`text-[10px] font-medium ${isCurrent ? 'text-primary' : isActive ? 'text-success' : 'text-muted-foreground'}`}>
+                        {step.label}
+                      </span>
+                    </div>
+                    {i < STATUS_FLOW.length - 1 && (
+                      <div className={`flex-1 h-0.5 mx-2 rounded-full ${i < currentStep ? 'bg-success' : 'bg-muted'}`} />
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {isRejected && (
+        <Card className="shadow-md border-0 border-l-4 border-l-destructive">
+          <CardContent className="py-4 flex items-center gap-3">
+            <XCircle className="h-5 w-5 text-destructive shrink-0" />
+            <div>
+              <p className="font-medium text-destructive">Expense Rejected</p>
+              <p className="text-sm text-muted-foreground">This expense was not approved. Check the approval history for details.</p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Details */}
+      <Card className="shadow-md border-0">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">Expense Details</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="flex items-start gap-3">
+              <DollarSign className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+              <div>
+                <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Amount</p>
+                <p className="text-lg font-bold text-foreground tabular-nums">${Number(expense.amount).toFixed(2)} <span className="text-sm font-normal text-muted-foreground">{expense.currency}</span></p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3">
+              <Building2 className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+              <div>
+                <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Merchant</p>
+                <p className="font-medium">{expense.merchant || '—'}</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3">
+              <Calendar className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+              <div>
+                <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Date</p>
+                <p className="font-medium">{new Date(expense.expense_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3">
+              <FolderOpen className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+              <div>
+                <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Cost Center</p>
+                <p className="font-medium">{expense.cost_center || '—'}</p>
+              </div>
+            </div>
+          </div>
           {expense.description && (
-            <div className="md:col-span-2"><span className="text-sm text-muted-foreground">Description</span><p>{expense.description}</p></div>
+            <>
+              <Separator className="my-4" />
+              <div>
+                <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider mb-1">Description</p>
+                <p className="text-sm text-foreground leading-relaxed">{expense.description}</p>
+              </div>
+            </>
           )}
         </CardContent>
       </Card>
 
+      {/* Actions */}
       {expense.status === 'draft' && expense.user_id === user?.id && (
-        <Button onClick={handleSubmitDraft} className="w-full sm:w-auto min-h-[44px]">Submit for Approval</Button>
+        <div className="flex gap-3">
+          <Button onClick={handleSubmitDraft} className="min-h-[44px]">Submit for Approval</Button>
+          <Button variant="outline" onClick={() => navigate('/expenses')} className="min-h-[44px]">Back to Expenses</Button>
+        </div>
       )}
 
+      {/* Approval History */}
       {approvals.length > 0 && (
-        <Card>
-          <CardHeader><CardTitle>Approval History</CardTitle></CardHeader>
+        <Card className="shadow-md border-0">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">Approval History</CardTitle>
+            <CardDescription className="text-xs">Timeline of approval decisions</CardDescription>
+          </CardHeader>
           <CardContent className="space-y-3">
             {approvals.map(a => (
-              <div key={a.id} className="flex items-start gap-3">
-                <div className={`mt-1 h-2 w-2 rounded-full ${a.action === 'approved' ? 'bg-success' : 'bg-destructive'}`} />
-                <div>
-                  <p className="text-sm font-medium">{a.level === 'manager' ? 'Manager' : 'Finance'} — {a.action}</p>
-                  {a.comments && <p className="text-sm text-muted-foreground">{a.comments}</p>}
-                  <p className="text-xs text-muted-foreground">{new Date(a.created_at).toLocaleString()}</p>
+              <div key={a.id} className="flex items-start gap-3 p-2.5 rounded-lg bg-muted/30">
+                <div className={`mt-0.5 h-6 w-6 rounded-full flex items-center justify-center shrink-0 ${a.action === 'approved' ? 'bg-success/20 text-success' : 'bg-destructive/20 text-destructive'}`}>
+                  {a.action === 'approved' ? <CheckCircle className="h-3.5 w-3.5" /> : <XCircle className="h-3.5 w-3.5" />}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-sm font-medium">
+                      {a.level === 'manager' ? 'Manager' : 'Finance'} — <span className={a.action === 'approved' ? 'text-success' : 'text-destructive'}>{a.action}</span>
+                    </p>
+                    <span className="text-xs text-muted-foreground shrink-0">{new Date(a.created_at).toLocaleDateString()}</span>
+                  </div>
+                  {a.comments && <p className="text-sm text-muted-foreground mt-0.5">{a.comments}</p>}
                 </div>
               </div>
             ))}
@@ -92,16 +224,25 @@ export default function ExpenseDetail() {
         </Card>
       )}
 
+      {/* Audit Trail */}
       {auditLogs.length > 0 && (
-        <Card>
-          <CardHeader><CardTitle>Audit Trail</CardTitle></CardHeader>
-          <CardContent className="space-y-2">
-            {auditLogs.map(log => (
-              <div key={log.id} className="flex flex-col sm:flex-row sm:justify-between text-sm border-b last:border-0 pb-2 gap-1">
-                <span>{log.action}</span>
-                <span className="text-muted-foreground">{new Date(log.created_at).toLocaleString()}</span>
-              </div>
-            ))}
+        <Card className="shadow-md border-0">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">Activity Log</CardTitle>
+            <CardDescription className="text-xs">Complete history of actions on this expense</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="relative pl-4 border-l-2 border-border space-y-3">
+              {auditLogs.map(log => (
+                <div key={log.id} className="relative">
+                  <div className="absolute -left-[21px] top-1 h-2.5 w-2.5 rounded-full bg-border border-2 border-card" />
+                  <div className="flex flex-col sm:flex-row sm:justify-between gap-0.5">
+                    <span className="text-sm font-medium">{log.action.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</span>
+                    <span className="text-xs text-muted-foreground">{new Date(log.created_at).toLocaleString()}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
           </CardContent>
         </Card>
       )}
