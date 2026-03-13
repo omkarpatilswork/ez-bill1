@@ -21,7 +21,7 @@ export default function MyExpenses() {
   useEffect(() => {
     if (!user) return;
     let query = supabase.from('expenses').select('*').eq('user_id', user.id).order('created_at', { ascending: false });
-    if (statusFilter !== 'all') query = query.eq('status', statusFilter);
+    if (statusFilter !== 'all') query = query.eq('status', statusFilter as ExpenseStatus);
     query.then(({ data }) => {
       setExpenses((data as unknown as Expense[]) || []);
       setLoading(false);
