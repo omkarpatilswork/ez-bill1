@@ -18,6 +18,7 @@ const employeeItems = [
   { title: 'New Expense', url: '/expenses/new', icon: PlusCircle },
   { title: 'My Expenses', url: '/expenses', icon: Receipt },
   { title: 'Analytics', url: '/analytics', icon: PieChart },
+  { title: 'Ask AI', url: '/ask-ai', icon: MessageSquare },
 ];
 
 const managerItems = [
