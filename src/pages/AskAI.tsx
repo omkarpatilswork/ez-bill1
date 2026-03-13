@@ -169,33 +169,46 @@ export default function AskAI() {
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-theme(spacing.12)-theme(spacing.6)*2)] sm:h-[calc(100vh-theme(spacing.14)-theme(spacing.6)*2)]">
-      <div className="mb-4">
-        <h1 className="text-2xl font-bold text-foreground">Ask AI</h1>
-        <p className="text-sm text-muted-foreground">Ask anything about your expenses</p>
+    <div className="flex flex-col h-[calc(100vh-theme(spacing.12)-theme(spacing.6)*2)] sm:h-[calc(100vh-theme(spacing.14)-theme(spacing.6)*2)] max-w-4xl mx-auto w-full">
+      {/* Header */}
+      <div className="mb-5 flex items-center gap-3">
+        <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
+          <Sparkles className="h-5 w-5 text-primary" />
+        </div>
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Ask AI</h1>
+          <p className="text-sm text-muted-foreground">Your intelligent expense assistant</p>
+        </div>
       </div>
 
-      <ScrollArea className="flex-1 rounded-lg border bg-card px-4">
-        <div className="py-4 space-y-4">
+      {/* Chat area */}
+      <ScrollArea className="flex-1 rounded-xl border border-border/60 bg-card shadow-sm px-5">
+        <div className="py-5 space-y-5">
           {messages.length === 0 && !isLoading && (
-            <div className="flex flex-col items-center justify-center py-12 text-center">
-              <div className="h-16 w-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
-                <Sparkles className="h-8 w-8 text-primary" />
+            <div className="flex flex-col items-center justify-center py-16 text-center">
+              <div className="h-20 w-20 rounded-2xl bg-primary/10 flex items-center justify-center mb-5 shadow-sm">
+                <Bot className="h-10 w-10 text-primary" />
               </div>
-              <h2 className="text-lg font-semibold text-foreground mb-1">Expense AI Assistant</h2>
-              <p className="text-sm text-muted-foreground mb-6 max-w-sm">
-                I have access to all your expense data. Ask me anything about spending, categories, trends, or specific transactions.
+              <h2 className="text-xl font-bold text-foreground mb-2">How can I help you?</h2>
+              <p className="text-sm text-muted-foreground mb-8 max-w-md leading-relaxed">
+                I have access to all your expense data. Ask me about spending patterns, category breakdowns, approval statuses, or specific transactions.
               </p>
               {loadingSuggestions ? (
-                <div className="flex flex-wrap gap-2 justify-center max-w-lg">
+                <div className="grid grid-cols-2 gap-3 max-w-lg w-full">
                   {[1, 2, 3, 4].map(i => (
-                    <Skeleton key={i} className="h-9 w-40 rounded-full" />
+                    <Skeleton key={i} className="h-12 rounded-xl" />
                   ))}
                 </div>
               ) : suggestions.length > 0 ? (
-                <div className="flex flex-wrap gap-2 justify-center max-w-lg">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-lg w-full">
                   {suggestions.map((s, i) => (
-                    <Button key={i} variant="outline" size="sm" className="rounded-full" onClick={() => sendMessage(s)}>
+                    <Button
+                      key={i}
+                      variant="outline"
+                      className="h-auto py-3 px-4 rounded-xl text-left text-sm font-normal whitespace-normal border-border/60 hover:bg-accent hover:border-primary/30 transition-all"
+                      onClick={() => sendMessage(s)}
+                    >
+                      <Sparkles className="h-3.5 w-3.5 mr-2 shrink-0 text-primary/60" />
                       {s}
                     </Button>
                   ))}
@@ -207,36 +220,36 @@ export default function AskAI() {
           {messages.map((msg, i) => (
             <div key={i} className={`group flex gap-3 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
               {msg.role === 'assistant' && (
-                <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
+                <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 mt-1">
                   <Bot className="h-4 w-4 text-primary" />
                 </div>
               )}
-              <div className={`relative max-w-[80%] rounded-2xl px-4 py-3 text-sm ${
+              <div className={`relative max-w-[75%] rounded-2xl px-4 py-3 text-sm shadow-sm ${
                 msg.role === 'user'
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-muted text-foreground'
+                  ? 'bg-primary text-primary-foreground rounded-br-md'
+                  : 'bg-muted/60 text-foreground border border-border/40 rounded-bl-md'
               }`}>
                 {msg.role === 'assistant' ? (
-                  <div className="ai-response">
+                  <div className="ai-response leading-relaxed">
                     <ReactMarkdown
                       components={{
                         h1: ({ children }) => <h3 className="text-base font-bold text-foreground mt-4 mb-2 first:mt-0">{children}</h3>,
                         h2: ({ children }) => <h4 className="text-sm font-bold text-foreground mt-3 mb-1.5 first:mt-0">{children}</h4>,
                         h3: ({ children }) => <h5 className="text-sm font-semibold text-foreground mt-3 mb-1 first:mt-0">{children}</h5>,
                         p: ({ children }) => <p className="mb-2 last:mb-0 leading-relaxed">{children}</p>,
-                        ul: ({ children }) => <ul className="mb-2 last:mb-0 space-y-1 pl-4">{children}</ul>,
-                        ol: ({ children }) => <ol className="mb-2 last:mb-0 space-y-1 pl-4 list-decimal">{children}</ol>,
-                        li: ({ children }) => <li className="relative pl-2 before:content-['•'] before:absolute before:-left-0 before:text-muted-foreground list-none">{children}</li>,
+                        ul: ({ children }) => <ul className="mb-2 last:mb-0 space-y-1.5 pl-4">{children}</ul>,
+                        ol: ({ children }) => <ol className="mb-2 last:mb-0 space-y-1.5 pl-4 list-decimal">{children}</ol>,
+                        li: ({ children }) => <li className="relative pl-2 before:content-['•'] before:absolute before:-left-0 before:text-primary/50 before:font-bold list-none">{children}</li>,
                         strong: ({ children }) => <strong className="font-semibold text-foreground">{children}</strong>,
                         em: ({ children }) => <em className="italic text-muted-foreground">{children}</em>,
                         table: ({ children }) => (
-                          <div className="my-2 overflow-x-auto rounded-lg border border-border">
+                          <div className="my-3 overflow-x-auto rounded-lg border border-border shadow-sm">
                             <table className="w-full text-sm">{children}</table>
                           </div>
                         ),
-                        thead: ({ children }) => <thead className="bg-muted/50">{children}</thead>,
-                        th: ({ children }) => <th className="px-3 py-2 text-left font-semibold text-foreground border-b border-border">{children}</th>,
-                        td: ({ children }) => <td className="px-3 py-2 border-b border-border last:border-b-0">{children}</td>,
+                        thead: ({ children }) => <thead className="bg-muted/70">{children}</thead>,
+                        th: ({ children }) => <th className="px-3 py-2.5 text-left font-semibold text-foreground border-b border-border">{children}</th>,
+                        td: ({ children }) => <td className="px-3 py-2.5 border-b border-border/50">{children}</td>,
                         tr: ({ children }) => <tr className="hover:bg-muted/30 transition-colors">{children}</tr>,
                         code: ({ children, className }) => {
                           const isBlock = className?.includes('language-');
@@ -245,12 +258,12 @@ export default function AskAI() {
                               <code className="text-xs">{children}</code>
                             </pre>
                           ) : (
-                            <code className="rounded bg-background px-1.5 py-0.5 text-xs font-mono border border-border">{children}</code>
+                            <code className="rounded-md bg-background px-1.5 py-0.5 text-xs font-mono border border-border">{children}</code>
                           );
                         },
                         hr: () => <hr className="my-3 border-border" />,
                         blockquote: ({ children }) => (
-                          <blockquote className="my-2 border-l-2 border-primary/40 pl-3 italic text-muted-foreground">{children}</blockquote>
+                          <blockquote className="my-2 border-l-3 border-primary/40 pl-3 italic text-muted-foreground">{children}</blockquote>
                         ),
                       }}
                     >
@@ -258,16 +271,15 @@ export default function AskAI() {
                     </ReactMarkdown>
                   </div>
                 ) : (
-                  <p className="whitespace-pre-wrap">{msg.content}</p>
+                  <p className="whitespace-pre-wrap leading-relaxed">{msg.content}</p>
                 )}
-                {/* Copy button */}
                 <div className="absolute -bottom-1 right-1 translate-y-full">
                   <CopyButton text={msg.content} />
                 </div>
               </div>
               {msg.role === 'user' && (
-                <div className="h-8 w-8 rounded-full bg-secondary flex items-center justify-center shrink-0 mt-0.5">
-                  <User className="h-4 w-4 text-secondary-foreground" />
+                <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center shrink-0 mt-1">
+                  <User className="h-4 w-4 text-primary-foreground" />
                 </div>
               )}
             </div>
@@ -275,14 +287,14 @@ export default function AskAI() {
 
           {isLoading && messages[messages.length - 1]?.role !== 'assistant' && (
             <div className="flex gap-3">
-              <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+              <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
                 <Bot className="h-4 w-4 text-primary" />
               </div>
-              <div className="bg-muted rounded-2xl px-4 py-3">
-                <div className="flex gap-1">
-                  <span className="h-2 w-2 rounded-full bg-muted-foreground/40 animate-bounce [animation-delay:0ms]" />
-                  <span className="h-2 w-2 rounded-full bg-muted-foreground/40 animate-bounce [animation-delay:150ms]" />
-                  <span className="h-2 w-2 rounded-full bg-muted-foreground/40 animate-bounce [animation-delay:300ms]" />
+              <div className="bg-muted/60 border border-border/40 rounded-2xl rounded-bl-md px-4 py-3">
+                <div className="flex gap-1.5">
+                  <span className="h-2 w-2 rounded-full bg-primary/40 animate-bounce [animation-delay:0ms]" />
+                  <span className="h-2 w-2 rounded-full bg-primary/40 animate-bounce [animation-delay:150ms]" />
+                  <span className="h-2 w-2 rounded-full bg-primary/40 animate-bounce [animation-delay:300ms]" />
                 </div>
               </div>
             </div>
@@ -291,7 +303,8 @@ export default function AskAI() {
         </div>
       </ScrollArea>
 
-      <div className="mt-3 flex gap-2">
+      {/* Input area */}
+      <div className="mt-4 flex gap-2 items-end">
         <textarea
           ref={inputRef}
           value={input}
@@ -299,12 +312,12 @@ export default function AskAI() {
           onKeyDown={handleKeyDown}
           placeholder="Ask about your expenses..."
           rows={1}
-          className="flex-1 resize-none rounded-xl border border-input bg-background px-4 py-3 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="flex-1 resize-none rounded-xl border border-border/60 bg-card shadow-sm px-4 py-3 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-shadow"
           disabled={isLoading}
         />
         <Button
           size="icon"
-          className="h-[46px] w-[46px] rounded-xl shrink-0"
+          className="h-[46px] w-[46px] rounded-xl shrink-0 shadow-sm"
           onClick={() => sendMessage(input)}
           disabled={!input.trim() || isLoading}
         >
