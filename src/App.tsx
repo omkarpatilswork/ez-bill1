@@ -13,6 +13,7 @@ import MyExpenses from "./pages/expenses/MyExpenses";
 import ExpenseDetail from "./pages/expenses/ExpenseDetail";
 import Analytics from "./pages/expenses/Analytics";
 import AskAI from "./pages/AskAI";
+import EmailBills from "./pages/expenses/EmailBills";
 import ManagerDashboard from "./pages/manager/ManagerDashboard";
 import PendingApprovals from "./pages/manager/PendingApprovals";
 import FinanceDashboard from "./pages/finance/FinanceDashboard";
