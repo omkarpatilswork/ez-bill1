@@ -86,7 +86,7 @@ Rules:
       }
       const errText = await response.text();
       console.error("AI gateway error:", response.status, errText);
-      return new Response(JSON.stringify({ error: "AI extraction failed" }), {
+      return new Response(JSON.stringify({ error: "AI extraction failed", detail: errText }), {
         status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
