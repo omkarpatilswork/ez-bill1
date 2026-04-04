@@ -26,8 +26,8 @@ serve(async (req) => {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
-    const mimeType = file_type.startsWith("image/") ? file_type : "image/png";
-    const isImage = file_type.startsWith("image/");
+    // Use the actual mime type - Gemini supports image/* and application/pdf
+    const mimeType = file_type || "image/png";
 
     const systemPrompt = `You are an OCR extraction engine. You receive an image or PDF of a receipt/bill/invoice. Extract structured data and return ONLY valid JSON with these fields:
 {
