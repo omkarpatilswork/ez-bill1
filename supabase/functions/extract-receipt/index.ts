@@ -26,8 +26,17 @@ serve(async (req) => {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
-    const mimeType = file_type.startsWith("image/") ? file_type : "image/png";
-    const isImage = file_type.startsWith("image/");
+    // Use the actual mime type - Gemini supports image/* and application/pdf
+    const mimeType = file_type || "image/png";
+    console.log("Processing file type:", mimeType, "base64 length:", file_base64.length);
+
+    // Check if file is too large (>10MB base64 ≈ 7.5MB file)
+    if (file_base64.length > 10 * 1024 * 1024) {
+      return new Response(
+        JSON.stringify({ error: "File is too large. Please upload an image under 7MB." }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     const systemPrompt = `You are an OCR extraction engine. You receive an image or PDF of a receipt/bill/invoice. Extract structured data and return ONLY valid JSON with these fields:
 {
@@ -86,7 +95,7 @@ Rules:
       }
       const errText = await response.text();
       console.error("AI gateway error:", response.status, errText);
-      return new Response(JSON.stringify({ error: "AI extraction failed" }), {
+      return new Response(JSON.stringify({ error: "AI extraction failed", detail: errText }), {
         status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
