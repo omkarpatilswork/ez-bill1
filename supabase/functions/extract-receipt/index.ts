@@ -28,6 +28,15 @@ serve(async (req) => {
 
     // Use the actual mime type - Gemini supports image/* and application/pdf
     const mimeType = file_type || "image/png";
+    console.log("Processing file type:", mimeType, "base64 length:", file_base64.length);
+
+    // Check if file is too large (>10MB base64 ≈ 7.5MB file)
+    if (file_base64.length > 10 * 1024 * 1024) {
+      return new Response(
+        JSON.stringify({ error: "File is too large. Please upload an image under 7MB." }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     const systemPrompt = `You are an OCR extraction engine. You receive an image or PDF of a receipt/bill/invoice. Extract structured data and return ONLY valid JSON with these fields:
 {
