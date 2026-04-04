@@ -77,7 +77,11 @@ export default function NewExpense() {
         body: { file_base64: base64, file_type: file.type },
       });
 
-      if (error) throw error;
+      if (error) {
+        // Try to parse error body for detail
+        const errBody = typeof error === 'object' && error.context?.body ? JSON.parse(error.context.body) : null;
+        throw new Error(errBody?.error || errBody?.detail || error.message || 'Extraction failed');
+      }
       if (data?.error) throw new Error(data.error);
 
       setExtractionResult(data);
