@@ -193,6 +193,80 @@ export type Database = {
           },
         ]
       }
+      gmail_connections: {
+        Row: {
+          access_token: string
+          connected_at: string
+          email_address: string
+          id: string
+          refresh_token: string
+          token_expires_at: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          access_token: string
+          connected_at?: string
+          email_address: string
+          id?: string
+          refresh_token: string
+          token_expires_at: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          access_token?: string
+          connected_at?: string
+          email_address?: string
+          id?: string
+          refresh_token?: string
+          token_expires_at?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      processed_emails: {
+        Row: {
+          expense_id: string | null
+          gmail_message_id: string
+          id: string
+          processed_at: string
+          received_at: string | null
+          sender: string | null
+          subject: string | null
+          user_id: string
+        }
+        Insert: {
+          expense_id?: string | null
+          gmail_message_id: string
+          id?: string
+          processed_at?: string
+          received_at?: string | null
+          sender?: string | null
+          subject?: string | null
+          user_id: string
+        }
+        Update: {
+          expense_id?: string | null
+          gmail_message_id?: string
+          id?: string
+          processed_at?: string
+          received_at?: string | null
+          sender?: string | null
+          subject?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "processed_emails_expense_id_fkey"
+            columns: ["expense_id"]
+            isOneToOne: false
+            referencedRelation: "expenses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
