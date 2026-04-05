@@ -55,6 +55,7 @@ export default function NewExpense() {
   const { toast } = useToast();
   const [searchParams] = useSearchParams();
   const mode = searchParams.get('mode'); // 'scan' | 'upload' | null (manual)
+  const editId = searchParams.get('edit'); // expense ID when editing
 
   const [categories, setCategories] = useState<ExpenseCategory[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
