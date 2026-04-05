@@ -403,8 +403,8 @@ export default function NewExpense() {
           </Card>
         )}
 
-        {/* Extraction Complete — Tabs */}
-        {receiptFile && !isExtracting && (
+        {/* Extraction Complete or Edit Mode — Tabs */}
+        {((receiptFile && !isExtracting) || editId) && (
           <>
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <TabsList className="w-full grid grid-cols-2 bg-secondary/50">
