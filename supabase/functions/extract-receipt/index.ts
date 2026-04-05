@@ -26,11 +26,9 @@ serve(async (req) => {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
-    // Use the actual mime type - Gemini supports image/* and application/pdf
     const mimeType = file_type || "image/png";
     console.log("Processing file type:", mimeType, "base64 length:", file_base64.length);
 
-    // Check if file is too large (>10MB base64 ≈ 7.5MB file)
     if (file_base64.length > 10 * 1024 * 1024) {
       return new Response(
         JSON.stringify({ error: "File is too large. Please upload an image under 7MB." }),
@@ -38,20 +36,42 @@ serve(async (req) => {
       );
     }
 
-    const systemPrompt = `You are an OCR extraction engine. You receive an image or PDF of a receipt/bill/invoice. Extract structured data and return ONLY valid JSON with these fields:
+    const systemPrompt = `You are an advanced OCR extraction engine for Indian bills, receipts, and invoices. Extract ALL structured data and return ONLY valid JSON with these fields:
+
 {
   "merchant_name": "string - name of store/restaurant/provider, or 'Not Found'",
-  "amount": "number - total amount as float without currency symbols, or null",
+  "merchant_address": "string - full address if visible, or 'Not Found'",
+  "merchant_gstin": "string - GSTIN number if visible on Indian bills, or 'Not Found'",
+  "amount": "number - total/grand total amount as float without currency symbols, or null",
+  "subtotal": "number - subtotal before tax if visible, or null",
+  "tax_amount": "number - total tax (GST/CGST+SGST/IGST) as float, or null",
+  "tax_details": "string - tax breakdown e.g. 'CGST 2.5% + SGST 2.5%', or 'Not Found'",
+  "discount": "number - discount amount if any, or null",
   "date_time": "string - YYYY-MM-DD HH:MM:SS format, or 'Not Found'",
-  "bill_invoice_number": "string - invoice/receipt number, or 'Not Found'",
-  "category": "string - one of: Travel, Meals, Office Supplies, Transportation, Accommodation, Software, Training, Other"
+  "bill_invoice_number": "string - invoice/receipt/bill number, or 'Not Found'",
+  "payment_method": "string - one of: UPI, Cash, Credit Card, Debit Card, Net Banking, Wallet, Other, or 'Not Found'",
+  "category": "string - one of: Food & Dining, Grocery, Petrol & Fuel, Toll, Parking, Shopping, Utilities, Travel, Accommodation, Transportation, Office Supplies, Software, Medical, Entertainment, Education, Other",
+  "line_items": [
+    {
+      "name": "string - item name",
+      "quantity": "number - quantity, default 1",
+      "unit_price": "number - price per unit",
+      "total_price": "number - total for this item"
+    }
+  ],
+  "total_items": "number - total count of line items, or 0",
+  "currency": "string - INR, USD, etc. Default INR for Indian bills"
 }
 
 Rules:
 - Do NOT infer or hallucinate missing values. Use 'Not Found' or null.
 - Amount must be a valid number without currency symbols.
+- Extract EVERY line item visible on the bill with name, quantity, unit price, and total.
+- If quantity is not shown, default to 1.
+- Category should be smartly inferred from merchant name, items, or bill type.
+- For Indian bills, look for GSTIN, FSSAI, and tax breakdowns (CGST/SGST/IGST).
+- Payment method: look for UPI ID, card last 4 digits, "CASH", "PAID BY" etc.
 - Normalize date to YYYY-MM-DD HH:MM:SS when possible.
-- Category should be inferred from merchant/items.
 - Return ONLY the JSON object. No markdown, no explanation.`;
 
     const userContent: any[] = [
@@ -63,7 +83,7 @@ Rules:
       },
       {
         type: "text",
-        text: "Extract all expense/receipt details from this image. Return only JSON.",
+        text: "Extract ALL bill details including every line item, tax, payment method, and merchant info. Return only JSON.",
       },
     ];
 
@@ -103,7 +123,6 @@ Rules:
     const result = await response.json();
     const content = result.choices?.[0]?.message?.content || "";
 
-    // Parse JSON from the response, stripping any markdown fences
     let extracted;
     try {
       const jsonStr = content.replace(/```json\s*/g, "").replace(/```\s*/g, "").trim();
