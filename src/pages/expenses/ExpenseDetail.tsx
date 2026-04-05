@@ -10,7 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import {
   ArrowLeft, Store, Package, Hash, Calendar, CreditCard, IndianRupee,
   Receipt, Eye, Users, ShieldCheck, Pencil, FileText, CheckCircle, XCircle,
-  Clock, DollarSign, Send, Trash2, Headphones, Loader2, ExternalLink
+  Clock, DollarSign, Send, Trash2, Headphones
 } from 'lucide-react';
 import type { Expense, ExpenseStatus, ApprovalAction, AuditLog } from '@/lib/types';
 
