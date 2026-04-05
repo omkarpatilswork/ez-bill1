@@ -6,9 +6,8 @@ import { StatusBadge } from '@/components/expenses/StatusBadge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
-  Receipt, Clock, CheckCircle, DollarSign, PlusCircle,
-  ArrowUpRight, TrendingUp, Search, Mail, Users as UsersIcon,
-  Wallet, Shield, HelpCircle, RefreshCw, User,
+  Receipt, PlusCircle, ArrowUpRight, TrendingUp, Search,
+  Mail, Users as UsersIcon, Wallet, Shield, RefreshCw, User, Sparkles,
 } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -21,7 +20,6 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [allExpenses, setAllExpenses] = useState<Expense[]>([]);
-  const [categories, setCategories] = useState<ExpenseCategory[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -30,11 +28,9 @@ export default function Dashboard() {
     Promise.all([
       supabase.from('expenses').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(10),
       supabase.from('expenses').select('*').eq('user_id', user.id).order('expense_date', { ascending: true }),
-      supabase.from('expense_categories').select('*'),
-    ]).then(([recentRes, allRes, catRes]) => {
+    ]).then(([recentRes, allRes]) => {
       setExpenses((recentRes.data as unknown as Expense[]) || []);
       setAllExpenses((allRes.data as unknown as Expense[]) || []);
-      setCategories((catRes.data as unknown as ExpenseCategory[]) || []);
       setLoading(false);
     });
   }, [user]);
@@ -43,10 +39,7 @@ export default function Dashboard() {
   const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
   const last30 = allExpenses.filter(e => new Date(e.expense_date) >= thirtyDaysAgo);
   const totalLast30 = last30.reduce((s, e) => s + Number(e.amount), 0);
-
   const total = allExpenses.reduce((s, e) => s + Number(e.amount), 0);
-  const pending = allExpenses.filter(e => ['submitted', 'manager_approved'].includes(e.status));
-  const approved = allExpenses.filter(e => e.status === 'approved' || e.status === 'reimbursed');
 
   const monthlyData = useMemo(() => {
     const map: Record<string, number> = {};
@@ -67,12 +60,24 @@ export default function Dashboard() {
   });
 
   const quickActions = [
-    { label: 'Scan Email', icon: Mail, path: '/email-bills', color: 'text-info' },
     { label: 'Split Bills', icon: UsersIcon, path: '/expenses', color: 'text-primary' },
     { label: 'Reimburse', icon: Wallet, path: '/expenses', color: 'text-success' },
-    { label: 'Warranty', icon: Shield, path: '/expenses', color: 'text-gold' },
-    { label: 'Help', icon: HelpCircle, path: '/ask-ai', color: 'text-muted-foreground' },
+    { label: 'Claim Warranty', icon: Shield, path: '/expenses', color: 'text-gold' },
+    { label: 'Scan Email', icon: Mail, path: '/email-bills', color: 'text-info' },
   ];
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      navigate(`/expenses?q=${encodeURIComponent(searchQuery.trim())}`);
+    }
+  };
+
+  // Name: profile > user_metadata > fallback
+  const firstName =
+    profile?.full_name?.split(' ')[0] ||
+    user?.user_metadata?.full_name?.split(' ')[0] ||
+    'User';
 
   if (loading) {
     return (
@@ -81,8 +86,6 @@ export default function Dashboard() {
       </div>
     );
   }
-
-  const firstName = profile?.full_name?.split(' ')[0] || 'there';
 
   return (
     <div className="space-y-6 max-w-2xl mx-auto md:max-w-none animate-fade-in">
@@ -96,8 +99,11 @@ export default function Dashboard() {
           <button onClick={() => navigate('/email-bills')} className="h-9 w-9 rounded-full bg-secondary flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors">
             <RefreshCw className="h-4 w-4" />
           </button>
-          <button onClick={() => navigate('/ask-ai')} className="h-9 w-9 rounded-full bg-secondary flex items-center justify-center overflow-hidden">
-            <User className="h-4 w-4 text-muted-foreground" />
+          <button onClick={() => navigate('/ask-ai')} className="h-9 w-9 rounded-full bg-secondary flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors">
+            <Sparkles className="h-4 w-4" />
+          </button>
+          <button onClick={() => navigate('/profile')} className="h-9 w-9 rounded-full bg-secondary flex items-center justify-center overflow-hidden text-muted-foreground hover:text-foreground transition-colors">
+            <User className="h-4 w-4" />
           </button>
         </div>
       </div>
@@ -109,7 +115,7 @@ export default function Dashboard() {
       </div>
 
       {/* Search Bar */}
-      <div className="relative">
+      <form onSubmit={handleSearch} className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
           placeholder="Search bills, merchants, or amounts…"
@@ -117,7 +123,7 @@ export default function Dashboard() {
           onChange={e => setSearchQuery(e.target.value)}
           className="pl-10 h-11 rounded-xl bg-secondary border-border/30 text-foreground placeholder:text-muted-foreground focus-visible:ring-primary/50"
         />
-      </div>
+      </form>
 
       {/* Dashboard Summary Card */}
       <div className="glass-card rounded-2xl p-5 animate-slide-up">
@@ -126,7 +132,7 @@ export default function Dashboard() {
           <span className="text-xs text-gold font-medium">{last30.length} bills</span>
         </div>
         <p className="text-3xl font-bold text-foreground mb-3">
-          ${totalLast30.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          ₹{totalLast30.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
         </p>
         {monthlyData.length > 0 && (
           <ResponsiveContainer width="100%" height={80}>
@@ -135,25 +141,6 @@ export default function Dashboard() {
             </BarChart>
           </ResponsiveContainer>
         )}
-      </div>
-
-      {/* Stat Cards Row */}
-      <div className="grid grid-cols-3 gap-3">
-        <div className="glass-card rounded-xl p-3 text-center">
-          <Receipt className="h-5 w-5 mx-auto mb-1.5 text-primary" />
-          <p className="text-lg font-bold text-foreground">{allExpenses.length}</p>
-          <p className="text-[10px] text-muted-foreground">Total Bills</p>
-        </div>
-        <div className="glass-card rounded-xl p-3 text-center">
-          <Clock className="h-5 w-5 mx-auto mb-1.5 text-gold" />
-          <p className="text-lg font-bold text-foreground">{pending.length}</p>
-          <p className="text-[10px] text-muted-foreground">Pending</p>
-        </div>
-        <div className="glass-card rounded-xl p-3 text-center">
-          <CheckCircle className="h-5 w-5 mx-auto mb-1.5 text-success" />
-          <p className="text-lg font-bold text-foreground">{approved.length}</p>
-          <p className="text-[10px] text-muted-foreground">Approved</p>
-        </div>
       </div>
 
       {/* Recent Bills */}
@@ -180,7 +167,7 @@ export default function Dashboard() {
                 className="glass-card block rounded-xl p-3.5 hover:bg-secondary/50 active:bg-secondary/80 transition-colors">
                 <div className="flex items-center justify-between mb-1">
                   <span className="font-medium text-sm text-foreground truncate mr-2">{exp.title}</span>
-                  <span className="font-bold text-sm tabular-nums text-foreground">${Number(exp.amount).toFixed(2)}</span>
+                  <span className="font-bold text-sm tabular-nums text-foreground">₹{Number(exp.amount).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-muted-foreground">{exp.merchant || '—'} · {new Date(exp.expense_date).toLocaleDateString()}</span>
@@ -222,7 +209,7 @@ export default function Dashboard() {
                 Spending Trend
               </h3>
               <p className="text-2xl font-bold text-foreground mt-1">
-                ${total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                ₹{total.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </p>
             </div>
           </div>
@@ -230,9 +217,9 @@ export default function Dashboard() {
             <BarChart data={monthlyData} barSize={10}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsla(160, 8%, 25%, 0.3)" />
               <XAxis dataKey="day" tick={{ fontSize: 10, fill: 'hsl(160, 8%, 55%)' }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fontSize: 10, fill: 'hsl(160, 8%, 55%)' }} axisLine={false} tickLine={false} tickFormatter={v => `$${v}`} />
+              <YAxis tick={{ fontSize: 10, fill: 'hsl(160, 8%, 55%)' }} axisLine={false} tickLine={false} tickFormatter={v => `₹${v}`} />
               <Tooltip
-                formatter={(val: number) => [`$${val.toFixed(2)}`, 'Spent']}
+                formatter={(val: number) => [`₹${val.toFixed(2)}`, 'Spent']}
                 contentStyle={{ borderRadius: '12px', border: 'none', background: 'hsl(160, 10%, 12%)', color: 'hsl(60, 10%, 95%)' }}
               />
               <Bar dataKey="amount" fill="hsl(152, 45%, 35%)" radius={[4, 4, 0, 0]} />
@@ -257,7 +244,7 @@ export default function Dashboard() {
                   <p className="text-xs text-muted-foreground">{exp.merchant || '—'} · {new Date(exp.expense_date).toLocaleDateString()}</p>
                 </div>
                 <div className="text-right shrink-0 ml-3">
-                  <p className="text-sm font-bold tabular-nums text-foreground">${Number(exp.amount).toFixed(2)}</p>
+                  <p className="text-sm font-bold tabular-nums text-foreground">₹{Number(exp.amount).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                   <StatusBadge status={exp.status as ExpenseStatus} />
                 </div>
               </Link>
