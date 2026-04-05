@@ -432,7 +432,7 @@ export default function ExpenseDetail() {
         </Button>
         <Button className="min-h-[44px] text-xs"
           onClick={() => setShowReimburse(true)}>
-          <ShieldCheck className="h-3.5 w-3.5 mr-1" /> Reimburse
+          <ShieldCheck className="h-3.5 w-3.5 mr-1" /> Send to Reimbursement
         </Button>
       </div>
 
