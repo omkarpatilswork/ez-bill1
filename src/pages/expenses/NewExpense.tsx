@@ -416,31 +416,80 @@ export default function NewExpense() {
                         Items ({editLineItems.length})
                       </p>
                       <div className="space-y-2">
-                        {editLineItems.map((item, i) => (
+                {editLineItems.map((item, i) => (
                           <div key={i} className="flex items-start gap-3 py-2 border-b border-border/20 last:border-0">
                             <div className="h-8 w-8 rounded-lg bg-secondary/50 flex items-center justify-center shrink-0 mt-0.5">
                               <span className="text-xs font-bold text-muted-foreground">{i + 1}</span>
                             </div>
                             <div className="flex-1 min-w-0">
                               {isEditing ? (
-                                <Input value={item.name} className="text-sm h-8 mb-1 bg-secondary/30 border-border/30"
-                                  onChange={e => {
-                                    const updated = [...editLineItems];
-                                    updated[i] = { ...updated[i], name: e.target.value };
-                                    setEditLineItems(updated);
-                                  }} />
+                                <>
+                                  <Input value={item.name} className="text-sm h-8 mb-1 bg-secondary/30 border-border/30"
+                                    placeholder="Item name"
+                                    onChange={e => {
+                                      const updated = [...editLineItems];
+                                      updated[i] = { ...updated[i], name: e.target.value };
+                                      setEditLineItems(updated);
+                                    }} />
+                                  <div className="flex gap-2 mt-1">
+                                    <div className="flex-1">
+                                      <label className="text-[9px] text-muted-foreground">Qty</label>
+                                      <Input type="number" min="1" value={item.quantity} className="text-xs h-7 bg-secondary/30 border-border/30"
+                                        onChange={e => {
+                                          const updated = [...editLineItems];
+                                          const qty = Math.max(1, Number(e.target.value) || 1);
+                                          updated[i] = { ...updated[i], quantity: qty, total_price: qty * updated[i].unit_price };
+                                          setEditLineItems(updated);
+                                          recalcTotal(updated);
+                                        }} />
+                                    </div>
+                                    <div className="flex-1">
+                                      <label className="text-[9px] text-muted-foreground">Unit ₹</label>
+                                      <Input type="number" step="0.01" value={item.unit_price} className="text-xs h-7 bg-secondary/30 border-border/30"
+                                        onChange={e => {
+                                          const updated = [...editLineItems];
+                                          const price = Number(e.target.value) || 0;
+                                          updated[i] = { ...updated[i], unit_price: price, total_price: updated[i].quantity * price };
+                                          setEditLineItems(updated);
+                                          recalcTotal(updated);
+                                        }} />
+                                    </div>
+                                  </div>
+                                </>
                               ) : (
                                 <p className="text-sm font-medium text-foreground truncate">{item.name}</p>
                               )}
-                              <p className="text-[11px] text-muted-foreground">
-                                Qty: {item.quantity} × ₹{item.unit_price?.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                              </p>
+                              {!isEditing && (
+                                <p className="text-[11px] text-muted-foreground">
+                                  Qty: {item.quantity} × ₹{item.unit_price?.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                                </p>
+                              )}
                             </div>
-                            <p className="text-sm font-semibold text-foreground tabular-nums shrink-0">
-                              ₹{item.total_price?.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                            </p>
+                            <div className="flex items-center gap-1 shrink-0">
+                              <p className="text-sm font-semibold text-foreground tabular-nums">
+                                ₹{item.total_price?.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                              </p>
+                              {isEditing && (
+                                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => {
+                                  const updated = editLineItems.filter((_, j) => j !== i);
+                                  setEditLineItems(updated);
+                                  recalcTotal(updated);
+                                }}>
+                                  <X className="h-3 w-3 text-destructive" />
+                                </Button>
+                              )}
+                            </div>
                           </div>
                         ))}
+                        {isEditing && (
+                          <Button variant="outline" size="sm" className="w-full mt-2 text-xs min-h-[36px] border-dashed"
+                            onClick={() => {
+                              const updated = [...editLineItems, { name: '', quantity: 1, unit_price: 0, total_price: 0 }];
+                              setEditLineItems(updated);
+                            }}>
+                            + Add Item
+                          </Button>
+                        )}
                       </div>
                     </CardContent>
                   </Card>
