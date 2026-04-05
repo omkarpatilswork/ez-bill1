@@ -488,11 +488,53 @@ export default function EmailBills() {
 
         {/* UPI SMS Tab */}
         <TabsContent value="upi" className="space-y-6">
+          {/* Auto Scan Card — shown only on Android native app */}
+          {showNativeScan && (
+            <Card className="shadow-md border-0 bg-primary/5">
+              <CardHeader>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <ScanLine className="h-5 w-5 text-primary" />
+                  Auto Scan UPI SMS
+                </CardTitle>
+                <CardDescription>
+                  Automatically read UPI payment messages from your phone and extract bill details.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button
+                  onClick={async () => {
+                    setIsAutoScanning(true);
+                    setUpiTransactions([]);
+                    const result = await scanUpiSmsFromDevice();
+                    if (result.error) {
+                      toast({ title: 'Scan failed', description: result.error, variant: 'destructive' });
+                    } else if (result.transactions.length === 0) {
+                      toast({ title: 'No UPI transactions', description: `Scanned ${result.smsCount} UPI messages but found no transactions.` });
+                    } else {
+                      setUpiTransactions(result.transactions);
+                      toast({ title: 'Scan complete', description: `Found ${result.transactions.length} transaction(s) from ${result.smsCount} SMS.` });
+                    }
+                    setIsAutoScanning(false);
+                  }}
+                  disabled={isAutoScanning}
+                  className="w-full min-h-[44px]"
+                >
+                  {isAutoScanning ? (
+                    <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Scanning SMS...</>
+                  ) : (
+                    <><ScanLine className="h-4 w-4 mr-2" /> Scan UPI SMS from Phone</>
+                  )}
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Manual Paste Card */}
           <Card className="shadow-md border-0">
             <CardHeader>
               <CardTitle className="text-base flex items-center gap-2">
                 <Smartphone className="h-5 w-5 text-primary" />
-                Paste UPI SMS
+                {showNativeScan ? 'Or Paste Manually' : 'Paste UPI SMS'}
               </CardTitle>
               <CardDescription>
                 Copy UPI payment confirmation SMS from your phone and paste below. You can paste multiple messages at once.
