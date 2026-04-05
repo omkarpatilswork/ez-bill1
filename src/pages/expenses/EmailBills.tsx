@@ -87,6 +87,8 @@ export default function EmailBills() {
   const [isParsing, setIsParsing] = useState(false);
   const [upiTransactions, setUpiTransactions] = useState<UpiTransaction[]>([]);
   const [savingUpiIdx, setSavingUpiIdx] = useState<number | null>(null);
+  const [isAutoScanning, setIsAutoScanning] = useState(false);
+  const [showNativeScan] = useState(() => isNativeApp() && isAndroid());
 
   useEffect(() => {
     checkConnection();
