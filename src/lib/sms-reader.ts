@@ -43,8 +43,9 @@ export async function scanUpiSmsFromDevice(): Promise<{
 
   try {
     // Dynamically import the SMS plugin (only available in native builds)
-    // @ts-ignore - capacitor-sms-inbox is only available in native Android builds
-    const { SmsInbox } = await import(/* @vite-ignore */ "capacitor-sms-inbox");
+    // Use a variable to prevent Vite from trying to resolve this module at build/dev time
+    const moduleName = "capacitor-sms-inbox";
+    const { SmsInbox } = await import(/* @vite-ignore */ moduleName);
 
     // Request permission and read recent SMS
     const permResult = await SmsInbox.requestPermission();
