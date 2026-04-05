@@ -85,7 +85,7 @@ serve(async (req) => {
     const { max_results = 10 } = await req.json().catch(() => ({}));
 
     // Search Gmail for bill/invoice/receipt emails
-    const query = "subject:(invoice OR receipt OR bill OR payment OR order confirmation) has:attachment newer_than:30d";
+    const query = "(subject:(invoice OR receipt OR bill OR payment OR order OR confirmation OR statement OR purchase) OR from:(swiggy OR zomato OR amazon OR flipkart OR uber OR ola OR paytm OR phonepe OR gpay OR razorpay OR paypal OR netflix OR spotify)) newer_than:90d";
     const searchUrl = `https://gmail.googleapis.com/gmail/v1/users/me/messages?q=${encodeURIComponent(query)}&maxResults=${max_results}`;
 
     const searchRes = await fetch(searchUrl, {
@@ -186,15 +186,15 @@ async function processMessages(searchData: any, accessToken: string, userId: str
         }
       }
 
-      if (attachments.length > 0) {
-        emails.push({
-          message_id: msg.id,
-          subject,
-          from,
-          date,
-          attachments,
-        });
-      }
+      // Include emails with attachments, or if no attachments, still include with empty array
+      emails.push({
+        message_id: msg.id,
+        subject,
+        from,
+        date,
+        attachments,
+        has_body: true,
+      });
     } catch (err) {
       console.error("Error processing message:", msg.id, err);
     }
