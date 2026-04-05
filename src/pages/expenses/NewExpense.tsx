@@ -332,8 +332,8 @@ export default function NewExpense() {
           </h1>
         </div>
 
-        {/* Upload Area (shown when no file yet) */}
-        {!receiptFile && !isExtracting && (
+        {/* Upload Area (shown when no file yet and not editing) */}
+        {!editId && !receiptFile && !isExtracting && (
           <Card className="border-0 bg-card/80 backdrop-blur">
             <CardContent className="pt-6 pb-6">
               <div className="flex flex-col items-center text-center space-y-4">
