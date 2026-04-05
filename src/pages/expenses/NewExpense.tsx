@@ -318,8 +318,8 @@ export default function NewExpense() {
   };
   const isValid = (form.merchant.trim() || form.title.trim()) && form.amount && parseFloat(form.amount) > 0;
 
-  // ─── UPLOAD PAGE (mode=upload or mode=scan) ───
-  if (mode === 'upload' || mode === 'scan') {
+  // ─── UPLOAD/SCAN/EDIT PAGE ───
+  if (mode === 'upload' || mode === 'scan' || editId) {
     return (
       <div className="max-w-2xl mx-auto space-y-4 pb-24">
         {/* Header */}
