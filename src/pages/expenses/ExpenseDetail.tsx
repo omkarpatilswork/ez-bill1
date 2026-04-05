@@ -10,7 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import {
   ArrowLeft, Store, Package, Hash, Calendar, CreditCard, IndianRupee,
   Receipt, Eye, Users, ShieldCheck, Pencil, FileText, CheckCircle, XCircle,
-  Clock, DollarSign, Send, Trash2, Headphones, Loader2, ExternalLink
+  Clock, DollarSign, Send, Trash2, Headphones
 } from 'lucide-react';
 import type { Expense, ExpenseStatus, ApprovalAction, AuditLog } from '@/lib/types';
 
@@ -75,8 +75,7 @@ export default function ExpenseDetail() {
   const [receiptName, setReceiptName] = useState<string>('');
   const [activeTab, setActiveTab] = useState<string>('ebill');
   const [showReimburse, setShowReimburse] = useState(false);
-  const [supportLoading, setSupportLoading] = useState(false);
-  const [supportInfo, setSupportInfo] = useState<{ phone?: string; website?: string; email?: string } | null>(null);
+  
 
   useEffect(() => {
     if (!id) return;
@@ -114,39 +113,7 @@ export default function ExpenseDetail() {
     navigate('/expenses');
   };
 
-  const handleGetSupport = async () => {
-    if (!expense?.merchant) {
-      toast({ title: 'No merchant info', description: 'Cannot look up support without a merchant name.' });
-      return;
-    }
-    setSupportLoading(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('ask-ai', {
-        body: {
-          messages: [{
-            role: 'user',
-            content: `Find the customer support contact details for "${expense.merchant}" in India. Return ONLY a JSON object with these fields: phone (customer care number), website (support/returns page URL), email (support email). If not found, use null for that field. No other text.`
-          }]
-        }
-      });
-      if (error) throw error;
-      const text = data?.choices?.[0]?.message?.content || data?.content || data?.response || '';
-      try {
-        const jsonMatch = text.match(/\{[\s\S]*\}/);
-        if (jsonMatch) {
-          setSupportInfo(JSON.parse(jsonMatch[0]));
-        } else {
-          setSupportInfo({ website: `https://www.google.com/search?q=${encodeURIComponent(expense.merchant + ' customer support returns warranty India')}` });
-        }
-      } catch {
-        setSupportInfo({ website: `https://www.google.com/search?q=${encodeURIComponent(expense.merchant + ' customer support returns warranty India')}` });
-      }
-    } catch {
-      setSupportInfo({ website: `https://www.google.com/search?q=${encodeURIComponent(expense.merchant + ' customer support returns warranty India')}` });
-    } finally {
-      setSupportLoading(false);
-    }
-  };
+  
 
   const handleDelete = async () => {
     if (!expense || !confirm('Delete this bill permanently?')) return;
@@ -313,7 +280,9 @@ export default function ExpenseDetail() {
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <h1 className="text-lg font-bold text-foreground truncate flex-1">{expense.merchant || expense.title}</h1>
-        {isInReimbursement && <StatusBadge status={expense.status as ExpenseStatus} />}
+        {['submitted', 'manager_approved', 'approved', 'reimbursed', 'rejected'].includes(expense.status) && (
+          <StatusBadge status={expense.status as ExpenseStatus} />
+        )}
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -422,45 +391,18 @@ export default function ExpenseDetail() {
           <Pencil className="h-3.5 w-3.5 mr-1" /> Edit
         </Button>
         <Button variant="outline" className="min-h-[44px] text-xs"
-          onClick={() => toast({ title: 'Coming soon', description: 'Split bill feature is under development.' })}>
+          onClick={() => navigate(`/expenses/${expense.id}/split`)}>
           <Users className="h-3.5 w-3.5 mr-1" /> Split
         </Button>
         <Button variant="outline" className="min-h-[44px] text-xs"
-          onClick={handleGetSupport} disabled={supportLoading}>
-          {supportLoading ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <Headphones className="h-3.5 w-3.5 mr-1" />}
-          Get Support
+          onClick={() => navigate(`/expenses/${expense.id}/support`)}>
+          <Headphones className="h-3.5 w-3.5 mr-1" /> Get Support
         </Button>
         <Button className="min-h-[44px] text-xs"
           onClick={() => setShowReimburse(true)}>
-          <ShieldCheck className="h-3.5 w-3.5 mr-1" /> Reimburse
+          <ShieldCheck className="h-3.5 w-3.5 mr-1" /> Send to Reimbursement
         </Button>
       </div>
-
-      {/* Support Info Card */}
-      {supportInfo && (
-        <Card className="border-0 bg-card/80 backdrop-blur">
-          <CardContent className="pt-4 pb-4 space-y-2">
-            <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium mb-2">
-              Support & Returns — {expense.merchant}
-            </p>
-            {supportInfo.phone && (
-              <a href={`tel:${supportInfo.phone}`} className="flex items-center gap-2 text-sm text-primary hover:underline">
-                <Headphones className="h-4 w-4" /> {supportInfo.phone}
-              </a>
-            )}
-            {supportInfo.email && (
-              <a href={`mailto:${supportInfo.email}`} className="flex items-center gap-2 text-sm text-primary hover:underline">
-                <FileText className="h-4 w-4" /> {supportInfo.email}
-              </a>
-            )}
-            {supportInfo.website && (
-              <a href={supportInfo.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-primary hover:underline">
-                <ExternalLink className="h-4 w-4" /> Visit Support Page
-              </a>
-            )}
-          </CardContent>
-        </Card>
-      )}
 
       {/* Delete — prominent at bottom */}
       <Button variant="destructive" className="w-full min-h-[48px] text-sm" onClick={handleDelete}>

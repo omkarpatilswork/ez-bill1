@@ -11,6 +11,8 @@ import Dashboard from "./pages/Dashboard";
 import NewExpense from "./pages/expenses/NewExpense";
 import MyExpenses from "./pages/expenses/MyExpenses";
 import ExpenseDetail from "./pages/expenses/ExpenseDetail";
+import MerchantSupport from "./pages/expenses/MerchantSupport";
+import SplitBill from "./pages/expenses/SplitBill";
 import Analytics from "./pages/expenses/Analytics";
 import AskAI from "./pages/AskAI";
 import EmailBills from "./pages/expenses/EmailBills";
@@ -36,6 +38,8 @@ const App = () => (
           <Route path="/" element={<ProtectedRoute><AppLayout><Dashboard /></AppLayout></ProtectedRoute>} />
           <Route path="/expenses/new" element={<ProtectedRoute><AppLayout><NewExpense /></AppLayout></ProtectedRoute>} />
           <Route path="/expenses/:id" element={<ProtectedRoute><AppLayout><ExpenseDetail /></AppLayout></ProtectedRoute>} />
+          <Route path="/expenses/:id/support" element={<ProtectedRoute><AppLayout><MerchantSupport /></AppLayout></ProtectedRoute>} />
+          <Route path="/expenses/:id/split" element={<ProtectedRoute><AppLayout><SplitBill /></AppLayout></ProtectedRoute>} />
           <Route path="/expenses" element={<ProtectedRoute><AppLayout><MyExpenses /></AppLayout></ProtectedRoute>} />
           <Route path="/analytics" element={<ProtectedRoute><AppLayout><Analytics /></AppLayout></ProtectedRoute>} />
           <Route path="/email-bills" element={<ProtectedRoute><AppLayout><EmailBills /></AppLayout></ProtectedRoute>} />

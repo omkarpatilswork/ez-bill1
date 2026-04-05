@@ -149,6 +149,7 @@ export default function NewExpense() {
         }
       }
       setActiveTab('ebill');
+      setIsEditing(true);
     })();
   }, [editId, user]);
 
@@ -318,8 +319,8 @@ export default function NewExpense() {
   };
   const isValid = (form.merchant.trim() || form.title.trim()) && form.amount && parseFloat(form.amount) > 0;
 
-  // ─── UPLOAD PAGE (mode=upload or mode=scan) ───
-  if (mode === 'upload' || mode === 'scan') {
+  // ─── UPLOAD/SCAN/EDIT PAGE ───
+  if (mode === 'upload' || mode === 'scan' || editId) {
     return (
       <div className="max-w-2xl mx-auto space-y-4 pb-24">
         {/* Header */}
@@ -328,12 +329,12 @@ export default function NewExpense() {
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <h1 className="text-lg font-bold text-foreground">
-            {mode === 'scan' ? 'Scan Bill' : 'Upload Bill'}
+            {editId ? 'Edit Bill' : mode === 'scan' ? 'Scan Bill' : 'Upload Bill'}
           </h1>
         </div>
 
-        {/* Upload Area (shown when no file yet) */}
-        {!receiptFile && !isExtracting && (
+        {/* Upload Area (shown when no file yet and not editing) */}
+        {!editId && !receiptFile && !isExtracting && (
           <Card className="border-0 bg-card/80 backdrop-blur">
             <CardContent className="pt-6 pb-6">
               <div className="flex flex-col items-center text-center space-y-4">
@@ -403,8 +404,8 @@ export default function NewExpense() {
           </Card>
         )}
 
-        {/* Extraction Complete — Tabs */}
-        {receiptFile && !isExtracting && (
+        {/* Extraction Complete or Edit Mode — Tabs */}
+        {((receiptFile && !isExtracting) || editId) && (
           <>
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <TabsList className="w-full grid grid-cols-2 bg-secondary/50">
@@ -421,26 +422,33 @@ export default function NewExpense() {
                 <Card className="border-0 bg-card/80 backdrop-blur overflow-hidden">
                   <CardContent className="p-2">
                     <div className="rounded-lg overflow-hidden bg-muted/30 flex items-center justify-center min-h-[300px]">
-                      {receiptPreviewUrl && receiptFile.type === 'application/pdf' ? (
+                      {receiptPreviewUrl && (receiptFile?.type === 'application/pdf' || receiptPreviewUrl.includes('.pdf')) ? (
                         <iframe src={receiptPreviewUrl} className="w-full h-[60vh] rounded" title="Bill PDF" />
                       ) : receiptPreviewUrl ? (
                         <img src={receiptPreviewUrl} alt="Bill" className="max-w-full max-h-[60vh] object-contain" />
-                      ) : null}
+                      ) : (
+                        <div className="flex flex-col items-center gap-2 py-12 text-muted-foreground">
+                          <FileText className="h-10 w-10 opacity-40" />
+                          <p className="text-sm">No original bill attached</p>
+                        </div>
+                      )}
                     </div>
-                    <div className="flex items-center gap-2 mt-3 px-2 pb-2">
-                      <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
-                      <span className="text-xs text-muted-foreground truncate flex-1">{receiptFile.name}</span>
-                      <span className="text-xs text-muted-foreground">{(receiptFile.size / 1024).toFixed(0)} KB</span>
-                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => {
-                        setReceiptFile(null);
-                        if (receiptPreviewUrl) URL.revokeObjectURL(receiptPreviewUrl);
-                        setReceiptPreviewUrl(null);
-                        setExtractionData(null);
-                        setEditLineItems([]);
-                      }}>
-                        <X className="h-3.5 w-3.5" />
-                      </Button>
-                    </div>
+                    {receiptFile && (
+                      <div className="flex items-center gap-2 mt-3 px-2 pb-2">
+                        <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
+                        <span className="text-xs text-muted-foreground truncate flex-1">{receiptFile.name}</span>
+                        <span className="text-xs text-muted-foreground">{(receiptFile.size / 1024).toFixed(0)} KB</span>
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => {
+                          setReceiptFile(null);
+                          if (receiptPreviewUrl) URL.revokeObjectURL(receiptPreviewUrl);
+                          setReceiptPreviewUrl(null);
+                          setExtractionData(null);
+                          setEditLineItems([]);
+                        }}>
+                          <X className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               </TabsContent>
@@ -749,32 +757,34 @@ export default function NewExpense() {
               className="bg-secondary/30 border-border/30" rows={2} />
           </div>
 
-          {/* Receipt upload (optional for manual) */}
-          <div className="space-y-1">
-            <Label className="text-xs font-medium">Attach Receipt (optional)</Label>
-            {receiptFile ? (
-              <div className="flex items-center gap-3 rounded-lg bg-secondary/30 p-3">
-                <FileText className="h-5 w-5 text-primary shrink-0" />
-                <span className="text-xs truncate flex-1">{receiptFile.name}</span>
-                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => {
-                  setReceiptFile(null);
-                  if (receiptPreviewUrl) URL.revokeObjectURL(receiptPreviewUrl);
-                  setReceiptPreviewUrl(null);
-                }}>
-                  <X className="h-3.5 w-3.5" />
-                </Button>
-              </div>
-            ) : (
-              <label className="flex items-center justify-center gap-2 rounded-lg border border-dashed border-border/50 bg-secondary/20 p-4 cursor-pointer hover:bg-secondary/30 transition-colors">
-                <Upload className="h-4 w-4 text-muted-foreground" />
-                <span className="text-xs text-muted-foreground">Tap to attach receipt</span>
-                <input type="file" accept="image/*,.pdf" className="hidden" onChange={e => {
-                  const f = e.target.files?.[0];
-                  if (f) { setReceiptFile(f); setReceiptPreviewUrl(URL.createObjectURL(f)); }
-                }} />
-              </label>
-            )}
-          </div>
+          {/* Receipt upload (optional for manual, hidden in edit mode) */}
+          {!editId && (
+            <div className="space-y-1">
+              <Label className="text-xs font-medium">Attach Receipt (optional)</Label>
+              {receiptFile ? (
+                <div className="flex items-center gap-3 rounded-lg bg-secondary/30 p-3">
+                  <FileText className="h-5 w-5 text-primary shrink-0" />
+                  <span className="text-xs truncate flex-1">{receiptFile.name}</span>
+                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => {
+                    setReceiptFile(null);
+                    if (receiptPreviewUrl) URL.revokeObjectURL(receiptPreviewUrl);
+                    setReceiptPreviewUrl(null);
+                  }}>
+                    <X className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+              ) : (
+                <label className="flex items-center justify-center gap-2 rounded-lg border border-dashed border-border/50 bg-secondary/20 p-4 cursor-pointer hover:bg-secondary/30 transition-colors">
+                  <Upload className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-xs text-muted-foreground">Tap to attach receipt</span>
+                  <input type="file" accept="image/*,.pdf" className="hidden" onChange={e => {
+                    const f = e.target.files?.[0];
+                    if (f) { setReceiptFile(f); setReceiptPreviewUrl(URL.createObjectURL(f)); }
+                  }} />
+                </label>
+              )}
+            </div>
+          )}
 
           <div className="space-y-2 pt-2 border-t border-border/30">
             <Button className="w-full min-h-[48px]" disabled={isSubmitting || !isValid} onClick={() => handleSubmit(false)}>
