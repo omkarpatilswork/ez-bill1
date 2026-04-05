@@ -680,7 +680,7 @@ export default function NewExpense() {
         <Button variant="ghost" size="sm" className="h-8 px-2" onClick={() => navigate(-1)}>
           <ArrowLeft className="h-4 w-4" />
         </Button>
-        <h1 className="text-lg font-bold text-foreground">Add Bill Manually</h1>
+        <h1 className="text-lg font-bold text-foreground">{editId ? 'Edit Bill' : 'Add Bill Manually'}</h1>
       </div>
 
       <Card className="border-0 bg-card/80 backdrop-blur">
