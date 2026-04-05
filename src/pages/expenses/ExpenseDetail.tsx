@@ -339,14 +339,25 @@ export default function ExpenseDetail() {
       </Tabs>
 
       {/* Action Buttons */}
-      <div className="grid grid-cols-3 gap-2 pt-2">
+      <div className="grid grid-cols-2 gap-2 pt-2">
         <Button variant="outline" className="min-h-[44px] text-xs"
-          onClick={() => navigate(`/expenses/new?mode=upload`)}>
+          onClick={() => navigate(`/expenses/new?edit=${expense.id}`)}>
           <Pencil className="h-3.5 w-3.5 mr-1" /> Edit
         </Button>
         <Button variant="outline" className="min-h-[44px] text-xs"
           onClick={() => toast({ title: 'Coming soon', description: 'Split bill feature is under development.' })}>
           <Users className="h-3.5 w-3.5 mr-1" /> Split
+        </Button>
+        <Button variant="outline" className="min-h-[44px] text-xs text-destructive hover:text-destructive"
+          onClick={async () => {
+            if (!confirm('Delete this bill?')) return;
+            await supabase.from('expense_receipts').delete().eq('expense_id', expense.id);
+            await supabase.from('audit_logs').delete().eq('expense_id', expense.id);
+            await supabase.from('expenses').delete().eq('id', expense.id);
+            toast({ title: 'Bill deleted' });
+            navigate('/expenses');
+          }}>
+          <Trash2 className="h-3.5 w-3.5 mr-1" /> Delete
         </Button>
         <Button className="min-h-[44px] text-xs"
           onClick={() => setShowReimburse(true)}>
