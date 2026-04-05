@@ -83,6 +83,47 @@ export default function NewExpense() {
     });
   }, []);
 
+  // Load existing expense for edit mode
+  useEffect(() => {
+    if (!editId || !user) return;
+    (async () => {
+      const { data: exp } = await supabase.from('expenses').select('*').eq('id', editId).single();
+      if (!exp) return;
+      const e = exp as any;
+      // Parse line items from description
+      const lineItems = parseStoredLineItems(e.description);
+      const descClean = cleanDescription(e.description);
+      setForm({
+        title: e.title || '',
+        merchant: e.merchant || '',
+        amount: String(e.amount || ''),
+        expense_date: e.expense_date || new Date().toISOString().slice(0, 10),
+        category_id: e.category_id || '',
+        category_name: e.cost_center || '',
+        cost_center: e.cost_center || '',
+        description: descClean,
+        payment_method: e.cost_center || '',
+        invoice_number: parseFieldFromDesc(e.description, 'Invoice'),
+        tax_amount: '',
+        subtotal: '',
+        discount: '',
+      });
+      setEditLineItems(lineItems);
+      setExtractionData({ line_items: lineItems });
+
+      // Load receipt
+      const { data: receipts } = await supabase.from('expense_receipts').select('*').eq('expense_id', editId).limit(1);
+      if (receipts && receipts.length > 0) {
+        const r = receipts[0] as any;
+        const { data: signedData } = await supabase.storage.from('receipts').createSignedUrl(r.file_path, 3600);
+        if (signedData?.signedUrl) {
+          setReceiptPreviewUrl(signedData.signedUrl);
+        }
+      }
+      setActiveTab('ebill');
+    })();
+  }, [editId, user]);
+
   useEffect(() => {
     return () => { if (receiptPreviewUrl) URL.revokeObjectURL(receiptPreviewUrl); };
   }, [receiptPreviewUrl]);
