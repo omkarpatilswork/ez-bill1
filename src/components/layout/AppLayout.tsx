@@ -1,6 +1,7 @@
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from './AppSidebar';
 import { BottomNav } from './BottomNav';
+import PageTransition from './PageTransition';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
