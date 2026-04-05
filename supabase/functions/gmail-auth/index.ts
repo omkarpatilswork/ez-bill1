@@ -52,7 +52,22 @@ serve(async (req) => {
         "https://www.googleapis.com/auth/gmail.readonly",
         "https://www.googleapis.com/auth/userinfo.email",
       ];
-      const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${GOOGLE_CLIENT_ID}&redirect_uri=${encodeURIComponent(redirect_uri)}&response_type=code&scope=${encodeURIComponent(scopes.join(" "))}&access_type=offline&prompt=consent`;
+
+      const authParams = new URLSearchParams({
+        client_id: GOOGLE_CLIENT_ID,
+        redirect_uri,
+        response_type: "code",
+        scope: scopes.join(" "),
+        access_type: "offline",
+        prompt: "consent select_account",
+        include_granted_scopes: "true",
+      });
+
+      if (user.email) {
+        authParams.set("login_hint", user.email);
+      }
+
+      const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?${authParams.toString()}`;
 
       return new Response(JSON.stringify({ auth_url: authUrl }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
