@@ -1,4 +1,4 @@
-import { Home, BarChart3, Receipt, Inbox, Plus, Camera, Upload, FileText } from 'lucide-react';
+import { Home, BarChart3, IndianRupee, Inbox, Plus, Camera, Upload, FileText } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
@@ -8,7 +8,7 @@ const tabs = [
   { label: 'Home', icon: Home, path: '/' },
   { label: 'Insights', icon: BarChart3, path: '/analytics' },
   { label: 'add', icon: Plus, path: '' },
-  { label: 'All Bills', icon: Receipt, path: '/expenses' },
+  { label: 'All Bills', icon: IndianRupee, path: '/expenses' },
   { label: 'Inbox', icon: Inbox, path: '/email-bills' },
 ];
 
