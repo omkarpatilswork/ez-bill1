@@ -11,7 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import {
   ArrowLeft, Store, Package, Hash, Calendar, CreditCard, IndianRupee,
   Receipt, Eye, Users, ShieldCheck, Pencil, FileText, CheckCircle, XCircle,
-  Clock, DollarSign, Send
+  Clock, DollarSign, Send, Trash2
 } from 'lucide-react';
 import type { Expense, ExpenseStatus, ApprovalAction, AuditLog } from '@/lib/types';
 
