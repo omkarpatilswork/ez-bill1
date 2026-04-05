@@ -237,8 +237,8 @@ export default function NewExpense() {
     if (!user) return;
     setIsSubmitting(true);
 
-    const { data: expense, error } = await supabase.from('expenses').insert({
-      user_id: user.id, title: form.title || `Bill - ${form.merchant}`,
+    const payload = {
+      title: form.title || `Bill - ${form.merchant}`,
       merchant: form.merchant,
       amount: parseFloat(form.amount),
       expense_date: form.expense_date,
@@ -246,33 +246,51 @@ export default function NewExpense() {
       cost_center: form.payment_method || form.cost_center,
       description: buildDescription(),
       status: asDraft ? 'draft' : 'submitted',
-    } as any).select().single();
+    } as any;
 
-    if (error) {
-      toast({ title: 'Error', description: error.message, variant: 'destructive' });
-      setIsSubmitting(false);
-      return;
+    let expenseId: string;
+
+    if (editId) {
+      // Update existing expense
+      const { error } = await supabase.from('expenses').update(payload).eq('id', editId);
+      if (error) {
+        toast({ title: 'Error', description: error.message, variant: 'destructive' });
+        setIsSubmitting(false);
+        return;
+      }
+      expenseId = editId;
+    } else {
+      // Insert new expense
+      const { data: expense, error } = await supabase.from('expenses').insert({
+        user_id: user.id, ...payload,
+      } as any).select().single();
+      if (error) {
+        toast({ title: 'Error', description: error.message, variant: 'destructive' });
+        setIsSubmitting(false);
+        return;
+      }
+      expenseId = (expense as any).id;
     }
 
-    if (receiptFile && expense) {
-      const filePath = `${user.id}/${(expense as any).id}/${receiptFile.name}`;
+    if (receiptFile && expenseId) {
+      const filePath = `${user.id}/${expenseId}/${receiptFile.name}`;
       const { error: uploadError } = await supabase.storage.from('receipts').upload(filePath, receiptFile);
       if (!uploadError) {
         await supabase.from('expense_receipts').insert({
-          expense_id: (expense as any).id, file_path: filePath, file_name: receiptFile.name,
+          expense_id: expenseId, file_path: filePath, file_name: receiptFile.name,
         } as any);
       }
     }
 
     await supabase.from('audit_logs').insert({
-      expense_id: (expense as any).id, user_id: user.id,
-      action: asDraft ? 'created_draft' : 'submitted',
+      expense_id: expenseId, user_id: user.id,
+      action: editId ? 'updated' : asDraft ? 'created_draft' : 'submitted',
       details: { amount: form.amount, title: form.title },
     } as any);
 
-    toast({ title: asDraft ? 'Draft saved' : 'Bill submitted ✅', description: asDraft ? 'You can submit it later.' : 'Your bill is now pending approval.' });
+    toast({ title: editId ? 'Bill updated ✅' : asDraft ? 'Draft saved' : 'Bill submitted ✅' });
     setIsSubmitting(false);
-    navigate('/expenses');
+    navigate(editId ? `/expenses/${editId}` : '/expenses');
   };
 
   const buildDescription = () => {
