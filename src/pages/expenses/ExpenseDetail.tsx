@@ -313,7 +313,9 @@ export default function ExpenseDetail() {
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <h1 className="text-lg font-bold text-foreground truncate flex-1">{expense.merchant || expense.title}</h1>
-        {isInReimbursement && <StatusBadge status={expense.status as ExpenseStatus} />}
+        {['submitted', 'manager_approved', 'approved', 'reimbursed', 'rejected'].includes(expense.status) && (
+          <StatusBadge status={expense.status as ExpenseStatus} />
+        )}
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
