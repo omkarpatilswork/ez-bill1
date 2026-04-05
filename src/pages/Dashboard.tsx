@@ -1,38 +1,29 @@
 import { useEffect, useState, useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { StatCard } from '@/components/dashboard/StatCard';
 import { StatusBadge } from '@/components/expenses/StatusBadge';
-import { DashboardChat } from '@/components/dashboard/DashboardChat';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Input } from '@/components/ui/input';
 import {
   Receipt, Clock, CheckCircle, DollarSign, PlusCircle,
-  ArrowUpRight, TrendingUp,
+  ArrowUpRight, TrendingUp, Search, Mail, Users as UsersIcon,
+  Wallet, Shield, HelpCircle, RefreshCw, User,
 } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
-  ResponsiveContainer, PieChart, Pie, Cell,
+  ResponsiveContainer,
 } from 'recharts';
 import type { Expense, ExpenseCategory, ExpenseStatus } from '@/lib/types';
 
-const DONUT_COLORS = [
-  'hsl(152, 57%, 42%)',
-  'hsl(221, 83%, 53%)',
-  'hsl(38, 92%, 50%)',
-  'hsl(0, 84%, 60%)',
-  'hsl(199, 89%, 48%)',
-  'hsl(280, 67%, 55%)',
-];
-
 export default function Dashboard() {
   const { user, profile } = useAuth();
+  const navigate = useNavigate();
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [allExpenses, setAllExpenses] = useState<Expense[]>([]);
   const [categories, setCategories] = useState<ExpenseCategory[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     if (!user) return;
@@ -48,33 +39,40 @@ export default function Dashboard() {
     });
   }, [user]);
 
+  const now = new Date();
+  const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+  const last30 = allExpenses.filter(e => new Date(e.expense_date) >= thirtyDaysAgo);
+  const totalLast30 = last30.reduce((s, e) => s + Number(e.amount), 0);
+
   const total = allExpenses.reduce((s, e) => s + Number(e.amount), 0);
   const pending = allExpenses.filter(e => ['submitted', 'manager_approved'].includes(e.status));
   const approved = allExpenses.filter(e => e.status === 'approved' || e.status === 'reimbursed');
-  const pendingAmount = pending.reduce((s, e) => s + Number(e.amount), 0);
-  const approvedAmount = approved.reduce((s, e) => s + Number(e.amount), 0);
-  const drafts = allExpenses.filter(e => e.status === 'draft');
 
   const monthlyData = useMemo(() => {
     const map: Record<string, number> = {};
-    allExpenses.forEach(e => {
+    last30.forEach(e => {
       const d = new Date(e.expense_date);
       const day = d.getDate();
       map[String(day)] = (map[String(day)] || 0) + Number(e.amount);
     });
     return Object.entries(map)
-      .slice(-15)
+      .sort(([a], [b]) => Number(a) - Number(b))
       .map(([day, amount]) => ({ day, amount: Math.round(amount * 100) / 100 }));
-  }, [allExpenses]);
+  }, [last30]);
 
-  const categoryData = useMemo(() => {
-    return categories.map(cat => ({
-      name: cat.name,
-      value: Math.round(allExpenses.filter(e => e.category_id === cat.id).reduce((s, e) => s + Number(e.amount), 0) * 100) / 100,
-    })).filter(d => d.value > 0).sort((a, b) => b.value - a.value);
-  }, [allExpenses, categories]);
+  const filteredRecent = expenses.filter(e => {
+    if (!searchQuery) return true;
+    const q = searchQuery.toLowerCase();
+    return e.title.toLowerCase().includes(q) || (e.merchant || '').toLowerCase().includes(q) || String(e.amount).includes(q);
+  });
 
-  const totalCategoryAmount = categoryData.reduce((s, d) => s + d.value, 0);
+  const quickActions = [
+    { label: 'Scan Email', icon: Mail, path: '/email-bills', color: 'text-info' },
+    { label: 'Split Bills', icon: UsersIcon, path: '/expenses', color: 'text-primary' },
+    { label: 'Reimburse', icon: Wallet, path: '/expenses', color: 'text-success' },
+    { label: 'Warranty', icon: Shield, path: '/expenses', color: 'text-gold' },
+    { label: 'Help', icon: HelpCircle, path: '/ask-ai', color: 'text-muted-foreground' },
+  ];
 
   if (loading) {
     return (
@@ -84,220 +82,204 @@ export default function Dashboard() {
     );
   }
 
+  const firstName = profile?.full_name?.split(' ')[0] || 'there';
+
   return (
-    <div className="space-y-5 sm:space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+    <div className="space-y-6 max-w-2xl mx-auto md:max-w-none animate-fade-in">
+      {/* Mobile Header */}
+      <div className="flex items-center justify-between md:hidden">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Dashboard</h1>
-          <p className="text-muted-foreground mt-1 text-sm sm:text-base">
-            Welcome back, {profile?.full_name?.split(' ')[0] || 'there'}! Here's your expense overview.
-          </p>
+          <h1 className="text-xl font-bold text-foreground">Hi, {firstName} 👋</h1>
+          <p className="text-xs text-muted-foreground">Manage your bills smartly</p>
         </div>
-        <div className="flex gap-2">
-          {drafts.length > 0 && (
-            <Button asChild variant="outline" className="w-full sm:w-auto">
-              <Link to="/expenses">
-                <Clock className="mr-2 h-4 w-4" />
-                {drafts.length} Draft{drafts.length > 1 ? 's' : ''}
-              </Link>
-            </Button>
-          )}
-          <Button asChild size="lg" className="shadow-lg w-full sm:w-auto">
-            <Link to="/expenses/new"><PlusCircle className="mr-2 h-4 w-4" /> New Expense</Link>
-          </Button>
+        <div className="flex items-center gap-2">
+          <button onClick={() => navigate('/email-bills')} className="h-9 w-9 rounded-full bg-secondary flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors">
+            <RefreshCw className="h-4 w-4" />
+          </button>
+          <button onClick={() => navigate('/ask-ai')} className="h-9 w-9 rounded-full bg-secondary flex items-center justify-center overflow-hidden">
+            <User className="h-4 w-4 text-muted-foreground" />
+          </button>
         </div>
       </div>
 
-      {/* Main layout: Left content + Right chat */}
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-5 sm:gap-6">
-        {/* Left column */}
-        <div className="xl:col-span-2 space-y-5 sm:space-y-6">
-          {/* Stat Cards - 2x2 */}
-          <div className="grid gap-3 sm:gap-4 grid-cols-2">
-            <StatCard
-              title="Total Expenses"
-              value={allExpenses.length}
-              icon={Receipt}
-              variant="primary"
-              progress={100}
-              description={`$${total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} total`}
-            />
-            <StatCard
-              title="Pending Approval"
-              value={pending.length}
-              icon={Clock}
-              variant="warning"
-              progress={allExpenses.length > 0 ? Math.round((pending.length / allExpenses.length) * 100) : 0}
-              description={`$${pendingAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} awaiting`}
-            />
-            <StatCard
-              title="Approved"
-              value={approved.length}
-              icon={CheckCircle}
-              variant="success"
-              progress={allExpenses.length > 0 ? Math.round((approved.length / allExpenses.length) * 100) : 0}
-              description={`$${approvedAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} cleared`}
-            />
-            <StatCard
-              title="Total Spent"
-              value={`$${total.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`}
-              icon={DollarSign}
-              variant="info"
-              progress={75}
-              description={`Across ${allExpenses.length} expenses`}
-            />
-          </div>
+      {/* Desktop Header */}
+      <div className="hidden md:block">
+        <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Hi, {firstName} 👋</h1>
+        <p className="text-muted-foreground mt-1 text-sm">Manage your bills smartly</p>
+      </div>
 
-          {/* Charts */}
-          <div className="grid gap-4 sm:gap-5 grid-cols-1 lg:grid-cols-5">
-            <Card className="lg:col-span-3 shadow-md border-0">
-              <CardHeader className="pb-2">
+      {/* Search Bar */}
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input
+          placeholder="Search bills, merchants, or amounts…"
+          value={searchQuery}
+          onChange={e => setSearchQuery(e.target.value)}
+          className="pl-10 h-11 rounded-xl bg-secondary border-border/30 text-foreground placeholder:text-muted-foreground focus-visible:ring-primary/50"
+        />
+      </div>
+
+      {/* Dashboard Summary Card */}
+      <div className="glass-card rounded-2xl p-5 animate-slide-up">
+        <div className="flex items-center justify-between mb-3">
+          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Last 30 Days</p>
+          <span className="text-xs text-gold font-medium">{last30.length} bills</span>
+        </div>
+        <p className="text-3xl font-bold text-foreground mb-3">
+          ${totalLast30.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+        </p>
+        {monthlyData.length > 0 && (
+          <ResponsiveContainer width="100%" height={80}>
+            <BarChart data={monthlyData} barSize={6}>
+              <Bar dataKey="amount" fill="hsl(152, 45%, 35%)" radius={[3, 3, 0, 0]} opacity={0.8} />
+            </BarChart>
+          </ResponsiveContainer>
+        )}
+      </div>
+
+      {/* Stat Cards Row */}
+      <div className="grid grid-cols-3 gap-3">
+        <div className="glass-card rounded-xl p-3 text-center">
+          <Receipt className="h-5 w-5 mx-auto mb-1.5 text-primary" />
+          <p className="text-lg font-bold text-foreground">{allExpenses.length}</p>
+          <p className="text-[10px] text-muted-foreground">Total Bills</p>
+        </div>
+        <div className="glass-card rounded-xl p-3 text-center">
+          <Clock className="h-5 w-5 mx-auto mb-1.5 text-gold" />
+          <p className="text-lg font-bold text-foreground">{pending.length}</p>
+          <p className="text-[10px] text-muted-foreground">Pending</p>
+        </div>
+        <div className="glass-card rounded-xl p-3 text-center">
+          <CheckCircle className="h-5 w-5 mx-auto mb-1.5 text-success" />
+          <p className="text-lg font-bold text-foreground">{approved.length}</p>
+          <p className="text-[10px] text-muted-foreground">Approved</p>
+        </div>
+      </div>
+
+      {/* Recent Bills */}
+      <div>
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-base font-semibold text-foreground">Recent Bills</h2>
+          <Link to="/expenses" className="text-xs text-gold font-medium flex items-center gap-1">
+            View All <ArrowUpRight className="h-3 w-3" />
+          </Link>
+        </div>
+        {filteredRecent.length === 0 ? (
+          <div className="glass-card rounded-xl p-8 text-center">
+            <Receipt className="mx-auto h-10 w-10 mb-3 text-muted-foreground/40" />
+            <p className="font-medium text-foreground mb-1 text-sm">No bills yet</p>
+            <p className="text-xs text-muted-foreground mb-4">Create your first bill to get started</p>
+            <Button asChild size="sm" className="rounded-xl">
+              <Link to="/expenses/new"><PlusCircle className="mr-2 h-4 w-4" /> New Bill</Link>
+            </Button>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {filteredRecent.slice(0, 5).map(exp => (
+              <Link key={exp.id} to={`/expenses/${exp.id}`}
+                className="glass-card block rounded-xl p-3.5 hover:bg-secondary/50 active:bg-secondary/80 transition-colors">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="font-medium text-sm text-foreground truncate mr-2">{exp.title}</span>
+                  <span className="font-bold text-sm tabular-nums text-foreground">${Number(exp.amount).toFixed(2)}</span>
+                </div>
                 <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="text-base sm:text-lg flex items-center gap-2">
-                      <TrendingUp className="h-4 w-4 text-muted-foreground" />
-                      Spending Trend
-                    </CardTitle>
-                    <div className="flex items-baseline gap-2 mt-1.5">
-                      <span className="text-2xl sm:text-3xl font-bold text-foreground">${total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                      <span className="flex items-center text-xs font-medium text-success">
-                        <ArrowUpRight className="h-3 w-3 mr-0.5" />7%
-                      </span>
-                    </div>
-                  </div>
+                  <span className="text-xs text-muted-foreground">{exp.merchant || '—'} · {new Date(exp.expense_date).toLocaleDateString()}</span>
+                  <StatusBadge status={exp.status as ExpenseStatus} />
                 </div>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <ResponsiveContainer width="100%" height={200}>
-                  <BarChart data={monthlyData} barSize={14}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} className="opacity-20" />
-                    <XAxis dataKey="day" tick={{ fontSize: 10 }} axisLine={false} tickLine={false} />
-                    <YAxis tick={{ fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={v => `$${v}`} />
-                    <Tooltip
-                      formatter={(val: number) => [`$${val.toFixed(2)}`, 'Spent']}
-                      contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
-                    />
-                    <Bar dataKey="amount" fill="hsl(152, 57%, 42%)" radius={[4, 4, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-
-            <Card className="lg:col-span-2 shadow-md border-0">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-base sm:text-lg">By Category</CardTitle>
-                <CardDescription className="text-xs">Where your money goes</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {categoryData.length === 0 ? (
-                  <p className="text-muted-foreground text-center py-8 text-sm">No category data yet</p>
-                ) : (
-                  <div className="flex flex-col items-center">
-                    <ResponsiveContainer width="100%" height={150}>
-                      <PieChart>
-                        <Pie data={categoryData} cx="50%" cy="50%" innerRadius={42} outerRadius={65} dataKey="value" paddingAngle={3} strokeWidth={0}>
-                          {categoryData.map((_, i) => <Cell key={i} fill={DONUT_COLORS[i % DONUT_COLORS.length]} />)}
-                        </Pie>
-                        <Tooltip formatter={(val: number) => `$${val.toFixed(2)}`} />
-                      </PieChart>
-                    </ResponsiveContainer>
-                    <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 mt-2 w-full">
-                      {categoryData.map((cat, i) => (
-                        <div key={cat.name} className="flex items-center gap-2 text-xs">
-                          <div className="h-2.5 w-2.5 rounded-full shrink-0" style={{ backgroundColor: DONUT_COLORS[i % DONUT_COLORS.length] }} />
-                          <span className="text-muted-foreground truncate">{cat.name}</span>
-                          <span className="ml-auto font-semibold tabular-nums">
-                            {totalCategoryAmount > 0 ? Math.round((cat.value / totalCategoryAmount) * 100) : 0}%
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+              </Link>
+            ))}
           </div>
+        )}
+      </div>
 
-          {/* Recent Expenses */}
-          <Card className="shadow-md border-0">
-            <CardHeader className="flex flex-row items-center justify-between pb-3">
-              <div>
-                <CardTitle className="text-base sm:text-lg">Recent Expenses</CardTitle>
-                <CardDescription className="text-xs mt-0.5">Your latest transactions at a glance</CardDescription>
+      {/* Quick Actions */}
+      <div>
+        <h2 className="text-base font-semibold text-foreground mb-3">Quick Actions</h2>
+        <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-hide">
+          {quickActions.map((action) => (
+            <button
+              key={action.label}
+              onClick={() => navigate(action.path)}
+              className="flex flex-col items-center gap-1.5 min-w-[64px] shrink-0"
+            >
+              <div className="h-12 w-12 rounded-xl bg-secondary flex items-center justify-center transition-transform active:scale-95">
+                <action.icon className={`h-5 w-5 ${action.color}`} />
               </div>
-              <Button variant="ghost" size="sm" asChild>
-                <Link to="/expenses" className="text-primary text-sm font-medium">
-                  View All <ArrowUpRight className="ml-1 h-3 w-3" />
-                </Link>
-              </Button>
-            </CardHeader>
-            <CardContent>
-              {expenses.length === 0 ? (
-                <div className="text-center py-10 text-muted-foreground">
-                  <Receipt className="mx-auto h-12 w-12 mb-3 opacity-40" />
-                  <p className="font-medium mb-1">No expenses yet</p>
-                  <p className="text-sm">Create your first expense to get started.</p>
-                  <Button asChild className="mt-4" size="sm">
-                    <Link to="/expenses/new"><PlusCircle className="mr-2 h-4 w-4" /> New Expense</Link>
-                  </Button>
-                </div>
-              ) : (
-                <>
-                  {/* Mobile */}
-                  <div className="block sm:hidden space-y-2">
-                    {expenses.slice(0, 6).map(exp => (
-                      <Link key={exp.id} to={`/expenses/${exp.id}`}
-                        className="block rounded-lg border p-3 hover:bg-muted/30 active:bg-muted/50 transition-colors">
-                        <div className="flex items-center justify-between mb-1.5">
-                          <span className="font-medium text-sm truncate mr-2">{exp.title}</span>
-                          <StatusBadge status={exp.status as ExpenseStatus} />
-                        </div>
-                        <div className="flex items-center justify-between text-xs text-muted-foreground">
-                          <span>{exp.merchant || '—'} · {new Date(exp.expense_date).toLocaleDateString()}</span>
-                          <span className="font-bold text-foreground text-sm tabular-nums">${Number(exp.amount).toFixed(2)}</span>
-                        </div>
-                      </Link>
-                    ))}
-                  </div>
-                  {/* Desktop */}
-                  <Table className="hidden sm:table">
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Expense</TableHead>
-                        <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Merchant</TableHead>
-                        <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground text-right">Amount</TableHead>
-                        <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Date</TableHead>
-                        <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Status</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {expenses.slice(0, 6).map(exp => (
-                        <TableRow key={exp.id} className="hover:bg-muted/30 transition-colors group">
-                          <TableCell>
-                            <Link to={`/expenses/${exp.id}`} className="font-medium hover:text-primary transition-colors group-hover:text-primary">
-                              {exp.title}
-                            </Link>
-                          </TableCell>
-                          <TableCell className="text-muted-foreground">{exp.merchant || '—'}</TableCell>
-                          <TableCell className="font-semibold text-right tabular-nums">${Number(exp.amount).toFixed(2)}</TableCell>
-                          <TableCell className="text-muted-foreground">{new Date(exp.expense_date).toLocaleDateString()}</TableCell>
-                          <TableCell><StatusBadge status={exp.status as ExpenseStatus} /></TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </>
-              )}
-            </CardContent>
-          </Card>
+              <span className="text-[10px] text-muted-foreground font-medium">{action.label}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Desktop Charts */}
+      <div className="hidden md:grid gap-5 grid-cols-1 lg:grid-cols-2">
+        {/* Spending Trend */}
+        <div className="glass-card rounded-2xl p-5">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                Spending Trend
+              </h3>
+              <p className="text-2xl font-bold text-foreground mt-1">
+                ${total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </p>
+            </div>
+          </div>
+          <ResponsiveContainer width="100%" height={180}>
+            <BarChart data={monthlyData} barSize={10}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsla(160, 8%, 25%, 0.3)" />
+              <XAxis dataKey="day" tick={{ fontSize: 10, fill: 'hsl(160, 8%, 55%)' }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fontSize: 10, fill: 'hsl(160, 8%, 55%)' }} axisLine={false} tickLine={false} tickFormatter={v => `$${v}`} />
+              <Tooltip
+                formatter={(val: number) => [`$${val.toFixed(2)}`, 'Spent']}
+                contentStyle={{ borderRadius: '12px', border: 'none', background: 'hsl(160, 10%, 12%)', color: 'hsl(60, 10%, 95%)' }}
+              />
+              <Bar dataKey="amount" fill="hsl(152, 45%, 35%)" radius={[4, 4, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
         </div>
 
-        {/* Right column - AI Chat */}
-        <div className="xl:col-span-1 hidden xl:block">
-          <div className="sticky top-4 h-[calc(100vh-theme(spacing.14)-theme(spacing.6)*2-4rem)]">
-            <DashboardChat />
+        {/* Desktop Recent Expenses Table */}
+        <div className="glass-card rounded-2xl p-5">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-semibold text-foreground">Recent Bills</h3>
+            <Link to="/expenses" className="text-xs text-gold font-medium flex items-center gap-1">
+              View All <ArrowUpRight className="h-3 w-3" />
+            </Link>
           </div>
+          <div className="space-y-2">
+            {expenses.slice(0, 5).map(exp => (
+              <Link key={exp.id} to={`/expenses/${exp.id}`}
+                className="flex items-center justify-between p-2.5 rounded-lg hover:bg-secondary/50 transition-colors">
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-foreground truncate">{exp.title}</p>
+                  <p className="text-xs text-muted-foreground">{exp.merchant || '—'} · {new Date(exp.expense_date).toLocaleDateString()}</p>
+                </div>
+                <div className="text-right shrink-0 ml-3">
+                  <p className="text-sm font-bold tabular-nums text-foreground">${Number(exp.amount).toFixed(2)}</p>
+                  <StatusBadge status={exp.status as ExpenseStatus} />
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Education / Value Section */}
+      <div className="md:hidden">
+        <h2 className="text-base font-semibold text-foreground mb-3">Everything you need to master your expenses</h2>
+        <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1">
+          {[
+            { title: 'Auto Tracking', desc: 'Bills from email are captured automatically' },
+            { title: 'No Lost Bills', desc: 'Every receipt stored securely in one place' },
+            { title: 'Easy Reimburse', desc: 'Submit and track reimbursements effortlessly' },
+          ].map((card) => (
+            <div key={card.title} className="glass-card rounded-xl p-4 min-w-[200px] shrink-0">
+              <h4 className="text-sm font-semibold text-foreground mb-1">{card.title}</h4>
+              <p className="text-xs text-muted-foreground leading-relaxed">{card.desc}</p>
+            </div>
+          ))}
         </div>
       </div>
     </div>

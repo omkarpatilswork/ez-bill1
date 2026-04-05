@@ -4,101 +4,56 @@
 
 @layer base {
   :root {
-    --background: 210 20% 98%;
-    --foreground: 220 25% 10%;
+    --background: 160 10% 6%;
+    --foreground: 60 10% 95%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 220 25% 10%;
+    --card: 160 10% 10%;
+    --card-foreground: 60 10% 95%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 220 25% 10%;
+    --popover: 160 10% 10%;
+    --popover-foreground: 60 10% 95%;
 
-    --primary: 221 83% 53%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 152 45% 35%;
+    --primary-foreground: 60 10% 98%;
 
-    --secondary: 210 40% 96%;
-    --secondary-foreground: 220 25% 10%;
+    --secondary: 160 10% 15%;
+    --secondary-foreground: 60 10% 90%;
 
-    --muted: 210 40% 96%;
-    --muted-foreground: 215 16% 47%;
+    --muted: 160 8% 14%;
+    --muted-foreground: 160 8% 55%;
 
-    --accent: 210 40% 96%;
-    --accent-foreground: 220 25% 10%;
+    --accent: 43 80% 50%;
+    --accent-foreground: 160 10% 6%;
 
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 63% 45%;
+    --destructive-foreground: 60 10% 98%;
 
-    --success: 142 71% 45%;
-    --success-foreground: 0 0% 100%;
+    --success: 152 55% 40%;
+    --success-foreground: 60 10% 98%;
 
-    --warning: 38 92% 50%;
-    --warning-foreground: 0 0% 100%;
+    --warning: 43 80% 50%;
+    --warning-foreground: 160 10% 6%;
 
-    --info: 199 89% 48%;
-    --info-foreground: 0 0% 100%;
+    --info: 199 70% 45%;
+    --info-foreground: 60 10% 98%;
 
-    --border: 214 32% 91%;
-    --input: 214 32% 91%;
-    --ring: 221 83% 53%;
+    --gold: 43 80% 50%;
+    --gold-foreground: 160 10% 6%;
 
-    --radius: 0.5rem;
+    --border: 160 8% 18%;
+    --input: 160 8% 18%;
+    --ring: 152 45% 35%;
 
-    --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 220 25% 20%;
-    --sidebar-primary: 221 83% 53%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 210 40% 96%;
-    --sidebar-accent-foreground: 220 25% 15%;
-    --sidebar-border: 214 32% 91%;
-    --sidebar-ring: 221 83% 53%;
-  }
+    --radius: 0.75rem;
 
-  .dark {
-    --background: 220 25% 6%;
-    --foreground: 210 20% 95%;
-
-    --card: 220 25% 10%;
-    --card-foreground: 210 20% 95%;
-
-    --popover: 220 25% 10%;
-    --popover-foreground: 210 20% 95%;
-
-    --primary: 221 83% 53%;
-    --primary-foreground: 210 40% 98%;
-
-    --secondary: 217 33% 17%;
-    --secondary-foreground: 210 40% 98%;
-
-    --muted: 217 33% 17%;
-    --muted-foreground: 215 20% 65%;
-
-    --accent: 217 33% 17%;
-    --accent-foreground: 210 40% 98%;
-
-    --destructive: 0 63% 31%;
-    --destructive-foreground: 210 40% 98%;
-
-    --success: 142 71% 35%;
-    --success-foreground: 0 0% 100%;
-
-    --warning: 38 92% 40%;
-    --warning-foreground: 0 0% 100%;
-
-    --info: 199 89% 38%;
-    --info-foreground: 0 0% 100%;
-
-    --border: 217 33% 17%;
-    --input: 217 33% 17%;
-    --ring: 224 76% 48%;
-
-    --sidebar-background: 220 25% 10%;
-    --sidebar-foreground: 210 20% 90%;
-    --sidebar-primary: 224 76% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 220 20% 16%;
-    --sidebar-accent-foreground: 210 20% 90%;
-    --sidebar-border: 220 20% 18%;
-    --sidebar-ring: 224 76% 48%;
+    --sidebar-background: 160 10% 8%;
+    --sidebar-foreground: 60 10% 85%;
+    --sidebar-primary: 152 45% 35%;
+    --sidebar-primary-foreground: 60 10% 98%;
+    --sidebar-accent: 160 10% 14%;
+    --sidebar-accent-foreground: 60 10% 90%;
+    --sidebar-border: 160 8% 16%;
+    --sidebar-ring: 152 45% 35%;
   }
 }
 
@@ -110,4 +65,45 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* Glassmorphism utility */
+.glass {
+  background: hsla(160, 10%, 12%, 0.6);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid hsla(160, 8%, 25%, 0.3);
+}
+
+.glass-card {
+  background: hsla(160, 10%, 10%, 0.7);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid hsla(160, 8%, 22%, 0.4);
+}
+
+/* Gold gradient text */
+.text-gold-gradient {
+  background: linear-gradient(135deg, hsl(43, 80%, 55%), hsl(43, 80%, 45%));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Smooth scrollbar */
+::-webkit-scrollbar {
+  width: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsla(160, 8%, 30%, 0.5);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsla(160, 8%, 40%, 0.6);
 }
