@@ -113,39 +113,7 @@ export default function ExpenseDetail() {
     navigate('/expenses');
   };
 
-  const handleGetSupport = async () => {
-    if (!expense?.merchant) {
-      toast({ title: 'No merchant info', description: 'Cannot look up support without a merchant name.' });
-      return;
-    }
-    setSupportLoading(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('ask-ai', {
-        body: {
-          messages: [{
-            role: 'user',
-            content: `Find the customer support contact details for "${expense.merchant}" in India. Return ONLY a JSON object with these fields: phone (customer care number), website (support/returns page URL), email (support email). If not found, use null for that field. No other text.`
-          }]
-        }
-      });
-      if (error) throw error;
-      const text = data?.choices?.[0]?.message?.content || data?.content || data?.response || '';
-      try {
-        const jsonMatch = text.match(/\{[\s\S]*\}/);
-        if (jsonMatch) {
-          setSupportInfo(JSON.parse(jsonMatch[0]));
-        } else {
-          setSupportInfo({ website: `https://www.google.com/search?q=${encodeURIComponent(expense.merchant + ' customer support returns warranty India')}` });
-        }
-      } catch {
-        setSupportInfo({ website: `https://www.google.com/search?q=${encodeURIComponent(expense.merchant + ' customer support returns warranty India')}` });
-      }
-    } catch {
-      setSupportInfo({ website: `https://www.google.com/search?q=${encodeURIComponent(expense.merchant + ' customer support returns warranty India')}` });
-    } finally {
-      setSupportLoading(false);
-    }
-  };
+  
 
   const handleDelete = async () => {
     if (!expense || !confirm('Delete this bill permanently?')) return;
