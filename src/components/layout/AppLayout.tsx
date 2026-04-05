@@ -1,20 +1,25 @@
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from './AppSidebar';
+import { BottomNav } from './BottomNav';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full">
+      <div className="min-h-screen flex w-full bg-background">
         <AppSidebar />
         <div className="flex-1 flex flex-col min-w-0">
-          <header className="h-12 sm:h-14 flex items-center border-b px-3 sm:px-4 bg-card">
-            <SidebarTrigger className="mr-3 sm:mr-4" />
-            <h2 className="text-base sm:text-lg font-semibold text-foreground">ExpenseDesk</h2>
+          {/* Desktop header */}
+          <header className="h-12 sm:h-14 hidden md:flex items-center border-b border-border/30 px-4 glass">
+            <SidebarTrigger className="mr-4 text-muted-foreground hover:text-foreground" />
+            <div className="flex items-center gap-2">
+              <span className="text-lg font-bold text-gold-gradient">EZ Bill</span>
+            </div>
           </header>
-          <main className="flex-1 p-3 sm:p-4 md:p-6 overflow-auto">
+          <main className="flex-1 p-4 md:p-6 overflow-auto pb-24 md:pb-6">
             {children}
           </main>
         </div>
+        <BottomNav />
       </div>
     </SidebarProvider>
   );

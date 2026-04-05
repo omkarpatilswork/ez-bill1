@@ -36,16 +36,16 @@ export default function Signup() {
   if (success) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background px-4">
-        <Card className="w-full max-w-md">
+        <Card className="w-full max-w-md border-border/30 bg-card">
           <CardHeader className="text-center">
             <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-xl bg-success">
               <Receipt className="h-6 w-6 text-success-foreground" />
             </div>
-            <CardTitle className="text-2xl">Check your email</CardTitle>
-            <CardDescription>We've sent a confirmation link to {email}. Please verify your email to continue.</CardDescription>
+            <CardTitle className="text-2xl text-foreground">Check your email</CardTitle>
+            <CardDescription className="text-muted-foreground">We've sent a confirmation link to {email}. Please verify your email to continue.</CardDescription>
           </CardHeader>
           <CardFooter className="justify-center">
-            <Link to="/login" className="text-primary hover:underline text-sm">Back to sign in</Link>
+            <Link to="/login" className="text-gold hover:underline text-sm">Back to sign in</Link>
           </CardFooter>
         </Card>
       </div>
@@ -54,32 +54,32 @@ export default function Signup() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <Card className="w-full max-w-md">
+      <Card className="w-full max-w-md border-border/30 bg-card">
         <CardHeader className="text-center">
           <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-xl bg-primary">
             <Receipt className="h-6 w-6 text-primary-foreground" />
           </div>
-          <CardTitle className="text-2xl">Create Account</CardTitle>
-          <CardDescription>Join ExpenseDesk to manage your expenses</CardDescription>
+          <CardTitle className="text-2xl text-gold-gradient">Create Account</CardTitle>
+          <CardDescription className="text-muted-foreground">Join EZ Bill to manage your expenses</CardDescription>
         </CardHeader>
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="fullName">Full Name</Label>
-              <Input id="fullName" placeholder="John Doe" value={fullName} onChange={e => setFullName(e.target.value)} required />
+              <Label htmlFor="fullName" className="text-foreground">Full Name</Label>
+              <Input id="fullName" placeholder="John Doe" className="bg-secondary border-border/30 text-foreground" value={fullName} onChange={e => setFullName(e.target.value)} required />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" placeholder="you@company.com" value={email} onChange={e => setEmail(e.target.value)} required />
+              <Label htmlFor="email" className="text-foreground">Email</Label>
+              <Input id="email" type="email" placeholder="you@company.com" className="bg-secondary border-border/30 text-foreground" value={email} onChange={e => setEmail(e.target.value)} required />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input id="password" type="password" placeholder="Min. 6 characters" value={password} onChange={e => setPassword(e.target.value)} required minLength={6} />
+              <Label htmlFor="password" className="text-foreground">Password</Label>
+              <Input id="password" type="password" placeholder="Min. 6 characters" className="bg-secondary border-border/30 text-foreground" value={password} onChange={e => setPassword(e.target.value)} required minLength={6} />
             </div>
             <div className="space-y-2">
-              <Label>Department</Label>
+              <Label className="text-foreground">Department</Label>
               <Select value={department} onValueChange={setDepartment}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger className="bg-secondary border-border/30 text-foreground"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {DEPARTMENTS.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}
                 </SelectContent>
@@ -87,12 +87,12 @@ export default function Signup() {
             </div>
           </CardContent>
           <CardFooter className="flex flex-col gap-4">
-            <Button type="submit" className="w-full" disabled={isLoading}>
+            <Button type="submit" className="w-full rounded-xl" disabled={isLoading}>
               {isLoading ? 'Creating account...' : 'Create Account'}
             </Button>
             <p className="text-sm text-muted-foreground">
               Already have an account?{' '}
-              <Link to="/login" className="text-primary hover:underline">Sign in</Link>
+              <Link to="/login" className="text-gold hover:underline">Sign in</Link>
             </p>
           </CardFooter>
         </form>

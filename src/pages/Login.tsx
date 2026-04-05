@@ -9,7 +9,6 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { Receipt } from 'lucide-react';
-import loginBg from '@/assets/login-bg.png';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -55,22 +54,22 @@ export default function Login() {
   };
 
   return (
-    <div className="flex min-h-screen">
+    <div className="flex min-h-screen bg-background">
       {/* Left side - Login form */}
-      <div className="flex w-full lg:w-1/2 items-center justify-center bg-background px-4 sm:px-8">
+      <div className="flex w-full lg:w-1/2 items-center justify-center px-4 sm:px-8">
         <Card className="w-full max-w-md border-0 shadow-none bg-transparent">
           <CardHeader className="text-center">
             <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-xl bg-primary">
               <Receipt className="h-6 w-6 text-primary-foreground" />
             </div>
-            <CardTitle className="text-2xl sm:text-3xl">ExpenseDesk</CardTitle>
-            <CardDescription>Sign in to manage your expenses</CardDescription>
+            <CardTitle className="text-2xl sm:text-3xl text-gold-gradient">EZ Bill</CardTitle>
+            <CardDescription className="text-muted-foreground">Sign in to manage your bills smartly</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <Button
               type="button"
               variant="outline"
-              className="w-full min-h-[44px]"
+              className="w-full min-h-[44px] border-border/50 text-foreground hover:bg-secondary"
               onClick={handleGoogleSignIn}
               disabled={isGoogleLoading}
             >
@@ -94,39 +93,36 @@ export default function Login() {
           <form onSubmit={handleSubmit}>
             <CardContent className="space-y-4 pt-0">
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" placeholder="you@company.com" className="min-h-[44px]" value={email} onChange={e => setEmail(e.target.value)} required />
+                <Label htmlFor="email" className="text-foreground">Email</Label>
+                <Input id="email" type="email" placeholder="you@company.com" className="min-h-[44px] bg-secondary border-border/30 text-foreground" value={email} onChange={e => setEmail(e.target.value)} required />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
-                <Input id="password" type="password" placeholder="••••••••" className="min-h-[44px]" value={password} onChange={e => setPassword(e.target.value)} required />
+                <Label htmlFor="password" className="text-foreground">Password</Label>
+                <Input id="password" type="password" placeholder="••••••••" className="min-h-[44px] bg-secondary border-border/30 text-foreground" value={password} onChange={e => setPassword(e.target.value)} required />
               </div>
             </CardContent>
             <CardFooter className="flex flex-col gap-4">
-              <Button type="submit" className="w-full min-h-[44px]" disabled={isLoading}>
+              <Button type="submit" className="w-full min-h-[44px] rounded-xl" disabled={isLoading}>
                 {isLoading ? 'Signing in...' : 'Sign In'}
               </Button>
               <p className="text-sm text-muted-foreground">
                 Don't have an account?{' '}
-                <Link to="/signup" className="text-primary hover:underline">Sign up</Link>
+                <Link to="/signup" className="text-gold hover:underline">Sign up</Link>
               </p>
             </CardFooter>
           </form>
         </Card>
       </div>
 
-      {/* Right side - Hero image */}
-      <div className="hidden lg:block lg:w-1/2 relative overflow-hidden">
-        <img
-          src={loginBg}
-          alt="Business professionals analyzing financial data on a rooftop with city skyline"
-          className="absolute inset-0 h-full w-full object-cover"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
-        <div className="absolute bottom-12 left-8 right-8 text-white">
-          <h2 className="text-3xl font-bold tracking-tight">Streamline your expense management</h2>
-          <p className="mt-2 text-lg text-white/80">Submit, track, and approve expenses — all in one place.</p>
+      {/* Right side - Hero */}
+      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden items-end p-12 bg-gradient-to-br from-secondary via-background to-secondary">
+        <div className="relative z-10">
+          <h2 className="text-3xl font-bold tracking-tight text-foreground">Your personal money manager</h2>
+          <p className="mt-2 text-lg text-muted-foreground">Automatically handle bills, track spending, and stay on top of reimbursements.</p>
         </div>
+        {/* Decorative elements */}
+        <div className="absolute top-20 right-20 h-64 w-64 rounded-full bg-primary/10 blur-3xl" />
+        <div className="absolute bottom-32 left-16 h-48 w-48 rounded-full bg-gold/5 blur-3xl" />
       </div>
     </div>
   );

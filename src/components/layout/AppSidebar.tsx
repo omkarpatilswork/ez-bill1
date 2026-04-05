@@ -49,7 +49,7 @@ export function AppSidebar() {
   };
 
   return (
-    <Sidebar collapsible="icon">
+    <Sidebar collapsible="icon" className="hidden md:flex">
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
@@ -57,16 +57,15 @@ export function AppSidebar() {
               <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary">
                 <Receipt className="h-4 w-4 text-primary-foreground" />
               </div>
-              {!collapsed && <span className="font-bold text-lg">ExpenseDesk</span>}
+              {!collapsed && <span className="font-bold text-lg text-gold-gradient">EZ Bill</span>}
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
 
       <SidebarContent>
-        {/* Employee section - always visible */}
         <SidebarGroup>
-          <SidebarGroupLabel>Expenses</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-muted-foreground">Expenses</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {employeeItems.map(item => (
@@ -83,12 +82,11 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {/* Manager section */}
         {hasRole('manager') && (
           <Collapsible defaultOpen className="group/collapsible">
             <SidebarGroup>
               <CollapsibleTrigger asChild>
-                <SidebarGroupLabel className="cursor-pointer">
+                <SidebarGroupLabel className="cursor-pointer text-muted-foreground">
                   Manager
                   {!collapsed && <ChevronDown className="ml-auto h-4 w-4 transition-transform group-data-[state=open]/collapsible:rotate-180" />}
                 </SidebarGroupLabel>
@@ -113,12 +111,11 @@ export function AppSidebar() {
           </Collapsible>
         )}
 
-        {/* Finance section */}
         {hasRole('finance') && (
           <Collapsible defaultOpen className="group/collapsible">
             <SidebarGroup>
               <CollapsibleTrigger asChild>
-                <SidebarGroupLabel className="cursor-pointer">
+                <SidebarGroupLabel className="cursor-pointer text-muted-foreground">
                   Finance
                   {!collapsed && <ChevronDown className="ml-auto h-4 w-4 transition-transform group-data-[state=open]/collapsible:rotate-180" />}
                 </SidebarGroupLabel>
@@ -147,7 +144,7 @@ export function AppSidebar() {
       <SidebarFooter>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton onClick={handleSignOut}>
+            <SidebarMenuButton onClick={handleSignOut} className="text-muted-foreground hover:text-foreground">
               <LogOut className="h-4 w-4" />
               {!collapsed && <span>Sign Out</span>}
             </SidebarMenuButton>
@@ -159,8 +156,8 @@ export function AppSidebar() {
                   <AvatarFallback className="bg-primary text-primary-foreground text-xs">{initials}</AvatarFallback>
                 </Avatar>
                 <div className="flex flex-col leading-tight">
-                  <span className="text-sm font-medium truncate">{profile?.full_name || 'User'}</span>
-                  <span className="text-xs text-sidebar-foreground/60 truncate">{profile?.department}</span>
+                  <span className="text-sm font-medium truncate text-foreground">{profile?.full_name || 'User'}</span>
+                  <span className="text-xs text-muted-foreground truncate">{profile?.department}</span>
                 </div>
               </div>
             </SidebarMenuItem>
