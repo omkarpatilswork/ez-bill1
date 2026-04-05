@@ -186,15 +186,15 @@ async function processMessages(searchData: any, accessToken: string, userId: str
         }
       }
 
-      if (attachments.length > 0) {
-        emails.push({
-          message_id: msg.id,
-          subject,
-          from,
-          date,
-          attachments,
-        });
-      }
+      // Include emails with attachments, or if no attachments, still include with empty array
+      emails.push({
+        message_id: msg.id,
+        subject,
+        from,
+        date,
+        attachments,
+        has_body: true,
+      });
     } catch (err) {
       console.error("Error processing message:", msg.id, err);
     }
