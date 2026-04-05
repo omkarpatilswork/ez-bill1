@@ -117,8 +117,8 @@ export default function ExpenseDetail() {
   const isRejected = expense.status === 'rejected';
   const isInReimbursement = ['submitted', 'manager_approved', 'approved', 'reimbursed'].includes(expense.status);
 
-  // Reimbursement view
-  if (showReimburse || isInReimbursement) {
+  // Reimbursement view — only when user explicitly clicks Reimburse
+  if (showReimburse) {
     return (
       <div className="max-w-3xl mx-auto space-y-5 pb-24">
         <div className="flex items-center gap-2">
