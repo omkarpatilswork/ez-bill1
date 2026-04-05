@@ -328,7 +328,7 @@ export default function NewExpense() {
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <h1 className="text-lg font-bold text-foreground">
-            {mode === 'scan' ? 'Scan Bill' : 'Upload Bill'}
+            {editId ? 'Edit Bill' : mode === 'scan' ? 'Scan Bill' : 'Upload Bill'}
           </h1>
         </div>
 
