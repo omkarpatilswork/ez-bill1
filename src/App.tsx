@@ -19,6 +19,7 @@ import PendingApprovals from "./pages/manager/PendingApprovals";
 import FinanceDashboard from "./pages/finance/FinanceDashboard";
 import AllExpenses from "./pages/finance/AllExpenses";
 import Reports from "./pages/finance/Reports";
+import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
