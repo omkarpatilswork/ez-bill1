@@ -87,6 +87,57 @@ export type Database = {
           },
         ]
       }
+      bill_splits: {
+        Row: {
+          amount: number
+          created_at: string
+          expense_id: string
+          friend_id: string | null
+          friend_name: string
+          id: string
+          is_self: boolean
+          items: Json | null
+          user_id: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          expense_id: string
+          friend_id?: string | null
+          friend_name: string
+          id?: string
+          is_self?: boolean
+          items?: Json | null
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          expense_id?: string
+          friend_id?: string | null
+          friend_name?: string
+          id?: string
+          is_self?: boolean
+          items?: Json | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bill_splits_expense_id_fkey"
+            columns: ["expense_id"]
+            isOneToOne: false
+            referencedRelation: "expenses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bill_splits_friend_id_fkey"
+            columns: ["friend_id"]
+            isOneToOne: false
+            referencedRelation: "friends"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       expense_categories: {
         Row: {
           description: string | null
@@ -192,6 +243,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      friends: {
+        Row: {
+          created_at: string
+          email: string | null
+          id: string
+          name: string
+          phone: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          name: string
+          phone?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          name?: string
+          phone?: string | null
+          user_id?: string
+        }
+        Relationships: []
       }
       gmail_connections: {
         Row: {
