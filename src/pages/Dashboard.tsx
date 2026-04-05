@@ -68,6 +68,7 @@ export default function Dashboard() {
     { label: 'Reimburse', icon: Wallet, path: '/expenses', color: 'text-success' },
     { label: 'Bill Support', icon: Headphones, action: () => setBillSelectorFor('support'), color: 'text-gold' },
     { label: 'Scan Email', icon: Mail, path: '/email-bills', color: 'text-info' },
+    { label: 'UPI Bills', icon: Smartphone, path: '/email-bills?tab=upi', color: 'text-primary' },
   ];
 
   const handleSearch = (e: React.FormEvent) => {
