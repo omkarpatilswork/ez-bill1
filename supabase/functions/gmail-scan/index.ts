@@ -186,7 +186,8 @@ async function processMessages(searchData: any, accessToken: string, userId: str
         }
       }
 
-      // Include emails with attachments, or if no attachments, still include with empty array
+      // Only include emails that have attachments (PDF or image)
+      if (attachments.length === 0) continue;
       emails.push({
         message_id: msg.id,
         subject,
