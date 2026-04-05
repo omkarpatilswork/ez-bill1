@@ -307,11 +307,11 @@ export default function NewExpense() {
           <>
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <TabsList className="w-full grid grid-cols-2 bg-secondary/50">
-                <TabsTrigger value="original" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-                  <Eye className="h-4 w-4 mr-1.5" /> Original Bill
-                </TabsTrigger>
                 <TabsTrigger value="ebill" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                   <Receipt className="h-4 w-4 mr-1.5" /> E-Bill
+                </TabsTrigger>
+                <TabsTrigger value="original" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                  <Eye className="h-4 w-4 mr-1.5" /> Original Bill
                 </TabsTrigger>
               </TabsList>
 
