@@ -75,8 +75,7 @@ export default function ExpenseDetail() {
   const [receiptName, setReceiptName] = useState<string>('');
   const [activeTab, setActiveTab] = useState<string>('ebill');
   const [showReimburse, setShowReimburse] = useState(false);
-  const [supportLoading, setSupportLoading] = useState(false);
-  const [supportInfo, setSupportInfo] = useState<{ phone?: string; website?: string; email?: string } | null>(null);
+  
 
   useEffect(() => {
     if (!id) return;
