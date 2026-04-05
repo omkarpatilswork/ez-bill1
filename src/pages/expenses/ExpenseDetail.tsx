@@ -4,14 +4,13 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { StatusBadge } from '@/components/expenses/StatusBadge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import {
   ArrowLeft, Store, Package, Hash, Calendar, CreditCard, IndianRupee,
   Receipt, Eye, Users, ShieldCheck, Pencil, FileText, CheckCircle, XCircle,
-  Clock, DollarSign, Send, Trash2
+  Clock, DollarSign, Send, Trash2, Headphones, Loader2, ExternalLink
 } from 'lucide-react';
 import type { Expense, ExpenseStatus, ApprovalAction, AuditLog } from '@/lib/types';
 
@@ -36,10 +35,25 @@ interface LineItem {
   total_price: number;
 }
 
-function parseLineItems(description: string | null | undefined): LineItem[] {
-  if (!description) return [];
-  // Try to parse line items stored in description (format: "Invoice: X | Payment: Y | 3 item(s) | ...")
-  return [];
+const LINE_ITEMS_MARKER = '::ITEMS::';
+
+function parseStoredLineItems(desc: string | null | undefined): LineItem[] {
+  if (!desc) return [];
+  const idx = desc.indexOf(LINE_ITEMS_MARKER);
+  if (idx < 0) return [];
+  try {
+    const jsonStr = desc.slice(idx + LINE_ITEMS_MARKER.length);
+    const endIdx = jsonStr.indexOf('::END_ITEMS::');
+    return JSON.parse(endIdx >= 0 ? jsonStr.slice(0, endIdx) : jsonStr);
+  } catch { return []; }
+}
+
+function cleanDescription(desc: string | null | undefined): string {
+  if (!desc) return '';
+  const idx = desc.indexOf(LINE_ITEMS_MARKER);
+  let clean = idx >= 0 ? desc.slice(0, idx) : desc;
+  clean = clean.replace(/Invoice:\s*[^|]+\|?\s*/g, '').replace(/Payment:\s*[^|]+\|?\s*/g, '').replace(/\d+ item\(s\)\s*\|?\s*/g, '');
+  return clean.trim();
 }
 
 function parseField(description: string | null | undefined, key: string): string {
@@ -61,6 +75,8 @@ export default function ExpenseDetail() {
   const [receiptName, setReceiptName] = useState<string>('');
   const [activeTab, setActiveTab] = useState<string>('ebill');
   const [showReimburse, setShowReimburse] = useState(false);
+  const [supportLoading, setSupportLoading] = useState(false);
+  const [supportInfo, setSupportInfo] = useState<{ phone?: string; website?: string; email?: string } | null>(null);
 
   useEffect(() => {
     if (!id) return;
@@ -74,7 +90,6 @@ export default function ExpenseDetail() {
       setApprovals((appRes.data as unknown as ApprovalAction[]) || []);
       setAuditLogs((logRes.data as unknown as AuditLog[]) || []);
 
-      // Get receipt signed URL
       const receipts = receiptRes.data as any[];
       if (receipts && receipts.length > 0) {
         setReceiptName(receipts[0].file_name || '');
@@ -99,6 +114,49 @@ export default function ExpenseDetail() {
     navigate('/expenses');
   };
 
+  const handleGetSupport = async () => {
+    if (!expense?.merchant) {
+      toast({ title: 'No merchant info', description: 'Cannot look up support without a merchant name.' });
+      return;
+    }
+    setSupportLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('ask-ai', {
+        body: {
+          messages: [{
+            role: 'user',
+            content: `Find the customer support contact details for "${expense.merchant}" in India. Return ONLY a JSON object with these fields: phone (customer care number), website (support/returns page URL), email (support email). If not found, use null for that field. No other text.`
+          }]
+        }
+      });
+      if (error) throw error;
+      const text = data?.choices?.[0]?.message?.content || data?.content || data?.response || '';
+      try {
+        const jsonMatch = text.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          setSupportInfo(JSON.parse(jsonMatch[0]));
+        } else {
+          setSupportInfo({ website: `https://www.google.com/search?q=${encodeURIComponent(expense.merchant + ' customer support returns warranty India')}` });
+        }
+      } catch {
+        setSupportInfo({ website: `https://www.google.com/search?q=${encodeURIComponent(expense.merchant + ' customer support returns warranty India')}` });
+      }
+    } catch {
+      setSupportInfo({ website: `https://www.google.com/search?q=${encodeURIComponent(expense.merchant + ' customer support returns warranty India')}` });
+    } finally {
+      setSupportLoading(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!expense || !confirm('Delete this bill permanently?')) return;
+    await supabase.from('expense_receipts').delete().eq('expense_id', expense.id);
+    await supabase.from('audit_logs').delete().eq('expense_id', expense.id);
+    await supabase.from('expenses').delete().eq('id', expense.id);
+    toast({ title: 'Bill deleted' });
+    navigate('/expenses');
+  };
+
   if (loading) return (
     <div className="flex items-center justify-center py-20">
       <div className="h-6 w-6 animate-spin rounded-full border-3 border-primary border-t-transparent" />
@@ -113,18 +171,20 @@ export default function ExpenseDetail() {
 
   const invoiceNum = parseField(expense.description, 'Invoice');
   const paymentMethod = expense.cost_center || parseField(expense.description, 'Payment') || '—';
+  const lineItems = parseStoredLineItems(expense.description);
+  const notes = cleanDescription(expense.description);
   const currentStep = getStatusStep(expense.status as ExpenseStatus);
   const isRejected = expense.status === 'rejected';
-  const isInReimbursement = ['submitted', 'manager_approved', 'approved', 'reimbursed'].includes(expense.status);
+  const isInReimbursement = ['submitted', 'manager_approved', 'approved', 'reimbursed', 'rejected'].includes(expense.status);
 
-  // Reimbursement view — only when user explicitly clicks Reimburse
+  // ─── Reimbursement view ───
   if (showReimburse) {
     return (
       <div className="max-w-3xl mx-auto space-y-5 pb-24">
         <div className="flex items-center gap-2">
           <Button variant="ghost" size="sm" className="h-8 px-2" onClick={() => {
-            if (showReimburse && !isInReimbursement) { setShowReimburse(false); return; }
-            navigate('/expenses');
+            if (!isInReimbursement) { setShowReimburse(false); return; }
+            setShowReimburse(false);
           }}>
             <ArrowLeft className="h-4 w-4" />
           </Button>
@@ -177,11 +237,9 @@ export default function ExpenseDetail() {
           </Card>
         )}
 
-        {/* Bill summary card */}
+        {/* Bill summary */}
         <Card className="shadow-md border-0">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base">Bill Details</CardTitle>
-          </CardHeader>
+          <CardHeader className="pb-3"><CardTitle className="text-base">Bill Details</CardTitle></CardHeader>
           <CardContent>
             <div className="grid gap-4 sm:grid-cols-2">
               <InfoRow icon={IndianRupee} label="Amount" value={`₹${Number(expense.amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`} />
@@ -195,9 +253,7 @@ export default function ExpenseDetail() {
         {/* Approval History */}
         {approvals.length > 0 && (
           <Card className="shadow-md border-0">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base">Approval History</CardTitle>
-            </CardHeader>
+            <CardHeader className="pb-3"><CardTitle className="text-base">Approval History</CardTitle></CardHeader>
             <CardContent className="space-y-3">
               {approvals.map(a => (
                 <div key={a.id} className="flex items-start gap-3 p-2.5 rounded-lg bg-muted/30">
@@ -222,9 +278,7 @@ export default function ExpenseDetail() {
         {/* Activity Log */}
         {auditLogs.length > 0 && (
           <Card className="shadow-md border-0">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base">Activity Log</CardTitle>
-            </CardHeader>
+            <CardHeader className="pb-3"><CardTitle className="text-base">Activity Log</CardTitle></CardHeader>
             <CardContent>
               <div className="relative pl-4 border-l-2 border-border space-y-3">
                 {auditLogs.map(log => (
@@ -241,7 +295,6 @@ export default function ExpenseDetail() {
           </Card>
         )}
 
-        {/* Submit for reimbursement if draft */}
         {expense.status === 'draft' && expense.user_id === user?.id && (
           <Button className="w-full min-h-[48px]" onClick={handleSubmitForReimbursement}>
             <Send className="h-4 w-4 mr-2" /> Send for Reimbursement
@@ -260,7 +313,7 @@ export default function ExpenseDetail() {
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <h1 className="text-lg font-bold text-foreground truncate flex-1">{expense.merchant || expense.title}</h1>
-        <StatusBadge status={expense.status as ExpenseStatus} />
+        {isInReimbursement && <StatusBadge status={expense.status as ExpenseStatus} />}
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -286,12 +339,36 @@ export default function ExpenseDetail() {
             </CardContent>
           </Card>
 
-          {/* Description / Notes */}
-          {expense.description && (
+          {/* Line Items */}
+          {lineItems.length > 0 && (
+            <Card className="border-0 bg-card/80 backdrop-blur">
+              <CardContent className="pt-4 pb-4">
+                <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium mb-3">Items ({lineItems.length})</p>
+                <div className="space-y-2">
+                  {lineItems.map((item, idx) => (
+                    <div key={idx} className="flex items-center justify-between py-2 border-b border-border/30 last:border-0">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-foreground truncate">{item.name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {item.quantity} × ₹{Number(item.unit_price).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                        </p>
+                      </div>
+                      <span className="text-sm font-semibold text-foreground tabular-nums ml-3">
+                        ₹{Number(item.total_price).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Notes */}
+          {notes && (
             <Card className="border-0 bg-card/80 backdrop-blur">
               <CardContent className="pt-4 pb-4">
                 <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium mb-1">Notes</p>
-                <p className="text-sm text-foreground leading-relaxed">{expense.description}</p>
+                <p className="text-sm text-foreground leading-relaxed">{notes}</p>
               </CardContent>
             </Card>
           )}
@@ -348,22 +425,47 @@ export default function ExpenseDetail() {
           onClick={() => toast({ title: 'Coming soon', description: 'Split bill feature is under development.' })}>
           <Users className="h-3.5 w-3.5 mr-1" /> Split
         </Button>
-        <Button variant="outline" className="min-h-[44px] text-xs text-destructive hover:text-destructive"
-          onClick={async () => {
-            if (!confirm('Delete this bill?')) return;
-            await supabase.from('expense_receipts').delete().eq('expense_id', expense.id);
-            await supabase.from('audit_logs').delete().eq('expense_id', expense.id);
-            await supabase.from('expenses').delete().eq('id', expense.id);
-            toast({ title: 'Bill deleted' });
-            navigate('/expenses');
-          }}>
-          <Trash2 className="h-3.5 w-3.5 mr-1" /> Delete
+        <Button variant="outline" className="min-h-[44px] text-xs"
+          onClick={handleGetSupport} disabled={supportLoading}>
+          {supportLoading ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <Headphones className="h-3.5 w-3.5 mr-1" />}
+          Get Support
         </Button>
         <Button className="min-h-[44px] text-xs"
           onClick={() => setShowReimburse(true)}>
           <ShieldCheck className="h-3.5 w-3.5 mr-1" /> Reimburse
         </Button>
       </div>
+
+      {/* Support Info Card */}
+      {supportInfo && (
+        <Card className="border-0 bg-card/80 backdrop-blur">
+          <CardContent className="pt-4 pb-4 space-y-2">
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium mb-2">
+              Support & Returns — {expense.merchant}
+            </p>
+            {supportInfo.phone && (
+              <a href={`tel:${supportInfo.phone}`} className="flex items-center gap-2 text-sm text-primary hover:underline">
+                <Headphones className="h-4 w-4" /> {supportInfo.phone}
+              </a>
+            )}
+            {supportInfo.email && (
+              <a href={`mailto:${supportInfo.email}`} className="flex items-center gap-2 text-sm text-primary hover:underline">
+                <FileText className="h-4 w-4" /> {supportInfo.email}
+              </a>
+            )}
+            {supportInfo.website && (
+              <a href={supportInfo.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-primary hover:underline">
+                <ExternalLink className="h-4 w-4" /> Visit Support Page
+              </a>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Delete — prominent at bottom */}
+      <Button variant="destructive" className="w-full min-h-[48px] text-sm" onClick={handleDelete}>
+        <Trash2 className="h-4 w-4 mr-2" /> Delete Bill
+      </Button>
     </div>
   );
 }
