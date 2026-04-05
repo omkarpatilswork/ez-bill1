@@ -10,35 +10,33 @@ interface StatCardProps {
   progress?: number;
 }
 
-const variantStyles = {
-  default: 'bg-card text-card-foreground',
-  primary: 'bg-primary text-primary-foreground',
-  success: 'bg-success text-success-foreground',
-  warning: 'bg-warning text-warning-foreground',
-  info: 'bg-info text-info-foreground',
-  destructive: 'bg-destructive text-destructive-foreground',
+const variantIconColors = {
+  default: 'text-muted-foreground',
+  primary: 'text-primary',
+  success: 'text-success',
+  warning: 'text-gold',
+  info: 'text-info',
+  destructive: 'text-destructive',
 };
 
-const iconBgStyles = {
-  default: 'bg-muted text-muted-foreground',
-  primary: 'bg-primary-foreground/20 text-primary-foreground',
-  success: 'bg-success-foreground/20 text-success-foreground',
-  warning: 'bg-warning-foreground/20 text-warning-foreground',
-  info: 'bg-info-foreground/20 text-info-foreground',
-  destructive: 'bg-destructive-foreground/20 text-destructive-foreground',
-};
-
-function CircularProgress({ value, size = 48, strokeWidth = 4, variant = 'default' }: { value: number; size?: number; strokeWidth?: number; variant?: string }) {
+function CircularProgress({ value, size = 44, strokeWidth = 3, variant = 'default' }: { value: number; size?: number; strokeWidth?: number; variant?: string }) {
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - (value / 100) * circumference;
-  const strokeColor = variant === 'default' ? 'hsl(var(--primary))' : 'currentColor';
-  const trackColor = variant === 'default' ? 'hsl(var(--muted))' : 'currentColor';
+
+  const colorMap: Record<string, string> = {
+    default: 'hsl(var(--primary))',
+    primary: 'hsl(var(--primary))',
+    success: 'hsl(var(--success))',
+    warning: 'hsl(var(--gold))',
+    info: 'hsl(var(--info))',
+    destructive: 'hsl(var(--destructive))',
+  };
 
   return (
     <svg width={size} height={size} className="shrink-0 -rotate-90">
-      <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke={trackColor} strokeWidth={strokeWidth} opacity={0.2} />
-      <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke={strokeColor} strokeWidth={strokeWidth}
+      <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="hsla(160, 8%, 25%, 0.3)" strokeWidth={strokeWidth} />
+      <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke={colorMap[variant] || colorMap.default} strokeWidth={strokeWidth}
         strokeDasharray={circumference} strokeDashoffset={offset} strokeLinecap="round" className="transition-all duration-700 ease-out" />
     </svg>
   );
@@ -46,29 +44,27 @@ function CircularProgress({ value, size = 48, strokeWidth = 4, variant = 'defaul
 
 export function StatCard({ title, value, icon: Icon, description, variant = 'default', progress }: StatCardProps) {
   return (
-    <Card className={`${variantStyles[variant]} overflow-hidden border-0 shadow-md hover:shadow-lg transition-shadow duration-200`}>
-      <CardContent className="flex items-center gap-3 sm:gap-4 p-4 sm:p-5">
+    <Card className="glass-card overflow-hidden border-border/20 hover:border-border/40 transition-all duration-200">
+      <CardContent className="flex items-center gap-3 p-4">
         {progress !== undefined ? (
           <div className="relative shrink-0">
-            <CircularProgress value={progress} size={48} strokeWidth={4} variant={variant} />
+            <CircularProgress value={progress} size={44} strokeWidth={3} variant={variant} />
             <div className="absolute inset-0 flex items-center justify-center">
-              <Icon className="h-5 w-5" />
+              <Icon className={`h-4 w-4 ${variantIconColors[variant]}`} />
             </div>
           </div>
         ) : (
-          <div className={`flex h-11 w-11 sm:h-12 sm:w-12 shrink-0 items-center justify-center rounded-xl ${iconBgStyles[variant]}`}>
-            <Icon className="h-5 w-5" />
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-secondary">
+            <Icon className={`h-4 w-4 ${variantIconColors[variant]}`} />
           </div>
         )}
         <div className="min-w-0 space-y-0.5">
-          <p className={`text-[11px] sm:text-xs font-medium uppercase tracking-wider ${variant === 'default' ? 'text-muted-foreground' : 'opacity-80'}`}>
+          <p className="text-[10px] sm:text-xs font-medium uppercase tracking-wider text-muted-foreground">
             {title}
           </p>
-          <p className="text-xl sm:text-2xl font-bold leading-tight truncate">{value}</p>
+          <p className="text-lg sm:text-xl font-bold leading-tight truncate text-foreground">{value}</p>
           {description && (
-            <p className={`text-xs ${variant === 'default' ? 'text-muted-foreground' : 'opacity-70'}`}>
-              {description}
-            </p>
+            <p className="text-[10px] sm:text-xs text-muted-foreground">{description}</p>
           )}
         </div>
       </CardContent>
