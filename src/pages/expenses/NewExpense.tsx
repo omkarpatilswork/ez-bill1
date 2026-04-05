@@ -299,7 +299,12 @@ export default function NewExpense() {
     if (form.payment_method) parts.push(`Payment: ${form.payment_method}`);
     if (editLineItems.length > 0) parts.push(`${editLineItems.length} item(s)`);
     if (form.description) parts.push(form.description);
-    return parts.join(' | ');
+    let desc = parts.join(' | ');
+    // Append line items as JSON
+    if (editLineItems.length > 0) {
+      desc += `${LINE_ITEMS_MARKER}${JSON.stringify(editLineItems)}::END_ITEMS::`;
+    }
+    return desc;
   };
 
   const val = (v: any) => v && v !== 'Not Found' ? v : null;
