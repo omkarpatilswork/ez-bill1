@@ -422,13 +422,12 @@ export default function ExpenseDetail() {
           <Pencil className="h-3.5 w-3.5 mr-1" /> Edit
         </Button>
         <Button variant="outline" className="min-h-[44px] text-xs"
-          onClick={() => toast({ title: 'Coming soon', description: 'Split bill feature is under development.' })}>
+          onClick={() => navigate(`/expenses/${expense.id}/split`)}>
           <Users className="h-3.5 w-3.5 mr-1" /> Split
         </Button>
         <Button variant="outline" className="min-h-[44px] text-xs"
-          onClick={handleGetSupport} disabled={supportLoading}>
-          {supportLoading ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <Headphones className="h-3.5 w-3.5 mr-1" />}
-          Get Support
+          onClick={() => navigate(`/expenses/${expense.id}/support`)}>
+          <Headphones className="h-3.5 w-3.5 mr-1" /> Get Support
         </Button>
         <Button className="min-h-[44px] text-xs"
           onClick={() => setShowReimburse(true)}>
