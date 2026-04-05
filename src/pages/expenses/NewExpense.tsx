@@ -749,32 +749,34 @@ export default function NewExpense() {
               className="bg-secondary/30 border-border/30" rows={2} />
           </div>
 
-          {/* Receipt upload (optional for manual) */}
-          <div className="space-y-1">
-            <Label className="text-xs font-medium">Attach Receipt (optional)</Label>
-            {receiptFile ? (
-              <div className="flex items-center gap-3 rounded-lg bg-secondary/30 p-3">
-                <FileText className="h-5 w-5 text-primary shrink-0" />
-                <span className="text-xs truncate flex-1">{receiptFile.name}</span>
-                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => {
-                  setReceiptFile(null);
-                  if (receiptPreviewUrl) URL.revokeObjectURL(receiptPreviewUrl);
-                  setReceiptPreviewUrl(null);
-                }}>
-                  <X className="h-3.5 w-3.5" />
-                </Button>
-              </div>
-            ) : (
-              <label className="flex items-center justify-center gap-2 rounded-lg border border-dashed border-border/50 bg-secondary/20 p-4 cursor-pointer hover:bg-secondary/30 transition-colors">
-                <Upload className="h-4 w-4 text-muted-foreground" />
-                <span className="text-xs text-muted-foreground">Tap to attach receipt</span>
-                <input type="file" accept="image/*,.pdf" className="hidden" onChange={e => {
-                  const f = e.target.files?.[0];
-                  if (f) { setReceiptFile(f); setReceiptPreviewUrl(URL.createObjectURL(f)); }
-                }} />
-              </label>
-            )}
-          </div>
+          {/* Receipt upload (optional for manual, hidden in edit mode) */}
+          {!editId && (
+            <div className="space-y-1">
+              <Label className="text-xs font-medium">Attach Receipt (optional)</Label>
+              {receiptFile ? (
+                <div className="flex items-center gap-3 rounded-lg bg-secondary/30 p-3">
+                  <FileText className="h-5 w-5 text-primary shrink-0" />
+                  <span className="text-xs truncate flex-1">{receiptFile.name}</span>
+                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => {
+                    setReceiptFile(null);
+                    if (receiptPreviewUrl) URL.revokeObjectURL(receiptPreviewUrl);
+                    setReceiptPreviewUrl(null);
+                  }}>
+                    <X className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+              ) : (
+                <label className="flex items-center justify-center gap-2 rounded-lg border border-dashed border-border/50 bg-secondary/20 p-4 cursor-pointer hover:bg-secondary/30 transition-colors">
+                  <Upload className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-xs text-muted-foreground">Tap to attach receipt</span>
+                  <input type="file" accept="image/*,.pdf" className="hidden" onChange={e => {
+                    const f = e.target.files?.[0];
+                    if (f) { setReceiptFile(f); setReceiptPreviewUrl(URL.createObjectURL(f)); }
+                  }} />
+                </label>
+              )}
+            </div>
+          )}
 
           <div className="space-y-2 pt-2 border-t border-border/30">
             <Button className="w-full min-h-[48px]" disabled={isSubmitting || !isValid} onClick={() => handleSubmit(false)}>
