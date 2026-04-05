@@ -1,51 +1,48 @@
 
 
-# Home Screen UI Overhaul
+# UPI SMS Bill Extraction Feature
 
-## Summary
-Restructure the Dashboard home screen per user specifications: fix name bug, reorganize header buttons, switch currency to INR (₹), remove stat cards from main view into Reimburse action, update quick actions, and rename bottom nav tab.
+## Context
+UPI payment confirmation SMS messages (from banks, Google Pay, PhonePe, Paytm etc.) contain transaction details like amount, merchant, UPI ID, and date. Since this is a web app, we cannot read SMS directly from the device. The practical approach is a **paste-and-parse** flow where users copy-paste their UPI SMS text and we extract structured bill data using AI.
 
-## Changes
+## What Gets Built
 
-### 1. Fix "Hi there" name bug
-The fallback `profile?.full_name?.split(' ')[0] || 'there'` shows "there" when no profile is loaded yet. Will ensure profile data is fetched before rendering and use a better fallback from the auth user metadata (`user.user_metadata.full_name`).
+### 1. New "UPI Bills" Tab/Section
+Add a new section accessible from the Email Bills page or as a separate quick action. The UI will have:
+- A text area where users paste one or more UPI SMS messages
+- A "Parse SMS" button that sends the text to an edge function
+- Parsed results displayed as cards showing: merchant, amount, date, UPI ID, payment status
+- An "Add as Expense" button on each parsed result to save it
 
-### 2. Header buttons reorganization (mobile)
-- **Sync button** (RefreshCw) — stays as-is, navigates to `/email-bills`
-- **Ask AI button** — new button with a sparkle/bot icon labeled or styled, placed next to Sync, navigates to `/ask-ai`
-- **Profile button** (User icon) — navigates to a new `/profile` route (placeholder page for now since user said "we'll come into that later")
+### 2. New Edge Function: `parse-upi-sms`
+- Receives raw SMS text (supports multiple SMS pasted together)
+- Uses Lovable AI (gemini-2.5-flash) to extract structured data:
+  - Amount, merchant name, UPI ID, date/time, transaction ID, bank name, payment status
+- Returns an array of parsed transactions
+- Handles edge cases: partial SMS, non-UPI messages, multiple formats (HDFC, SBI, ICICI, etc.)
 
-### 3. Search bar — navigate to All Bills on search
-When the user types a query and submits (or after a short debounce), navigate to `/expenses?q=searchQuery` so the All Bills page handles universal search (by title, merchant, amount, category). The MyExpenses page will read the query param and apply filters.
-
-### 4. Currency: $ → ₹ everywhere
-Replace all `$` currency symbols with `₹` across Dashboard, charts, tooltips, recent bills, and desktop sections.
-
-### 5. Remove stat cards (Total Bills, Pending, Approved) from main dashboard
-These 3 stat cards will be removed from the home screen. Their data (pending, approved, total) will be accessible inside the **Reimburse** quick action, which will navigate to `/expenses` where this info already exists.
-
-### 6. Quick Actions — update to 4 items
-Remove "Help". Rename "Warranty" to "Claim Warranty". Reorder:
-1. Split Bills
-2. Reimburse
-3. Claim Warranty
-4. Scan Email
-
-### 7. Bottom Nav — rename "Bills" to "All Bills", ₹ symbol
-- Rename tab label from "Bills" to "All Bills"
-- Any currency references in bottom nav (there are none currently, but the `$` icon won't be used)
-
-### 8. Desktop charts — update currency to ₹
-YAxis formatter and Tooltip formatter changed from `$` to `₹`.
-
-## Files to Edit
-- **`src/pages/Dashboard.tsx`** — all changes above (header, search redirect, currency, stat cards removal, quick actions)
-- **`src/components/layout/BottomNav.tsx`** — rename "Bills" to "All Bills"
-- **`src/pages/expenses/MyExpenses.tsx`** — read `q` query param for universal search filtering
+### 3. Quick Action Integration
+- Add "UPI Bills" to the homepage quick actions grid
+- Navigates to the UPI SMS parsing page
 
 ## Technical Details
-- Profile name fix: `profile?.full_name?.split(' ')[0] || user?.user_metadata?.full_name?.split(' ')[0] || 'User'`
-- Search redirect: `navigate(`/expenses?q=${encodeURIComponent(searchQuery)}`)` on Enter key
-- Currency format: Replace all `$` literals and `toLocaleString` calls with `₹` prefix
-- Quick actions array reduced to 4 items with updated labels
+
+**Edge function (`supabase/functions/parse-upi-sms/index.ts`)**:
+- CORS headers, LOVABLE_API_KEY auth
+- System prompt trained on Indian bank UPI SMS formats
+- Returns JSON array of extracted transactions
+- Model: `google/gemini-2.5-flash` (fast, cost-effective for text parsing)
+
+**Frontend changes**:
+- New component or tab within EmailBills page for UPI SMS input
+- Reuses existing expense creation flow to save parsed bills
+- Category auto-detection from merchant/UPI ID patterns
+
+**Database**: No new tables needed — parsed UPI transactions become regular expenses via the existing `expenses` table.
+
+## Files Changed
+1. `supabase/functions/parse-upi-sms/index.ts` — new edge function
+2. `src/pages/expenses/EmailBills.tsx` — add UPI tab alongside Gmail section
+3. `src/pages/Dashboard.tsx` — add UPI Bills quick action
+4. `src/components/layout/AppSidebar.tsx` — optional nav entry
 
