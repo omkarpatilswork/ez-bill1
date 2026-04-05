@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
@@ -8,11 +8,14 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import {
   Mail, Link2, Unlink, RefreshCw, Loader2, FileText, Download,
   CheckCircle2, AlertCircle, Eye, ScanLine, ArrowRight,
+  Smartphone, Send, IndianRupee, Clock, CreditCard,
 } from 'lucide-react';
 import type { ExpenseCategory } from '@/lib/types';
 
@@ -39,10 +42,24 @@ interface ExtractedData {
   category?: string;
 }
 
+interface UpiTransaction {
+  merchant_name: string;
+  amount: number;
+  date: string;
+  upi_id?: string;
+  transaction_id?: string;
+  bank_name?: string;
+  payment_status: 'success' | 'failed' | 'pending';
+  description: string;
+}
+
 export default function EmailBills() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { toast } = useToast();
+
+  const initialTab = searchParams.get('tab') === 'upi' ? 'upi' : 'gmail';
 
   const [isConnected, setIsConnected] = useState(false);
   const [connectedEmail, setConnectedEmail] = useState('');
@@ -63,6 +80,12 @@ export default function EmailBills() {
   const [isImporting, setIsImporting] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [currentEmailMsgId, setCurrentEmailMsgId] = useState('');
+
+  // UPI state
+  const [smsText, setSmsText] = useState('');
+  const [isParsing, setIsParsing] = useState(false);
+  const [upiTransactions, setUpiTransactions] = useState<UpiTransaction[]>([]);
+  const [savingUpiIdx, setSavingUpiIdx] = useState<number | null>(null);
 
   useEffect(() => {
     checkConnection();
@@ -103,7 +126,6 @@ export default function EmailBills() {
         toast({ title: 'Error', description: data?.error || 'Failed to get auth URL', variant: 'destructive' });
         return;
       }
-      // Open in new window for OAuth
       window.location.href = data.auth_url;
     } catch (err: any) {
       toast({ title: 'Error', description: err.message, variant: 'destructive' });
@@ -127,7 +149,6 @@ export default function EmailBills() {
           setConnectedEmail(data.email);
           toast({ title: 'Gmail connected', description: `Connected as ${data.email}` });
         }
-        // Clean URL
         window.history.replaceState({}, '', '/email-bills');
       };
       exchangeCode();
@@ -172,7 +193,6 @@ export default function EmailBills() {
     setCurrentEmailMsgId(email.message_id);
 
     try {
-      // Fetch attachment data
       const { data: attData, error: attError } = await supabase.functions.invoke('gmail-attachment', {
         body: { message_id: email.message_id, attachment_id: attachment.id },
       });
@@ -182,7 +202,6 @@ export default function EmailBills() {
       setAttachmentPreview(`data:${attachment.mimeType};base64,${base64}`);
       setAttachmentMime(attachment.mimeType);
 
-      // Run OCR extraction
       const { data: extracted, error: extractError } = await supabase.functions.invoke('extract-receipt', {
         body: { file_base64: base64, file_type: attachment.mimeType },
       });
@@ -191,7 +210,6 @@ export default function EmailBills() {
 
       setExtractedData(extracted);
 
-      // Pre-fill import form
       const matchCategory = (name?: string) => {
         if (!name || name === 'Not Found') return '';
         const match = categories.find(c => c.name.toLowerCase() === name.toLowerCase());
@@ -237,7 +255,6 @@ export default function EmailBills() {
 
       if (error) throw error;
 
-      // Mark email as processed
       await supabase.from('processed_emails').insert({
         user_id: user.id,
         gmail_message_id: currentEmailMsgId,
@@ -246,7 +263,6 @@ export default function EmailBills() {
         expense_id: (expense as any)?.id,
       } as any);
 
-      // Remove from list
       setEmails(prev => prev.filter(e => e.message_id !== currentEmailMsgId));
       setShowImportDialog(false);
       setExtractedData(null);
@@ -257,6 +273,59 @@ export default function EmailBills() {
       toast({ title: 'Import failed', description: err.message, variant: 'destructive' });
     } finally {
       setIsImporting(false);
+    }
+  };
+
+  // UPI SMS parsing
+  const parseUpiSms = async () => {
+    if (!smsText.trim()) {
+      toast({ title: 'Empty input', description: 'Please paste your UPI SMS message(s).', variant: 'destructive' });
+      return;
+    }
+    setIsParsing(true);
+    setUpiTransactions([]);
+    try {
+      const { data, error } = await supabase.functions.invoke('parse-upi-sms', {
+        body: { sms_text: smsText.trim() },
+      });
+      if (error) throw new Error('Failed to parse SMS');
+      if (data?.error) throw new Error(data.error);
+
+      const txns = data?.transactions || [];
+      setUpiTransactions(txns);
+      if (txns.length === 0) {
+        toast({ title: 'No transactions found', description: 'Could not find any UPI transactions in the text. Try pasting a valid UPI SMS.' });
+      } else {
+        toast({ title: 'Parsed successfully', description: `Found ${txns.length} transaction(s).` });
+      }
+    } catch (err: any) {
+      toast({ title: 'Parsing failed', description: err.message, variant: 'destructive' });
+    } finally {
+      setIsParsing(false);
+    }
+  };
+
+  const saveUpiAsExpense = async (txn: UpiTransaction, idx: number) => {
+    if (!user) return;
+    setSavingUpiIdx(idx);
+    try {
+      const { error } = await supabase.from('expenses').insert({
+        user_id: user.id,
+        title: `UPI Payment - ${txn.merchant_name}`,
+        merchant: txn.merchant_name,
+        amount: txn.amount,
+        expense_date: txn.date,
+        description: `${txn.description}${txn.upi_id ? `\nUPI ID: ${txn.upi_id}` : ''}${txn.transaction_id ? `\nTxn ID: ${txn.transaction_id}` : ''}${txn.bank_name ? `\nBank: ${txn.bank_name}` : ''}`,
+        status: 'draft',
+      } as any);
+      if (error) throw error;
+
+      setUpiTransactions(prev => prev.filter((_, i) => i !== idx));
+      toast({ title: 'Saved', description: `₹${txn.amount} payment to ${txn.merchant_name} saved as draft.` });
+    } catch (err: any) {
+      toast({ title: 'Save failed', description: err.message, variant: 'destructive' });
+    } finally {
+      setSavingUpiIdx(null);
     }
   };
 
@@ -271,137 +340,283 @@ export default function EmailBills() {
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <div>
-        <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Email Bills</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Import Bills</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Connect your Gmail to automatically find and import bills from your inbox.
+          Import bills from Gmail or UPI payment SMS messages.
         </p>
       </div>
 
-      {/* Connection Card */}
-      <Card className="shadow-md border-0">
-        <CardContent className="pt-6">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-            <div className="flex items-center gap-3 flex-1">
-              <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ${isConnected ? 'bg-green-100 text-green-600' : 'bg-muted text-muted-foreground'}`}>
-                <Mail className="h-6 w-6" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-foreground">
-                  {isConnected ? 'Gmail Connected' : 'Connect Gmail'}
-                </h3>
-                <p className="text-sm text-muted-foreground">
-                  {isConnected ? connectedEmail : 'Link your Gmail to scan for bills and receipts'}
-                </p>
-              </div>
-            </div>
-            <div className="flex gap-2 w-full sm:w-auto">
-              {isConnected ? (
-                <>
-                  <Button onClick={scanEmails} disabled={isScanning} className="min-h-[44px] flex-1 sm:flex-initial">
-                    {isScanning ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Scanning...</> : <><RefreshCw className="h-4 w-4 mr-2" /> Scan Inbox</>}
-                  </Button>
-                  <Button variant="outline" onClick={disconnectGmail} className="min-h-[44px]">
-                    <Unlink className="h-4 w-4 mr-1" /> Disconnect
-                  </Button>
-                </>
-              ) : (
-                <Button onClick={connectGmail} className="min-h-[44px] w-full sm:w-auto">
-                  <Link2 className="h-4 w-4 mr-2" /> Connect Gmail
-                </Button>
-              )}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      <Tabs defaultValue={initialTab} className="w-full">
+        <TabsList className="grid w-full grid-cols-2 mb-4">
+          <TabsTrigger value="gmail" className="flex items-center gap-2">
+            <Mail className="h-4 w-4" /> Gmail
+          </TabsTrigger>
+          <TabsTrigger value="upi" className="flex items-center gap-2">
+            <Smartphone className="h-4 w-4" /> UPI SMS
+          </TabsTrigger>
+        </TabsList>
 
-      {/* How It Works */}
-      {!isConnected && (
-        <Card className="shadow-md border-0 bg-primary/5">
-          <CardHeader>
-            <CardTitle className="text-base">How It Works</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {[
-              { step: '1', title: 'Connect', desc: 'Securely link your Gmail account with read-only access' },
-              { step: '2', title: 'Scan', desc: 'We search for emails with invoices, receipts, and bills' },
-              { step: '3', title: 'Extract', desc: 'AI reads the attachments and extracts expense details' },
-              { step: '4', title: 'Import', desc: 'Review, edit, and import as expenses with one click' },
-            ].map(item => (
-              <div key={item.step} className="flex items-start gap-3">
-                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold">
-                  {item.step}
+        {/* Gmail Tab */}
+        <TabsContent value="gmail" className="space-y-6">
+          {/* Connection Card */}
+          <Card className="shadow-md border-0">
+            <CardContent className="pt-6">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                <div className="flex items-center gap-3 flex-1">
+                  <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ${isConnected ? 'bg-green-100 text-green-600' : 'bg-muted text-muted-foreground'}`}>
+                    <Mail className="h-6 w-6" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-foreground">
+                      {isConnected ? 'Gmail Connected' : 'Connect Gmail'}
+                    </h3>
+                    <p className="text-sm text-muted-foreground">
+                      {isConnected ? connectedEmail : 'Link your Gmail to scan for bills and receipts'}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <p className="font-medium text-sm text-foreground">{item.title}</p>
-                  <p className="text-xs text-muted-foreground">{item.desc}</p>
+                <div className="flex gap-2 w-full sm:w-auto">
+                  {isConnected ? (
+                    <>
+                      <Button onClick={scanEmails} disabled={isScanning} className="min-h-[44px] flex-1 sm:flex-initial">
+                        {isScanning ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Scanning...</> : <><RefreshCw className="h-4 w-4 mr-2" /> Scan Inbox</>}
+                      </Button>
+                      <Button variant="outline" onClick={disconnectGmail} className="min-h-[44px]">
+                        <Unlink className="h-4 w-4 mr-1" /> Disconnect
+                      </Button>
+                    </>
+                  ) : (
+                    <Button onClick={connectGmail} className="min-h-[44px] w-full sm:w-auto">
+                      <Link2 className="h-4 w-4 mr-2" /> Connect Gmail
+                    </Button>
+                  )}
                 </div>
               </div>
-            ))}
-          </CardContent>
-        </Card>
-      )}
+            </CardContent>
+          </Card>
 
-      {/* Email Results */}
-      {isConnected && emails.length > 0 && (
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-foreground">Found Bills ({emails.length})</h2>
-          </div>
-          {emails.map(email => (
-            <Card key={email.message_id} className="shadow-sm border-0">
-              <CardContent className="pt-4 pb-4">
-                <div className="flex flex-col gap-3">
-                  <div className="flex items-start gap-3">
-                    <FileText className="h-5 w-5 text-primary shrink-0 mt-0.5" />
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-sm text-foreground truncate">{email.subject || 'No subject'}</p>
-                      <p className="text-xs text-muted-foreground truncate">From: {email.from}</p>
-                      <p className="text-xs text-muted-foreground">{email.date ? new Date(email.date).toLocaleDateString() : ''}</p>
+          {/* How It Works */}
+          {!isConnected && (
+            <Card className="shadow-md border-0 bg-primary/5">
+              <CardHeader>
+                <CardTitle className="text-base">How It Works</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {[
+                  { step: '1', title: 'Connect', desc: 'Securely link your Gmail account with read-only access' },
+                  { step: '2', title: 'Scan', desc: 'We search for emails with invoices, receipts, and bills' },
+                  { step: '3', title: 'Extract', desc: 'AI reads the attachments and extracts expense details' },
+                  { step: '4', title: 'Import', desc: 'Review, edit, and import as expenses with one click' },
+                ].map(item => (
+                  <div key={item.step} className="flex items-start gap-3">
+                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold">
+                      {item.step}
+                    </div>
+                    <div>
+                      <p className="font-medium text-sm text-foreground">{item.title}</p>
+                      <p className="text-xs text-muted-foreground">{item.desc}</p>
                     </div>
                   </div>
-                  <div className="flex flex-wrap gap-2">
-                    {email.attachments.map(att => {
-                      const key = `${email.message_id}-${att.id}`;
-                      const isProcessing = processingId === key;
-                      return (
-                        <Button
-                          key={att.id}
-                          variant="outline"
-                          size="sm"
-                          className="min-h-[40px] text-xs"
-                          disabled={!!processingId}
-                          onClick={() => processAttachment(email, att)}
-                        >
-                          {isProcessing ? (
-                            <><Loader2 className="h-3 w-3 mr-1.5 animate-spin" /> Processing...</>
-                          ) : (
-                            <><ScanLine className="h-3 w-3 mr-1.5" /> {att.filename} <ArrowRight className="h-3 w-3 ml-1" /></>
-                          )}
-                        </Button>
-                      );
-                    })}
-                  </div>
-                </div>
+                ))}
               </CardContent>
             </Card>
-          ))}
-        </div>
-      )}
+          )}
 
-      {isConnected && !isScanning && emails.length === 0 && (
-        <Card className="shadow-md border-0">
-          <CardContent className="py-12 text-center">
-            <Mail className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-            <h3 className="font-semibold text-foreground mb-1">No bills found yet</h3>
-            <p className="text-sm text-muted-foreground mb-4">Click "Scan Inbox" to search for bills and receipts in your email.</p>
-            <Button onClick={scanEmails} disabled={isScanning}>
-              <RefreshCw className="h-4 w-4 mr-2" /> Scan Inbox
-            </Button>
-          </CardContent>
-        </Card>
-      )}
+          {/* Email Results */}
+          {isConnected && emails.length > 0 && (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-semibold text-foreground">Found Bills ({emails.length})</h2>
+              </div>
+              {emails.map(email => (
+                <Card key={email.message_id} className="shadow-sm border-0">
+                  <CardContent className="pt-4 pb-4">
+                    <div className="flex flex-col gap-3">
+                      <div className="flex items-start gap-3">
+                        <FileText className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-sm text-foreground truncate">{email.subject || 'No subject'}</p>
+                          <p className="text-xs text-muted-foreground truncate">From: {email.from}</p>
+                          <p className="text-xs text-muted-foreground">{email.date ? new Date(email.date).toLocaleDateString() : ''}</p>
+                        </div>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {email.attachments.map(att => {
+                          const key = `${email.message_id}-${att.id}`;
+                          const isProcessing = processingId === key;
+                          return (
+                            <Button
+                              key={att.id}
+                              variant="outline"
+                              size="sm"
+                              className="min-h-[40px] text-xs"
+                              disabled={!!processingId}
+                              onClick={() => processAttachment(email, att)}
+                            >
+                              {isProcessing ? (
+                                <><Loader2 className="h-3 w-3 mr-1.5 animate-spin" /> Processing...</>
+                              ) : (
+                                <><ScanLine className="h-3 w-3 mr-1.5" /> {att.filename} <ArrowRight className="h-3 w-3 ml-1" /></>
+                              )}
+                            </Button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
 
-      {/* Import Dialog */}
+          {isConnected && !isScanning && emails.length === 0 && (
+            <Card className="shadow-md border-0">
+              <CardContent className="py-12 text-center">
+                <Mail className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+                <h3 className="font-semibold text-foreground mb-1">No bills found yet</h3>
+                <p className="text-sm text-muted-foreground mb-4">Click "Scan Inbox" to search for bills and receipts in your email.</p>
+                <Button onClick={scanEmails} disabled={isScanning}>
+                  <RefreshCw className="h-4 w-4 mr-2" /> Scan Inbox
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+
+        {/* UPI SMS Tab */}
+        <TabsContent value="upi" className="space-y-6">
+          <Card className="shadow-md border-0">
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <Smartphone className="h-5 w-5 text-primary" />
+                Paste UPI SMS
+              </CardTitle>
+              <CardDescription>
+                Copy UPI payment confirmation SMS from your phone and paste below. You can paste multiple messages at once.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <Textarea
+                placeholder={`Example:\nRs.500.00 debited from A/c XX1234 to SWIGGY on 01-04-25. UPI Ref: 510123456789. If not done by you, call 18001234567.\n\nYou can paste multiple SMS messages here...`}
+                value={smsText}
+                onChange={e => setSmsText(e.target.value)}
+                rows={6}
+                className="resize-none text-sm"
+              />
+              <Button
+                onClick={parseUpiSms}
+                disabled={isParsing || !smsText.trim()}
+                className="w-full min-h-[44px]"
+              >
+                {isParsing ? (
+                  <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Parsing SMS...</>
+                ) : (
+                  <><Send className="h-4 w-4 mr-2" /> Parse UPI SMS</>
+                )}
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* How It Works for UPI */}
+          {upiTransactions.length === 0 && !isParsing && (
+            <Card className="shadow-md border-0 bg-primary/5">
+              <CardHeader>
+                <CardTitle className="text-base">How It Works</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {[
+                  { step: '1', title: 'Copy SMS', desc: 'Open your SMS app and copy UPI payment confirmation messages' },
+                  { step: '2', title: 'Paste Here', desc: 'Paste one or more SMS messages in the text box above' },
+                  { step: '3', title: 'AI Parses', desc: 'AI extracts merchant, amount, date, UPI ID and more' },
+                  { step: '4', title: 'Save as Bill', desc: 'Review and save each transaction as an expense' },
+                ].map(item => (
+                  <div key={item.step} className="flex items-start gap-3">
+                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold">
+                      {item.step}
+                    </div>
+                    <div>
+                      <p className="font-medium text-sm text-foreground">{item.title}</p>
+                      <p className="text-xs text-muted-foreground">{item.desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Parsed UPI Transactions */}
+          {upiTransactions.length > 0 && (
+            <div className="space-y-3">
+              <h2 className="text-lg font-semibold text-foreground">
+                Parsed Transactions ({upiTransactions.length})
+              </h2>
+              {upiTransactions.map((txn, idx) => (
+                <Card key={idx} className="shadow-sm border-0">
+                  <CardContent className="pt-4 pb-4">
+                    <div className="flex flex-col gap-3">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-start gap-3 flex-1 min-w-0">
+                          <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${
+                            txn.payment_status === 'success' ? 'bg-green-500/10 text-green-500' :
+                            txn.payment_status === 'failed' ? 'bg-red-500/10 text-red-500' :
+                            'bg-yellow-500/10 text-yellow-500'
+                          }`}>
+                            <IndianRupee className="h-5 w-5" />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="font-semibold text-sm text-foreground truncate">{txn.merchant_name}</p>
+                            <p className="text-xs text-muted-foreground">{txn.description}</p>
+                          </div>
+                        </div>
+                        <div className="text-right shrink-0">
+                          <p className="font-bold text-base tabular-nums text-foreground">
+                            ₹{txn.amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                          </p>
+                          <Badge variant={txn.payment_status === 'success' ? 'default' : 'destructive'} className="text-[10px] mt-1">
+                            {txn.payment_status}
+                          </Badge>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground pl-[52px]">
+                        <span className="flex items-center gap-1">
+                          <Clock className="h-3 w-3" /> {txn.date}
+                        </span>
+                        {txn.upi_id && (
+                          <span className="flex items-center gap-1">
+                            <CreditCard className="h-3 w-3" /> {txn.upi_id}
+                          </span>
+                        )}
+                        {txn.bank_name && <span>{txn.bank_name}</span>}
+                        {txn.transaction_id && <span>Ref: {txn.transaction_id}</span>}
+                      </div>
+
+                      {txn.payment_status === 'success' && (
+                        <div className="pl-[52px]">
+                          <Button
+                            size="sm"
+                            className="min-h-[40px]"
+                            disabled={savingUpiIdx === idx}
+                            onClick={() => saveUpiAsExpense(txn, idx)}
+                          >
+                            {savingUpiIdx === idx ? (
+                              <><Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> Saving...</>
+                            ) : (
+                              <><Download className="h-3.5 w-3.5 mr-1.5" /> Save as Expense</>
+                            )}
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </TabsContent>
+      </Tabs>
+
+      {/* Import Dialog (Gmail) */}
       <Dialog open={showImportDialog} onOpenChange={setShowImportDialog}>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
@@ -411,7 +626,6 @@ export default function EmailBills() {
             </DialogTitle>
           </DialogHeader>
 
-          {/* Extracted summary */}
           {extractedData && (
             <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-2">
               <p className="text-xs font-medium text-muted-foreground">AI Extracted Fields</p>
@@ -438,7 +652,6 @@ export default function EmailBills() {
             </div>
           )}
 
-          {/* Editable form */}
           <div className="space-y-4">
             <div className="space-y-1.5">
               <Label className="text-sm">Title</Label>
