@@ -181,8 +181,10 @@ export default function NewExpense() {
 
     try {
       const base64 = await fileToBase64(file);
+      if (!base64) throw new Error('Could not read file');
+      const fileType = file.type || (file.name?.toLowerCase().endsWith('.pdf') ? 'application/pdf' : 'image/jpeg');
       const { data, error } = await supabase.functions.invoke('extract-receipt', {
-        body: { file_base64: base64, file_type: file.type },
+        body: { file_base64: base64, file_type: fileType },
       });
 
       if (error) {
