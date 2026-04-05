@@ -8,7 +8,7 @@ const tabs = [
   { label: 'Home', icon: Home, path: '/' },
   { label: 'Insights', icon: BarChart3, path: '/analytics' },
   { label: 'add', icon: Plus, path: '' },
-  { label: 'All Bills', icon: Receipt, path: '/expenses' },
+  { label: 'All Bills', icon: IndianRupee, path: '/expenses' },
   { label: 'Inbox', icon: Inbox, path: '/email-bills' },
 ];
 
