@@ -9,7 +9,7 @@ const tabs = [
   { label: 'Insights', icon: BarChart3, path: '/analytics' },
   { label: 'add', icon: Plus, path: '' },
   { label: 'All Bills', icon: IndianRupee, path: '/expenses' },
-  { label: 'Inbox', icon: Inbox, path: '/email-bills' },
+  { label: 'Import', icon: Inbox, path: '/email-bills' },
 ];
 
 const addActions = [
