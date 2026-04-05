@@ -421,26 +421,33 @@ export default function NewExpense() {
                 <Card className="border-0 bg-card/80 backdrop-blur overflow-hidden">
                   <CardContent className="p-2">
                     <div className="rounded-lg overflow-hidden bg-muted/30 flex items-center justify-center min-h-[300px]">
-                      {receiptPreviewUrl && receiptFile.type === 'application/pdf' ? (
+                      {receiptPreviewUrl && (receiptFile?.type === 'application/pdf' || receiptPreviewUrl.includes('.pdf')) ? (
                         <iframe src={receiptPreviewUrl} className="w-full h-[60vh] rounded" title="Bill PDF" />
                       ) : receiptPreviewUrl ? (
                         <img src={receiptPreviewUrl} alt="Bill" className="max-w-full max-h-[60vh] object-contain" />
-                      ) : null}
+                      ) : (
+                        <div className="flex flex-col items-center gap-2 py-12 text-muted-foreground">
+                          <FileText className="h-10 w-10 opacity-40" />
+                          <p className="text-sm">No original bill attached</p>
+                        </div>
+                      )}
                     </div>
-                    <div className="flex items-center gap-2 mt-3 px-2 pb-2">
-                      <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
-                      <span className="text-xs text-muted-foreground truncate flex-1">{receiptFile.name}</span>
-                      <span className="text-xs text-muted-foreground">{(receiptFile.size / 1024).toFixed(0)} KB</span>
-                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => {
-                        setReceiptFile(null);
-                        if (receiptPreviewUrl) URL.revokeObjectURL(receiptPreviewUrl);
-                        setReceiptPreviewUrl(null);
-                        setExtractionData(null);
-                        setEditLineItems([]);
-                      }}>
-                        <X className="h-3.5 w-3.5" />
-                      </Button>
-                    </div>
+                    {receiptFile && (
+                      <div className="flex items-center gap-2 mt-3 px-2 pb-2">
+                        <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
+                        <span className="text-xs text-muted-foreground truncate flex-1">{receiptFile.name}</span>
+                        <span className="text-xs text-muted-foreground">{(receiptFile.size / 1024).toFixed(0)} KB</span>
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => {
+                          setReceiptFile(null);
+                          if (receiptPreviewUrl) URL.revokeObjectURL(receiptPreviewUrl);
+                          setReceiptPreviewUrl(null);
+                          setExtractionData(null);
+                          setEditLineItems([]);
+                        }}>
+                          <X className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               </TabsContent>
