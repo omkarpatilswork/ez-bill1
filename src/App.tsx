@@ -11,6 +11,8 @@ import Dashboard from "./pages/Dashboard";
 import NewExpense from "./pages/expenses/NewExpense";
 import MyExpenses from "./pages/expenses/MyExpenses";
 import ExpenseDetail from "./pages/expenses/ExpenseDetail";
+import MerchantSupport from "./pages/expenses/MerchantSupport";
+import SplitBill from "./pages/expenses/SplitBill";
 import Analytics from "./pages/expenses/Analytics";
 import AskAI from "./pages/AskAI";
 import EmailBills from "./pages/expenses/EmailBills";
