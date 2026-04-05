@@ -150,6 +150,7 @@ export default function NewExpense() {
       }
       setActiveTab('ebill');
       setIsEditing(true);
+    })();
   }, [editId, user]);
 
   useEffect(() => {
