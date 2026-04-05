@@ -1,6 +1,7 @@
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from './AppSidebar';
 import { BottomNav } from './BottomNav';
+import PageTransition from './PageTransition';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -16,7 +17,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             </div>
           </header>
           <main className="flex-1 p-4 md:p-6 overflow-auto pb-24 md:pb-6">
-            {children}
+            <PageTransition>{children}</PageTransition>
           </main>
         </div>
         <BottomNav />
