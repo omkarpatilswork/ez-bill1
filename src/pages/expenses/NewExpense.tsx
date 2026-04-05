@@ -49,6 +49,34 @@ const CATEGORIES = [
   'Office Supplies', 'Software', 'Medical', 'Entertainment', 'Education', 'Other'
 ];
 
+const LINE_ITEMS_MARKER = '::ITEMS::';
+
+function parseStoredLineItems(desc: string | null | undefined): LineItem[] {
+  if (!desc) return [];
+  const idx = desc.indexOf(LINE_ITEMS_MARKER);
+  if (idx < 0) return [];
+  try {
+    const jsonStr = desc.slice(idx + LINE_ITEMS_MARKER.length);
+    const endIdx = jsonStr.indexOf('::END_ITEMS::');
+    return JSON.parse(endIdx >= 0 ? jsonStr.slice(0, endIdx) : jsonStr);
+  } catch { return []; }
+}
+
+function cleanDescription(desc: string | null | undefined): string {
+  if (!desc) return '';
+  const idx = desc.indexOf(LINE_ITEMS_MARKER);
+  let clean = idx >= 0 ? desc.slice(0, idx) : desc;
+  // Remove structured prefixes
+  clean = clean.replace(/Invoice:\s*[^|]+\|?\s*/g, '').replace(/Payment:\s*[^|]+\|?\s*/g, '').replace(/\d+ item\(s\)\s*\|?\s*/g, '');
+  return clean.trim();
+}
+
+function parseFieldFromDesc(desc: string | null | undefined, key: string): string {
+  if (!desc) return '';
+  const match = desc.match(new RegExp(`${key}:\\s*([^|]+)`));
+  return match ? match[1].trim() : '';
+}
+
 export default function NewExpense() {
   const { user } = useAuth();
   const navigate = useNavigate();
