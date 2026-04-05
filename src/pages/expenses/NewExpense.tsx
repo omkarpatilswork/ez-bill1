@@ -215,6 +215,12 @@ export default function NewExpense() {
   };
 
   const val = (v: any) => v && v !== 'Not Found' ? v : null;
+  const recalcTotal = (items: LineItem[]) => {
+    const subtotal = items.reduce((s, i) => s + (i.total_price || 0), 0);
+    const tax = Number(form.tax_amount) || 0;
+    const discount = Number(form.discount) || 0;
+    setForm(f => ({ ...f, subtotal: String(subtotal), amount: String(subtotal + tax - discount) }));
+  };
   const isValid = (form.merchant.trim() || form.title.trim()) && form.amount && parseFloat(form.amount) > 0;
 
   // ─── UPLOAD PAGE (mode=upload or mode=scan) ───
