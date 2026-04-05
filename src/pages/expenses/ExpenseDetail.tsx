@@ -437,32 +437,6 @@ export default function ExpenseDetail() {
         </Button>
       </div>
 
-      {/* Support Info Card */}
-      {supportInfo && (
-        <Card className="border-0 bg-card/80 backdrop-blur">
-          <CardContent className="pt-4 pb-4 space-y-2">
-            <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium mb-2">
-              Support & Returns — {expense.merchant}
-            </p>
-            {supportInfo.phone && (
-              <a href={`tel:${supportInfo.phone}`} className="flex items-center gap-2 text-sm text-primary hover:underline">
-                <Headphones className="h-4 w-4" /> {supportInfo.phone}
-              </a>
-            )}
-            {supportInfo.email && (
-              <a href={`mailto:${supportInfo.email}`} className="flex items-center gap-2 text-sm text-primary hover:underline">
-                <FileText className="h-4 w-4" /> {supportInfo.email}
-              </a>
-            )}
-            {supportInfo.website && (
-              <a href={supportInfo.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-primary hover:underline">
-                <ExternalLink className="h-4 w-4" /> Visit Support Page
-              </a>
-            )}
-          </CardContent>
-        </Card>
-      )}
-
       {/* Delete — prominent at bottom */}
       <Button variant="destructive" className="w-full min-h-[48px] text-sm" onClick={handleDelete}>
         <Trash2 className="h-4 w-4 mr-2" /> Delete Bill
