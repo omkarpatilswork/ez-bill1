@@ -74,6 +74,11 @@ Rules:
 - Normalize date to YYYY-MM-DD HH:MM:SS when possible.
 - Return ONLY the JSON object. No markdown, no explanation.`;
 
+    const isPdf = mimeType === "application/pdf";
+
+    // Use OpenAI model for PDFs since Gemini doesn't handle PDFs via OpenAI-compat data URI
+    const model = isPdf ? "openai/gpt-5-mini" : "google/gemini-2.5-flash";
+
     const userContent: any[] = [
       {
         type: "image_url",
@@ -94,7 +99,7 @@ Rules:
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
+        model,
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userContent },
