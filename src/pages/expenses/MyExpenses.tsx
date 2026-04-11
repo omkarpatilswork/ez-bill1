@@ -6,8 +6,7 @@ import { Button } from '@/components/ui/button';
 import {
   Search, Receipt, Utensils, Fuel, Car, ParkingCircle, ShoppingBag, Zap,
   MoreHorizontal, Repeat, Trash2, X, CheckSquare, Loader2, AlertCircle,
-  ArrowUpDown, Mail, Camera, Upload, PenLine, Hotel, Plane, Heart,
-  GraduationCap, Gamepad2, Briefcase, Pill
+  ArrowUpDown, Hotel, Plane, GraduationCap, Gamepad2, Briefcase, Pill
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
