@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { isNativeApp, isAndroid, scanUpiSmsFromDevice } from '@/lib/sms-reader';
+import { smartCategoryFromMerchant, isSubscriptionMerchant, MERCHANT_CATEGORY_MAP as _MCM, SUBSCRIPTION_MERCHANTS as _SM } from '@/lib/smart-category';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
