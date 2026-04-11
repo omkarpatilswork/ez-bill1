@@ -535,6 +535,29 @@ export default function NewExpense() {
           </Card>
         )}
 
+        {/* Duplicate Warning Banner */}
+        {duplicateWarning && !editId && (
+          <Card className="border border-yellow-500/40 bg-yellow-500/10 backdrop-blur">
+            <CardContent className="py-3 px-4 flex items-start gap-3">
+              <AlertTriangle className="h-5 w-5 text-yellow-500 shrink-0 mt-0.5" />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-yellow-400">Possible Duplicate</p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  A similar bill from <span className="text-foreground font-medium">{duplicateWarning.merchant}</span> for ₹{Number(duplicateWarning.amount).toLocaleString('en-IN')} already exists.
+                </p>
+                <div className="flex gap-2 mt-2">
+                  <Button variant="outline" size="sm" className="h-7 text-xs border-yellow-500/30" asChild>
+                    <Link to={`/expenses/${duplicateWarning.id}`}>View Existing</Link>
+                  </Button>
+                  <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => setDuplicateWarning(null)}>
+                    Ignore & Continue
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Extraction Complete or Edit Mode — Tabs */}
         {((receiptFile && !isExtracting) || editId) && (
           <>
