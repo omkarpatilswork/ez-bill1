@@ -19,7 +19,6 @@ const STATUS_FLOW: { status: ExpenseStatus; label: string; icon: typeof Clock }[
   { status: 'submitted', label: 'Submitted', icon: Clock },
   { status: 'manager_approved', label: 'Manager', icon: CheckCircle },
   { status: 'approved', label: 'Approved', icon: CheckCircle },
-  { status: 'reimbursed', label: 'Reimbursed', icon: DollarSign },
 ];
 
 function getStatusStep(status: ExpenseStatus): number {

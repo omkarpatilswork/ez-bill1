@@ -660,7 +660,7 @@ export default function NewExpense() {
                     <Send className="h-4 w-4 mr-2" />
                     {isSubmitting ? 'Submitting...' : 'Confirm & Submit Bill'}
                   </Button>
-                  <div className="grid grid-cols-3 gap-2">
+                  <div className="grid grid-cols-2 gap-2">
                     <Button variant="outline" className="min-h-[44px] text-xs" disabled={isSubmitting || !isValid}
                       onClick={() => handleSubmit(true)}>
                       <Save className="h-3.5 w-3.5 mr-1" /> Draft
@@ -668,10 +668,6 @@ export default function NewExpense() {
                     <Button variant="outline" className="min-h-[44px] text-xs"
                       onClick={() => toast({ title: 'Coming soon', description: 'Split bill feature is under development.' })}>
                       <Users className="h-3.5 w-3.5 mr-1" /> Split
-                    </Button>
-                    <Button variant="outline" className="min-h-[44px] text-xs"
-                      onClick={() => toast({ title: 'Coming soon', description: 'Reimburse feature is under development.' })}>
-                      <ShieldCheck className="h-3.5 w-3.5 mr-1" /> Reimburse
                     </Button>
                   </div>
                 </div>
