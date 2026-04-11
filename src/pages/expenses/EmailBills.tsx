@@ -721,10 +721,10 @@ export default function EmailBills() {
           {showPreviewScreen && (
             <div className="space-y-4">
               <div className="flex items-center justify-between flex-wrap gap-2">
-                <div>
+              <div>
                   <h2 className="text-lg font-semibold text-foreground">Preview Extracted Bills</h2>
                   <p className="text-xs text-muted-foreground">
-                    {selectedPreviewCount} selected for import
+                    {selectedPreviewCount} selected · Total: ₹{selectedTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                   </p>
                 </div>
                 <div className="flex gap-2">
@@ -807,16 +807,11 @@ export default function EmailBills() {
               {selectedPreviewCount > 0 && (
                 <div className="sticky bottom-20 md:bottom-4 z-10">
                   <Button
-                    onClick={bulkSaveBills}
-                    disabled={isBulkImporting}
+                    onClick={() => setShowConfirmDialog(true)}
                     className="w-full min-h-[48px] shadow-lg"
                     size="lg"
                   >
-                    {isBulkImporting ? (
-                      <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Importing...</>
-                    ) : (
-                      <><Download className="h-4 w-4 mr-2" /> Save All ({selectedPreviewCount} bills)</>
-                    )}
+                    <CheckCircle2 className="h-4 w-4 mr-2" /> Confirm & Save ({selectedPreviewCount} bills · ₹{selectedTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })})
                   </Button>
                 </div>
               )}
