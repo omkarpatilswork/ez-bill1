@@ -3,10 +3,14 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Search, Receipt, Utensils, Fuel, Car, ParkingCircle, ShoppingBag, Zap, MoreHorizontal, RefreshCw, Repeat } from 'lucide-react';
+import { Search, Receipt, Utensils, Fuel, Car, ParkingCircle, ShoppingBag, Zap, MoreHorizontal, Repeat, Trash2, X, CheckSquare } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
+import { Checkbox } from '@/components/ui/checkbox';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import type { Expense } from '@/lib/types';
 
 const SUBSCRIPTION_PATTERNS = /netflix|hotstar|spotify|prime video|youtube premium|apple music|zee5|sony liv|disney\+|amazon prime|chatgpt|notion|figma|canva|jio|airtel|vi|bsnl|tata play|dish tv|act fibernet|credit card|hdfc card|icici card|sbi card|axis card|kotak card|amex|citi card|insurance|lic|term plan|\[subscription\]/i;
@@ -86,6 +90,12 @@ export default function MyExpenses() {
   const [categoryFilter, setCategoryFilter] = useState('all');
   const { toast } = useToast();
 
+  // Multi-select state
+  const [selectMode, setSelectMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
   const fetchExpenses = () => {
     if (!user) return;
     setLoading(true);
@@ -107,14 +117,80 @@ export default function MyExpenses() {
 
   const totalFiltered = filteredExpenses.reduce((s, e) => s + Number(e.amount), 0);
 
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const selectAll = () => {
+    if (selectedIds.size === filteredExpenses.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(filteredExpenses.map(e => e.id)));
+    }
+  };
+
+  const exitSelectMode = () => {
+    setSelectMode(false);
+    setSelectedIds(new Set());
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0) return;
+    setDeleting(true);
+    const ids = Array.from(selectedIds);
+    const { error } = await supabase.from('expenses').delete().in('id', ids);
+    setDeleting(false);
+    setShowDeleteConfirm(false);
+    if (error) {
+      toast({ title: 'Delete failed', description: error.message, variant: 'destructive' });
+    } else {
+      toast({ title: `Deleted ${ids.length} bill${ids.length > 1 ? 's' : ''}` });
+      setExpenses(prev => prev.filter(e => !selectedIds.has(e.id)));
+      exitSelectMode();
+    }
+  };
+
   return (
     <div className="space-y-4 pb-20">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">All Bills</h1>
-        <p className="text-sm text-muted-foreground mt-0.5">
-          {filteredExpenses.length} bill{filteredExpenses.length !== 1 ? 's' : ''} · ₹{totalFiltered.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} total
-        </p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">All Bills</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            {filteredExpenses.length} bill{filteredExpenses.length !== 1 ? 's' : ''} · ₹{totalFiltered.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} total
+          </p>
+        </div>
+        {!selectMode ? (
+          <Button variant="ghost" size="sm" onClick={() => setSelectMode(true)} className="text-muted-foreground">
+            <CheckSquare className="h-4 w-4 mr-1.5" /> Select
+          </Button>
+        ) : (
+          <Button variant="ghost" size="sm" onClick={exitSelectMode} className="text-muted-foreground">
+            <X className="h-4 w-4 mr-1.5" /> Cancel
+          </Button>
+        )}
       </div>
+
+      {selectMode && (
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={selectAll} className="text-xs">
+            {selectedIds.size === filteredExpenses.length ? 'Deselect All' : 'Select All'}
+          </Button>
+          <Button
+            variant="destructive"
+            size="sm"
+            disabled={selectedIds.size === 0}
+            onClick={() => setShowDeleteConfirm(true)}
+            className="text-xs"
+          >
+            <Trash2 className="h-3.5 w-3.5 mr-1" />
+            Delete ({selectedIds.size})
+          </Button>
+        </div>
+      )}
 
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -162,45 +238,91 @@ export default function MyExpenses() {
             const catLabel = getCategoryLabel(exp);
             const CategoryIcon = getCategoryIcon(catLabel);
             const isSub = isSubscription(exp);
-            return (
+            const isSelected = selectedIds.has(exp.id);
+
+            const cardContent = (
+              <div className="flex items-center gap-3">
+                {selectMode && (
+                  <Checkbox
+                    checked={isSelected}
+                    onCheckedChange={() => toggleSelect(exp.id)}
+                    className="shrink-0"
+                  />
+                )}
+                <div className={`h-11 w-11 rounded-xl flex items-center justify-center shrink-0 ${isSub ? 'bg-purple-500/10' : 'bg-primary/10'}`}>
+                  <CategoryIcon className={`h-5 w-5 ${isSub ? 'text-purple-500' : 'text-primary'}`} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-sm text-foreground truncate">
+                    {exp.merchant || exp.title}
+                  </p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">
+                    {catLabel}
+                    {isSub && <span className="ml-1 text-purple-400">· Recurring</span>}
+                    {exp.description && /\d+\s*item/i.test(exp.description) && (
+                      <> · {exp.description.match(/(\d+\s*item[s]?)/i)?.[1]}</>
+                    )}
+                  </p>
+                  <p className="text-[11px] text-muted-foreground">
+                    {exp.cost_center ? exp.cost_center : 'UPI'}
+                  </p>
+                </div>
+                <div className="text-right shrink-0">
+                  <p className="font-bold text-sm text-foreground tabular-nums">
+                    ₹{Number(exp.amount).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">
+                    {new Date(exp.expense_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+                  </p>
+                </div>
+              </div>
+            );
+
+            return selectMode ? (
+              <div
+                key={exp.id}
+                onClick={() => toggleSelect(exp.id)}
+                className={`block rounded-xl border p-3.5 transition-colors cursor-pointer ${
+                  isSelected
+                    ? 'bg-destructive/5 border-destructive/30'
+                    : 'bg-card border-border/30 hover:bg-muted/20 active:bg-muted/40'
+                }`}
+              >
+                {cardContent}
+              </div>
+            ) : (
               <Link
                 key={exp.id}
                 to={`/expenses/${exp.id}`}
                 className="block rounded-xl bg-card border border-border/30 p-3.5 hover:bg-muted/20 active:bg-muted/40 transition-colors"
               >
-                <div className="flex items-center gap-3">
-                  <div className={`h-11 w-11 rounded-xl flex items-center justify-center shrink-0 ${isSub ? 'bg-purple-500/10' : 'bg-primary/10'}`}>
-                    <CategoryIcon className={`h-5 w-5 ${isSub ? 'text-purple-500' : 'text-primary'}`} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-sm text-foreground truncate">
-                      {exp.merchant || exp.title}
-                    </p>
-                    <p className="text-[11px] text-muted-foreground mt-0.5">
-                      {catLabel}
-                      {isSub && <span className="ml-1 text-purple-400">· Recurring</span>}
-                      {exp.description && /\d+\s*item/i.test(exp.description) && (
-                        <> · {exp.description.match(/(\d+\s*item[s]?)/i)?.[1]}</>
-                      )}
-                    </p>
-                    <p className="text-[11px] text-muted-foreground">
-                      {exp.cost_center ? exp.cost_center : 'UPI'}
-                    </p>
-                  </div>
-                  <div className="text-right shrink-0">
-                    <p className="font-bold text-sm text-foreground tabular-nums">
-                      ₹{Number(exp.amount).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                    </p>
-                    <p className="text-[11px] text-muted-foreground mt-0.5">
-                      {new Date(exp.expense_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
-                    </p>
-                  </div>
-                </div>
+                {cardContent}
               </Link>
             );
           })}
         </div>
       )}
+
+      <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <AlertDialogContent className="max-w-[340px] rounded-2xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete {selectedIds.size} bill{selectedIds.size > 1 ? 's' : ''}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. The selected bills will be permanently removed.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleBulkDelete}
+              disabled={deleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleting ? 'Deleting…' : 'Delete'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
