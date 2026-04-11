@@ -253,6 +253,8 @@ export default function EmailBills() {
             const amount = ext.amount;
             if (amount == null || amount === 0) { skipped++; continue; }
 
+            const val = (v: any) => v && v !== 'Not Found' ? v : '';
+
             const matchAiCategory = (name?: string) => {
               if (!name || name === 'Not Found') return null;
               return categories.find(c => c.name.toLowerCase() === name.toLowerCase())?.id || null;
@@ -260,9 +262,13 @@ export default function EmailBills() {
             const categoryId = matchAiCategory(ext.category)
               || smartCategoryMatch(ext.merchant_name || '', email.subject, categories);
 
-            const merchantName = ext.merchant_name && ext.merchant_name !== 'Not Found' ? ext.merchant_name : '';
-            const title = ext.bill_invoice_number && ext.bill_invoice_number !== 'Not Found'
-              ? `Invoice ${ext.bill_invoice_number}`
+            const merchantName = val(ext.merchant_name);
+            const invoiceNumber = val(ext.bill_invoice_number);
+            const paymentMethod = val(ext.payment_method);
+            const lineItems: Array<{ name: string; quantity: number; unit_price: number; total_price: number }> = ext.line_items || [];
+
+            const title = invoiceNumber
+              ? `Invoice ${invoiceNumber}`
               : merchantName ? `Expense at ${merchantName}` : email.subject || 'Email Bill';
 
             const expenseDate = ext.date_time && ext.date_time !== 'Not Found'
@@ -272,6 +278,20 @@ export default function EmailBills() {
               `${merchantName} ${email.subject}`.toLowerCase().includes(s)
             );
 
+            // Build description with structured data (same format as NewExpense)
+            const LINE_ITEMS_MARKER = '::ITEMS::';
+            const descParts: string[] = [];
+            if (invoiceNumber) descParts.push(`Invoice: ${invoiceNumber}`);
+            if (paymentMethod) descParts.push(`Payment: ${paymentMethod}`);
+            if (lineItems.length > 0) descParts.push(`${lineItems.length} item(s)`);
+            if (val(ext.tax_details)) descParts.push(`Tax: ${ext.tax_details}`);
+            descParts.push(`From email: ${email.subject}`);
+            if (isSubscription) descParts.push('[Subscription]');
+            let description = descParts.join(' | ');
+            if (lineItems.length > 0) {
+              description += `${LINE_ITEMS_MARKER}${JSON.stringify(lineItems)}::END_ITEMS::`;
+            }
+
             const { data: expense, error } = await supabase.from('expenses').insert({
               user_id: user.id,
               title,
@@ -279,19 +299,39 @@ export default function EmailBills() {
               amount,
               expense_date: expenseDate,
               category_id: categoryId,
-              description: `From email: ${email.subject}\nSender: ${email.from}${isSubscription ? '\n[Subscription]' : ''}`,
+              description,
               status: 'draft',
-              cost_center: isSubscription ? 'Subscription' : '',
+              cost_center: isSubscription ? 'Subscription' : paymentMethod,
             } as any).select().single();
 
             if (error) { skipped++; continue; }
+            const expenseId = (expense as any)?.id;
+
+            // Upload attachment to storage and create receipt record
+            try {
+              const binaryStr = atob(attData.data);
+              const bytes = new Uint8Array(binaryStr.length);
+              for (let i = 0; i < binaryStr.length; i++) bytes[i] = binaryStr.charCodeAt(i);
+              const fileBlob = new Blob([bytes], { type: att.mimeType });
+              const filePath = `${user.id}/${expenseId}/${att.filename}`;
+              const { error: uploadErr } = await supabase.storage.from('receipts').upload(filePath, fileBlob);
+              if (!uploadErr) {
+                await supabase.from('expense_receipts').insert({
+                  expense_id: expenseId,
+                  file_path: filePath,
+                  file_name: att.filename,
+                } as any);
+              }
+            } catch (uploadErr) {
+              console.error('Receipt upload failed:', uploadErr);
+            }
 
             await supabase.from('processed_emails').insert({
               user_id: user.id,
               gmail_message_id: email.message_id,
               subject: title,
               sender: merchantName || email.from,
-              expense_id: (expense as any)?.id,
+              expense_id: expenseId,
             } as any);
 
             saved++;
