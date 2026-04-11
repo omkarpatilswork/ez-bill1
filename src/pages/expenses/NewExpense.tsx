@@ -709,9 +709,20 @@ export default function NewExpense() {
             </div>
           </div>
 
-          <div className="grid gap-3 grid-cols-2">
+          <div className="grid gap-3 grid-cols-3">
             <div className="space-y-1">
-              <Label className="text-xs font-medium">Amount (₹) <span className="text-destructive">*</span></Label>
+              <Label className="text-xs font-medium">Currency</Label>
+              <Select value={form.currency} onValueChange={v => setForm(f => ({ ...f, currency: v }))}>
+                <SelectTrigger className="min-h-[44px] bg-secondary/30 border-border/30">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="max-h-60">
+                  {CURRENCIES.map(c => <SelectItem key={c.code} value={c.code}>{c.symbol} {c.code}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs font-medium">Amount <span className="text-destructive">*</span></Label>
               <Input className="min-h-[44px] bg-secondary/30 border-border/30" type="number" step="0.01" min="0" placeholder="0.00"
                 value={form.amount} onChange={e => setForm({ ...form, amount: e.target.value })} required />
             </div>
