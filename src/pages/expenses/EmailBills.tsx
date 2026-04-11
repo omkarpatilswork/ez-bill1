@@ -233,9 +233,7 @@ export default function EmailBills() {
             const expenseDate = ext.date_time && ext.date_time !== 'Not Found'
               ? ext.date_time.slice(0, 10) : new Date().toISOString().slice(0, 10);
 
-            const isSubscription = SUBSCRIPTION_MERCHANTS.some(s =>
-              `${merchantName} ${email.subject}`.toLowerCase().includes(s)
-            );
+            const isSubscription = isSubscriptionMerchant(`${merchantName} ${email.subject}`);
 
             // Build description with structured data (same format as NewExpense)
             const LINE_ITEMS_MARKER = '::ITEMS::';
