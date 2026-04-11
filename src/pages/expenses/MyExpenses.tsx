@@ -3,15 +3,24 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
-import { Search, Receipt, Utensils, Fuel, Car, ParkingCircle, ShoppingBag, Zap, MoreHorizontal, Repeat, Trash2, X, CheckSquare } from 'lucide-react';
+import { Search, Receipt, Utensils, Fuel, Car, ParkingCircle, ShoppingBag, Zap, MoreHorizontal, Repeat, Trash2, X, CheckSquare, Loader2, AlertCircle } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import type { Expense } from '@/lib/types';
+
+interface DuplicateGroup {
+  merchant: string;
+  amount: number;
+  expense_date: string;
+  ids: string[];
+}
 
 const SUBSCRIPTION_PATTERNS = /netflix|hotstar|spotify|prime video|youtube premium|apple music|zee5|sony liv|disney\+|amazon prime|chatgpt|notion|figma|canva|jio|airtel|vi|bsnl|tata play|dish tv|act fibernet|credit card|hdfc card|icici card|sbi card|axis card|kotak card|amex|citi card|insurance|lic|term plan|\[subscription\]/i;
 
@@ -96,6 +105,11 @@ export default function MyExpenses() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
+  // Duplicate detection state
+  const [duplicates, setDuplicates] = useState<DuplicateGroup[]>([]);
+  const [showDuplicateDialog, setShowDuplicateDialog] = useState(false);
+  const [isDeletingDuplicates, setIsDeletingDuplicates] = useState(false);
+
   const fetchExpenses = () => {
     if (!user) return;
     setLoading(true);
@@ -107,6 +121,53 @@ export default function MyExpenses() {
   };
 
   useEffect(() => { fetchExpenses(); }, [user]);
+
+  // Check for duplicates when navigated with ?checkDupes=1
+  useEffect(() => {
+    if (searchParams.get('checkDupes') === '1' && user) {
+      detectDuplicates();
+    }
+  }, [searchParams, user]);
+
+  const detectDuplicates = async () => {
+    if (!user) return;
+    const { data } = await supabase
+      .from('expenses')
+      .select('id, merchant, amount, expense_date')
+      .eq('user_id', user.id);
+    if (!data) return;
+    const groups = new Map<string, { merchant: string; amount: number; expense_date: string; ids: string[] }>();
+    for (const row of data as any[]) {
+      const key = `${(row.merchant || '').toLowerCase().trim()}|${row.amount}|${row.expense_date}`;
+      if (!groups.has(key)) {
+        groups.set(key, { merchant: row.merchant || 'Unknown', amount: row.amount, expense_date: row.expense_date, ids: [] });
+      }
+      groups.get(key)!.ids.push(row.id);
+    }
+    const dupes = Array.from(groups.values()).filter(g => g.ids.length > 1);
+    if (dupes.length > 0) {
+      setDuplicates(dupes);
+      setShowDuplicateDialog(true);
+    }
+  };
+
+  const deleteDuplicates = async () => {
+    setIsDeletingDuplicates(true);
+    let deleted = 0;
+    for (const group of duplicates) {
+      const toDelete = group.ids.slice(1);
+      for (const id of toDelete) {
+        await supabase.from('processed_emails').delete().eq('expense_id', id);
+        const { error } = await supabase.from('expenses').delete().eq('id', id);
+        if (!error) deleted++;
+      }
+    }
+    setIsDeletingDuplicates(false);
+    setShowDuplicateDialog(false);
+    setDuplicates([]);
+    toast({ title: 'Duplicates removed', description: `Deleted ${deleted} duplicate bill(s).` });
+    fetchExpenses();
+  };
 
   const filteredExpenses = expenses.filter(e => {
     if (!matchesCategory(e, categoryFilter)) return false;
@@ -142,6 +203,8 @@ export default function MyExpenses() {
     if (selectedIds.size === 0) return;
     setDeleting(true);
     const ids = Array.from(selectedIds);
+    // Also remove processed_emails so Gmail rescan can re-import these
+    await supabase.from('processed_emails').delete().in('expense_id', ids);
     const { error } = await supabase.from('expenses').delete().in('id', ids);
     setDeleting(false);
     setShowDeleteConfirm(false);
@@ -323,6 +386,61 @@ export default function MyExpenses() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={showDuplicateDialog} onOpenChange={setShowDuplicateDialog}>
+        <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertCircle className="h-5 w-5 text-yellow-500" />
+              Duplicate Bills Found
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              {duplicates.length} group(s) of duplicate bills were found. Would you like to remove the extras?
+            </p>
+            <div className="space-y-2 max-h-[40vh] overflow-y-auto">
+              {duplicates.map((group, idx) => (
+                <div key={idx} className="rounded-lg border border-border bg-muted/30 p-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-foreground">{group.merchant || 'Unknown'}</p>
+                      <p className="text-xs text-muted-foreground">
+                        ₹{group.amount} · {new Date(group.expense_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+                      </p>
+                    </div>
+                    <Badge variant="secondary" className="text-xs">
+                      {group.ids.length} copies
+                    </Badge>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="flex gap-2 pt-1">
+              <Button
+                onClick={deleteDuplicates}
+                disabled={isDeletingDuplicates}
+                variant="destructive"
+                className="flex-1 min-h-[44px]"
+              >
+                {isDeletingDuplicates ? (
+                  <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Removing...</>
+                ) : (
+                  <><Trash2 className="h-4 w-4 mr-2" /> Remove Duplicates</>
+                )}
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => setShowDuplicateDialog(false)}
+                disabled={isDeletingDuplicates}
+                className="min-h-[44px]"
+              >
+                Keep All
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

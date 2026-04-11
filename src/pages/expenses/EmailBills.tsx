@@ -46,12 +46,6 @@ interface UpiTransaction {
   description: string;
 }
 
-interface DuplicateGroup {
-  merchant: string;
-  amount: number;
-  expense_date: string;
-  ids: string[];
-}
 
 const MERCHANT_CATEGORY_MAP: Record<string, string> = {
   swiggy: 'Meals', zomato: 'Meals', dominos: 'Meals', "domino's": 'Meals', "mcdonald's": 'Meals',
@@ -120,9 +114,7 @@ export default function EmailBills() {
   const [importProgress, setImportProgress] = useState({ phase: '', current: 0, total: 0 });
   const [importResult, setImportResult] = useState<{ saved: number; skipped: number; total: number } | null>(null);
 
-  const [duplicates, setDuplicates] = useState<DuplicateGroup[]>([]);
-  const [showDuplicateDialog, setShowDuplicateDialog] = useState(false);
-  const [isDeletingDuplicates, setIsDeletingDuplicates] = useState(false);
+  // Duplicate detection removed — handled in All Bills page
 
   const [smsText, setSmsText] = useState('');
   const [isParsing, setIsParsing] = useState(false);
@@ -209,7 +201,7 @@ export default function EmailBills() {
     if (!user) return;
     setIsScanning(true);
     setImportResult(null);
-    setDuplicates([]);
+    // duplicates handled in All Bills page
 
     try {
       setImportProgress({ phase: 'Scanning inbox...', current: 0, total: 0 });
@@ -348,7 +340,8 @@ export default function EmailBills() {
       });
 
       if (saved > 0) {
-        await detectDuplicates();
+        // Navigate to All Bills with duplicate check
+        navigate('/expenses?checkDupes=1');
       }
     } catch (err: any) {
       toast({ title: 'Import failed', description: err.message, variant: 'destructive' });
@@ -358,46 +351,7 @@ export default function EmailBills() {
     }
   };
 
-  const detectDuplicates = async () => {
-    if (!user) return;
-    const { data } = await supabase
-      .from('expenses')
-      .select('id, merchant, amount, expense_date')
-      .eq('user_id', user.id);
-
-    if (!data) return;
-
-    const groups = new Map<string, { merchant: string; amount: number; expense_date: string; ids: string[] }>();
-    for (const row of data as any[]) {
-      const key = `${(row.merchant || '').toLowerCase().trim()}|${row.amount}|${row.expense_date}`;
-      if (!groups.has(key)) {
-        groups.set(key, { merchant: row.merchant || 'Unknown', amount: row.amount, expense_date: row.expense_date, ids: [] });
-      }
-      groups.get(key)!.ids.push(row.id);
-    }
-
-    const dupes = Array.from(groups.values()).filter(g => g.ids.length > 1);
-    if (dupes.length > 0) {
-      setDuplicates(dupes);
-      setShowDuplicateDialog(true);
-    }
-  };
-
-  const deleteDuplicates = async () => {
-    setIsDeletingDuplicates(true);
-    let deleted = 0;
-    for (const group of duplicates) {
-      const toDelete = group.ids.slice(1);
-      for (const id of toDelete) {
-        const { error } = await supabase.from('expenses').delete().eq('id', id);
-        if (!error) deleted++;
-      }
-    }
-    setIsDeletingDuplicates(false);
-    setShowDuplicateDialog(false);
-    setDuplicates([]);
-    toast({ title: 'Duplicates removed', description: `Deleted ${deleted} duplicate bill(s).` });
-  };
+  // Duplicate detection and deletion moved to MyExpenses (All Bills page)
 
   const parseUpiSms = async () => {
     if (!smsText.trim()) {
@@ -791,60 +745,6 @@ export default function EmailBills() {
         </TabsContent>}
       </Tabs>
 
-      <Dialog open={showDuplicateDialog} onOpenChange={setShowDuplicateDialog}>
-        <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <AlertCircle className="h-5 w-5 text-yellow-500" />
-              Duplicate Bills Found
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <p className="text-sm text-muted-foreground">
-              {duplicates.length} group(s) of duplicate bills were found. Would you like to remove the extras?
-            </p>
-            <div className="space-y-2 max-h-[40vh] overflow-y-auto">
-              {duplicates.map((group, idx) => (
-                <div key={idx} className="rounded-lg border border-border bg-muted/30 p-3">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-foreground">{group.merchant || 'Unknown'}</p>
-                      <p className="text-xs text-muted-foreground">
-                        ₹{group.amount} · {new Date(group.expense_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
-                      </p>
-                    </div>
-                    <Badge variant="secondary" className="text-xs">
-                      {group.ids.length} copies
-                    </Badge>
-                  </div>
-                </div>
-              ))}
-            </div>
-            <div className="flex gap-2 pt-1">
-              <Button
-                onClick={deleteDuplicates}
-                disabled={isDeletingDuplicates}
-                variant="destructive"
-                className="flex-1 min-h-[44px]"
-              >
-                {isDeletingDuplicates ? (
-                  <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Removing...</>
-                ) : (
-                  <><Trash2 className="h-4 w-4 mr-2" /> Remove Duplicates</>
-                )}
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => setShowDuplicateDialog(false)}
-                disabled={isDeletingDuplicates}
-                className="min-h-[44px]"
-              >
-                Keep All
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
