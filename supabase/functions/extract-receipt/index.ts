@@ -76,36 +76,21 @@ Rules:
 
     const isPdf = mimeType === "application/pdf";
 
-    // Use Gemini for images, GPT for PDFs (Gemini doesn't handle PDF via OpenAI-compat)
-    const model = isPdf ? "openai/gpt-5-mini" : "google/gemini-2.5-flash";
+    // Use Gemini for both images and PDFs — it supports inline PDF via image_url data URI
+    const model = "google/gemini-2.5-flash";
 
-    const userContent: any[] = isPdf
-      ? [
-          {
-            type: "file",
-            file: {
-              filename: "receipt.pdf",
-              content_type: mimeType,
-              data: file_base64,
-            },
-          },
-          {
-            type: "text",
-            text: "Extract ALL bill details including every line item, tax, payment method, and merchant info. Return only JSON.",
-          },
-        ]
-      : [
-          {
-            type: "image_url",
-            image_url: {
-              url: `data:${mimeType};base64,${file_base64}`,
-            },
-          },
-          {
-            type: "text",
-            text: "Extract ALL bill details including every line item, tax, payment method, and merchant info. Return only JSON.",
-          },
-        ];
+    const userContent: any[] = [
+      {
+        type: "image_url",
+        image_url: {
+          url: `data:${mimeType};base64,${file_base64}`,
+        },
+      },
+      {
+        type: "text",
+        text: "Extract ALL bill details including every line item, tax, payment method, and merchant info. Return only JSON.",
+      },
+    ];
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
