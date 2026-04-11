@@ -7,6 +7,28 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+// Subjects/senders to exclude — brokerage & bank statements
+const EXCLUDE_PATTERNS = [
+  // Brokers
+  /zerodha/i, /indmoney/i, /ind\s*money/i, /kotak\s*neo/i, /kotak\s*securities/i,
+  /groww/i, /upstox/i, /angel\s*one/i, /angel\s*broking/i, /motilal\s*oswal/i,
+  /icici\s*direct/i, /hdfc\s*securities/i, /sharekhan/i, /5paisa/i, /paytm\s*money/i,
+  /kite/i, /coin\s*by\s*zerodha/i, /smallcase/i, /dhan/i,
+  // Statement keywords
+  /statement\s*of\s*account/i, /account\s*statement/i, /bank\s*statement/i,
+  /portfolio\s*statement/i, /holding\s*statement/i, /demat\s*statement/i,
+  /contract\s*note/i, /weekly\s*report/i, /monthly\s*statement/i,
+  /transaction\s*statement/i, /ledger\s*statement/i, /p\s*&?\s*l\s*statement/i,
+  /profit\s*(and|&)\s*loss/i, /capital\s*gain/i, /tax\s*statement/i,
+  /annual\s*statement/i, /quarterly\s*statement/i,
+  /mutual\s*fund\s*statement/i, /cas\s*statement/i, /consolidated\s*account/i,
+];
+
+function isExcluded(subject: string, from: string): boolean {
+  const text = `${subject} ${from}`;
+  return EXCLUDE_PATTERNS.some(p => p.test(text));
+}
+
 async function refreshToken(supabase: any, userId: string, connection: any, clientId: string, clientSecret: string) {
   const res = await fetch("https://oauth2.googleapis.com/token", {
     method: "POST",
@@ -28,6 +50,10 @@ async function refreshToken(supabase: any, userId: string, connection: any, clie
   }).eq("user_id", userId);
 
   return data.access_token;
+}
+
+async function gmailFetch(url: string, accessToken: string) {
+  return fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
 }
 
 serve(async (req) => {
@@ -80,29 +106,28 @@ serve(async (req) => {
       accessToken = await refreshToken(supabase, user.id, connection, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET);
     }
 
-    const { max_results = 30, days = 30 } = await req.json().catch(() => ({}));
+    const { max_results = 50, days = 30 } = await req.json().catch(() => ({}));
 
-    const query = `(subject:(invoice OR receipt OR bill OR payment OR order OR confirmation OR statement OR purchase) OR from:(swiggy OR zomato OR amazon OR flipkart OR uber OR ola OR paytm OR phonepe OR gpay OR razorpay OR paypal OR netflix OR spotify)) newer_than:${days}d`;
-    const searchUrl = `https://gmail.googleapis.com/gmail/v1/users/me/messages?q=${encodeURIComponent(query)}&maxResults=${max_results}`;
+    // More focused query: bills & receipts only, exclude statements
+    const query = `has:attachment (subject:(invoice OR receipt OR bill OR payment OR "order confirmation" OR purchase) OR from:(swiggy OR zomato OR amazon OR flipkart OR uber OR ola OR paytm OR phonepe OR gpay OR razorpay OR paypal OR netflix OR spotify OR bigbasket OR myntra OR ajio OR bookmyshow OR makemytrip OR cleartrip OR dunzo OR blinkit OR zepto OR jiomart)) -subject:"statement of account" -subject:"account statement" -subject:"bank statement" -subject:"contract note" -subject:"portfolio" -subject:"holdings" -subject:"P&L" -subject:"weekly report" newer_than:${days}d`;
 
-    const searchRes = await fetch(searchUrl, {
-      headers: { Authorization: `Bearer ${accessToken}` },
-    });
+    // Fetch more results to compensate for filtering
+    const fetchMax = Math.min(max_results * 2, 100);
+    const searchUrl = `https://gmail.googleapis.com/gmail/v1/users/me/messages?q=${encodeURIComponent(query)}&maxResults=${fetchMax}`;
 
-    if (!searchRes.ok) {
-      if (searchRes.status === 401) {
-        accessToken = await refreshToken(supabase, user.id, connection, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET);
-        const retryRes = await fetch(searchUrl, { headers: { Authorization: `Bearer ${accessToken}` } });
-        if (!retryRes.ok) throw new Error("Gmail API error after refresh");
-        const retryData = await retryRes.json();
-        return await processMessages(retryData, accessToken, user.id, supabase);
-      }
+    let searchRes = await gmailFetch(searchUrl, accessToken);
+
+    if (!searchRes.ok && searchRes.status === 401) {
+      accessToken = await refreshToken(supabase, user.id, connection, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET);
+      searchRes = await gmailFetch(searchUrl, accessToken);
+      if (!searchRes.ok) throw new Error("Gmail API error after refresh");
+    } else if (!searchRes.ok) {
       const errText = await searchRes.text();
       throw new Error(`Gmail API error: ${searchRes.status} ${errText}`);
     }
 
     const searchData = await searchRes.json();
-    return await processMessages(searchData, accessToken, user.id, supabase);
+    return await processMessages(searchData, accessToken, user.id, supabase, max_results);
   } catch (e) {
     console.error("gmail-scan error:", e);
     return new Response(
@@ -112,10 +137,10 @@ serve(async (req) => {
   }
 });
 
-async function processMessages(searchData: any, accessToken: string, userId: string, supabase: any) {
+async function processMessages(searchData: any, accessToken: string, userId: string, supabase: any, maxResults: number) {
   const messages = searchData.messages || [];
   if (messages.length === 0) {
-    return new Response(JSON.stringify({ emails: [], already_imported: [], message: "No bill emails found" }), {
+    return new Response(JSON.stringify({ emails: [], message: "No bill emails found" }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
@@ -124,20 +149,21 @@ async function processMessages(searchData: any, accessToken: string, userId: str
   const messageIds = messages.map((m: any) => m.id);
   const { data: processed } = await supabase
     .from("processed_emails")
-    .select("gmail_message_id, subject, sender")
+    .select("gmail_message_id")
     .eq("user_id", userId)
     .in("gmail_message_id", messageIds);
 
-  const processedMap = new Map((processed || []).map((p: any) => [p.gmail_message_id, p]));
+  const processedSet = new Set((processed || []).map((p: any) => p.gmail_message_id));
 
-  const newEmails: any[] = [];
-  const alreadyImported: any[] = [];
+  const allEmails: any[] = [];
 
   for (const msg of messages) {
+    if (allEmails.length >= maxResults) break;
+
     try {
-      const msgRes = await fetch(
+      const msgRes = await gmailFetch(
         `https://gmail.googleapis.com/gmail/v1/users/me/messages/${msg.id}?format=full`,
-        { headers: { Authorization: `Bearer ${accessToken}` } }
+        accessToken
       );
       if (!msgRes.ok) continue;
 
@@ -149,12 +175,16 @@ async function processMessages(searchData: any, accessToken: string, userId: str
       const from = getHeader("From");
       const date = getHeader("Date");
 
+      // Exclude broker/bank statements
+      if (isExcluded(subject, from)) continue;
+
       const attachments: any[] = [];
       const findAttachments = (parts: any[]) => {
         for (const part of parts) {
           if (part.filename && part.body?.attachmentId) {
             const mime = part.mimeType || "";
-            if (mime.startsWith("image/") || mime === "application/pdf") {
+            // Only PDFs and images (likely receipts)
+            if (mime === "application/pdf" || mime.startsWith("image/")) {
               attachments.push({
                 id: part.body.attachmentId,
                 filename: part.filename,
@@ -170,7 +200,7 @@ async function processMessages(searchData: any, accessToken: string, userId: str
       if (msgData.payload?.parts) findAttachments(msgData.payload.parts);
       if (msgData.payload?.filename && msgData.payload?.body?.attachmentId) {
         const mime = msgData.payload.mimeType || "";
-        if (mime.startsWith("image/") || mime === "application/pdf") {
+        if (mime === "application/pdf" || mime.startsWith("image/")) {
           attachments.push({
             id: msgData.payload.body.attachmentId,
             filename: msgData.payload.filename,
@@ -182,23 +212,23 @@ async function processMessages(searchData: any, accessToken: string, userId: str
 
       if (attachments.length === 0) continue;
 
-      const emailObj = { message_id: msg.id, subject, from, date, attachments, has_body: true };
-
-      if (processedMap.has(msg.id)) {
-        alreadyImported.push(emailObj);
-      } else {
-        newEmails.push(emailObj);
-      }
+      allEmails.push({
+        message_id: msg.id,
+        subject,
+        from,
+        date,
+        attachments,
+        already_imported: processedSet.has(msg.id),
+      });
     } catch (err) {
       console.error("Error processing message:", msg.id, err);
     }
   }
 
   return new Response(JSON.stringify({
-    emails: newEmails,
-    already_imported: alreadyImported,
+    emails: allEmails,
     total_found: messages.length,
-    new_count: newEmails.length,
+    count: allEmails.length,
   }), {
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
