@@ -105,6 +105,11 @@ export default function MyExpenses() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
+  // Duplicate detection state
+  const [duplicates, setDuplicates] = useState<DuplicateGroup[]>([]);
+  const [showDuplicateDialog, setShowDuplicateDialog] = useState(false);
+  const [isDeletingDuplicates, setIsDeletingDuplicates] = useState(false);
+
   const fetchExpenses = () => {
     if (!user) return;
     setLoading(true);
@@ -116,6 +121,53 @@ export default function MyExpenses() {
   };
 
   useEffect(() => { fetchExpenses(); }, [user]);
+
+  // Check for duplicates when navigated with ?checkDupes=1
+  useEffect(() => {
+    if (searchParams.get('checkDupes') === '1' && user) {
+      detectDuplicates();
+    }
+  }, [searchParams, user]);
+
+  const detectDuplicates = async () => {
+    if (!user) return;
+    const { data } = await supabase
+      .from('expenses')
+      .select('id, merchant, amount, expense_date')
+      .eq('user_id', user.id);
+    if (!data) return;
+    const groups = new Map<string, { merchant: string; amount: number; expense_date: string; ids: string[] }>();
+    for (const row of data as any[]) {
+      const key = `${(row.merchant || '').toLowerCase().trim()}|${row.amount}|${row.expense_date}`;
+      if (!groups.has(key)) {
+        groups.set(key, { merchant: row.merchant || 'Unknown', amount: row.amount, expense_date: row.expense_date, ids: [] });
+      }
+      groups.get(key)!.ids.push(row.id);
+    }
+    const dupes = Array.from(groups.values()).filter(g => g.ids.length > 1);
+    if (dupes.length > 0) {
+      setDuplicates(dupes);
+      setShowDuplicateDialog(true);
+    }
+  };
+
+  const deleteDuplicates = async () => {
+    setIsDeletingDuplicates(true);
+    let deleted = 0;
+    for (const group of duplicates) {
+      const toDelete = group.ids.slice(1);
+      for (const id of toDelete) {
+        await supabase.from('processed_emails').delete().eq('expense_id', id);
+        const { error } = await supabase.from('expenses').delete().eq('id', id);
+        if (!error) deleted++;
+      }
+    }
+    setIsDeletingDuplicates(false);
+    setShowDuplicateDialog(false);
+    setDuplicates([]);
+    toast({ title: 'Duplicates removed', description: `Deleted ${deleted} duplicate bill(s).` });
+    fetchExpenses();
+  };
 
   const filteredExpenses = expenses.filter(e => {
     if (!matchesCategory(e, categoryFilter)) return false;
