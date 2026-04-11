@@ -74,18 +74,35 @@ Rules:
 - Normalize date to YYYY-MM-DD HH:MM:SS when possible.
 - Return ONLY the JSON object. No markdown, no explanation.`;
 
-    const userContent: any[] = [
-      {
-        type: "image_url",
-        image_url: {
-          url: `data:${mimeType};base64,${file_base64}`,
-        },
-      },
-      {
-        type: "text",
-        text: "Extract ALL bill details including every line item, tax, payment method, and merchant info. Return only JSON.",
-      },
-    ];
+    const isPdf = mimeType === "application/pdf";
+
+    const userContent: any[] = isPdf
+      ? [
+          {
+            type: "file",
+            file: {
+              filename: "receipt.pdf",
+              data: file_base64,
+              mime_type: "application/pdf",
+            },
+          },
+          {
+            type: "text",
+            text: "Extract ALL bill details including every line item, tax, payment method, and merchant info. Return only JSON.",
+          },
+        ]
+      : [
+          {
+            type: "image_url",
+            image_url: {
+              url: `data:${mimeType};base64,${file_base64}`,
+            },
+          },
+          {
+            type: "text",
+            text: "Extract ALL bill details including every line item, tax, payment method, and merchant info. Return only JSON.",
+          },
+        ];
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
