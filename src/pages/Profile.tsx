@@ -1,14 +1,20 @@
 import { useAuth } from '@/hooks/useAuth';
-import { User, Mail, Building2, ArrowLeft } from 'lucide-react';
+import { User, Mail, Building2, ArrowLeft, LogOut } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
 
 export default function Profile() {
-  const { user, profile } = useAuth();
+  const { user, profile, signOut } = useAuth();
   const navigate = useNavigate();
 
   const fullName = profile?.full_name || user?.user_metadata?.full_name || 'User';
   const email = user?.email || '';
   const department = profile?.department || '—';
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/login');
+  };
 
   return (
     <div className="max-w-lg mx-auto space-y-6 animate-fade-in">
@@ -16,10 +22,10 @@ export default function Profile() {
         <button onClick={() => navigate(-1)} className="h-9 w-9 rounded-full bg-secondary flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors">
           <ArrowLeft className="h-4 w-4" />
         </button>
-        <h1 className="text-xl font-bold text-foreground">Profile</h1>
+        <h1 className="text-xl font-bold text-foreground">Account</h1>
       </div>
       <div className="hidden md:block">
-        <h1 className="text-2xl font-bold text-foreground">Profile & Settings</h1>
+        <h1 className="text-2xl font-bold text-foreground">Account & Settings</h1>
         <p className="text-sm text-muted-foreground mt-1">Manage your account</p>
       </div>
 
@@ -49,6 +55,13 @@ export default function Profile() {
             <p className="text-sm text-foreground">{department}</p>
           </div>
         </div>
+      </div>
+
+      <div className="glass-card rounded-2xl p-5">
+        <Button variant="destructive" className="w-full" onClick={handleSignOut}>
+          <LogOut className="h-4 w-4 mr-2" />
+          Sign Out
+        </Button>
       </div>
     </div>
   );
