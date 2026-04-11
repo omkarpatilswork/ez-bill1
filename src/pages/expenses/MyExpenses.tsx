@@ -117,12 +117,22 @@ export default function MyExpenses() {
     if (!user) return;
     const { data } = await supabase
       .from('expenses')
-      .select('id, merchant, amount, expense_date')
+      .select('id, merchant, amount, expense_date, description')
       .eq('user_id', user.id);
     if (!data) return;
+
     const groups = new Map<string, { merchant: string; amount: number; expense_date: string; ids: string[] }>();
     for (const row of data as any[]) {
-      const key = `${(row.merchant || '').toLowerCase().trim()}|${row.amount}|${row.expense_date}`;
+      // Extract invoice number from description
+      const invoiceMatch = (row.description || '').match(/Invoice:\s*([^|]+)/);
+      const invoice = invoiceMatch ? invoiceMatch[1].trim().toLowerCase() : '';
+
+      // Primary key: invoice number + date (if invoice exists)
+      // Fallback key: merchant + amount + date
+      const key = invoice
+        ? `inv:${invoice}|${row.expense_date}`
+        : `mrch:${(row.merchant || '').toLowerCase().trim()}|${row.amount}|${row.expense_date}`;
+
       if (!groups.has(key)) {
         groups.set(key, { merchant: row.merchant || 'Unknown', amount: row.amount, expense_date: row.expense_date, ids: [] });
       }
