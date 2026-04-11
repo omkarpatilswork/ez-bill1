@@ -3,7 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -11,6 +11,8 @@ import {
   Receipt, Eye, Users, Pencil, FileText, Trash2, Headphones
 } from 'lucide-react';
 import type { Expense } from '@/lib/types';
+import { getCurrencySymbol } from '@/lib/countries';
+import { smartCategoryFromMerchant } from '@/lib/smart-category';
 
 interface LineItem {
   name: string;
@@ -36,7 +38,10 @@ function cleanDescription(desc: string | null | undefined): string {
   if (!desc) return '';
   const idx = desc.indexOf(LINE_ITEMS_MARKER);
   let clean = idx >= 0 ? desc.slice(0, idx) : desc;
-  clean = clean.replace(/Invoice:\s*[^|]+\|?\s*/g, '').replace(/Payment:\s*[^|]+\|?\s*/g, '').replace(/\d+ item\(s\)\s*\|?\s*/g, '');
+  clean = clean.replace(/Invoice:\s*[^|]+\|?\s*/g, '').replace(/Payment:\s*[^|]+\|?\s*/g, '')
+    .replace(/\d+ item\(s\)\s*\|?\s*/g, '').replace(/Tax:\s*[^|]+\|?\s*/g, '')
+    .replace(/Discount:\s*[^|]+\|?\s*/g, '').replace(/Subtotal:\s*[^|]+\|?\s*/g, '')
+    .replace(/From email:\s*[^|]+\|?\s*/g, '').replace(/\[Subscription\]\s*\|?\s*/g, '');
   return clean.trim();
 }
 
@@ -81,6 +86,7 @@ export default function ExpenseDetail() {
 
   const handleDelete = async () => {
     if (!expense || !confirm('Delete this bill permanently?')) return;
+    await supabase.from('processed_emails').delete().eq('expense_id', expense.id);
     await supabase.from('expense_receipts').delete().eq('expense_id', expense.id);
     await supabase.from('expenses').delete().eq('id', expense.id);
     toast({ title: 'Bill deleted' });
@@ -103,10 +109,14 @@ export default function ExpenseDetail() {
   const paymentMethod = expense.cost_center || parseField(expense.description, 'Payment') || '—';
   const lineItems = parseStoredLineItems(expense.description);
   const notes = cleanDescription(expense.description);
+  const subtotal = parseField(expense.description, 'Subtotal');
+  const taxAmount = parseField(expense.description, 'Tax');
+  const discount = parseField(expense.description, 'Discount');
+  const currencySymbol = getCurrencySymbol(expense.currency || 'INR');
+  const categoryLabel = expense.cost_center || smartCategoryFromMerchant(expense.merchant || '', expense.title);
 
   return (
     <div className="max-w-3xl mx-auto space-y-4 pb-24">
-      {/* Header */}
       <div className="flex items-center gap-2">
         <Button variant="ghost" size="sm" className="h-8 px-2" onClick={() => navigate('/expenses')}>
           <ArrowLeft className="h-4 w-4" />
@@ -129,10 +139,11 @@ export default function ExpenseDetail() {
           <Card className="border-0 bg-card/80 backdrop-blur">
             <CardContent className="pt-4 pb-4 space-y-3">
               <EBillRow icon={Store} label="Merchant" value={expense.merchant || '—'} />
-              <EBillRow icon={Package} label="Category" value={expense.cost_center || '—'} />
+              <EBillRow icon={Package} label="Category" value={categoryLabel} />
               <EBillRow icon={Hash} label="Invoice Number" value={invoiceNum || '—'} />
               <EBillRow icon={Calendar} label="Date" value={new Date(expense.expense_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })} />
               <EBillRow icon={CreditCard} label="Payment Method" value={paymentMethod} />
+              <EBillRow icon={IndianRupee} label="Currency" value={`${currencySymbol} ${expense.currency || 'INR'}`} />
             </CardContent>
           </Card>
 
@@ -146,11 +157,11 @@ export default function ExpenseDetail() {
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-foreground truncate">{item.name}</p>
                         <p className="text-xs text-muted-foreground">
-                          {item.quantity} × ₹{Number(item.unit_price).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                          {item.quantity} × {currencySymbol}{Number(item.unit_price).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                         </p>
                       </div>
                       <span className="text-sm font-semibold text-foreground tabular-nums ml-3">
-                        ₹{Number(item.total_price).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                        {currencySymbol}{Number(item.total_price).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                       </span>
                     </div>
                   ))}
@@ -168,12 +179,32 @@ export default function ExpenseDetail() {
             </Card>
           )}
 
+          {/* Amount Breakdown */}
           <Card className="border-0 bg-card/80 backdrop-blur">
-            <CardContent className="pt-4 pb-4">
-              <div className="flex justify-between items-center">
+            <CardContent className="pt-4 pb-4 space-y-2">
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium mb-2">Bill Summary</p>
+              {subtotal && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Subtotal</span>
+                  <span className="text-foreground">{currencySymbol}{Number(subtotal).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                </div>
+              )}
+              {taxAmount && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Tax</span>
+                  <span className="text-foreground">{currencySymbol}{Number(taxAmount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                </div>
+              )}
+              {discount && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Discount</span>
+                  <span className="text-green-500">-{currencySymbol}{Number(discount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                </div>
+              )}
+              <div className={`flex justify-between items-center ${(subtotal || taxAmount || discount) ? 'pt-2 border-t border-border/30' : ''}`}>
                 <span className="font-semibold text-foreground">Total Amount</span>
                 <span className="text-lg font-bold text-gold tabular-nums">
-                  ₹{Number(expense.amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                  {currencySymbol}{Number(expense.amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                 </span>
               </div>
             </CardContent>

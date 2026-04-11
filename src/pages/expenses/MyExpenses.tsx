@@ -14,6 +14,8 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import type { Expense } from '@/lib/types';
+import { smartCategoryFromMerchant, isSubscriptionMerchant } from '@/lib/smart-category';
+import { getCurrencySymbol } from '@/lib/countries';
 
 interface DuplicateGroup {
   merchant: string;
@@ -21,8 +23,6 @@ interface DuplicateGroup {
   expense_date: string;
   ids: string[];
 }
-
-const SUBSCRIPTION_PATTERNS = /netflix|hotstar|spotify|prime video|youtube premium|apple music|zee5|sony liv|disney\+|amazon prime|chatgpt|notion|figma|canva|jio|airtel|vi|bsnl|tata play|dish tv|act fibernet|credit card|hdfc card|icici card|sbi card|axis card|kotak card|amex|citi card|insurance|lic|term plan|\[subscription\]/i;
 
 const CATEGORIES = [
   { label: 'All', value: 'all', icon: Receipt },
@@ -36,15 +36,16 @@ const CATEGORIES = [
   { label: 'Other', value: 'other', icon: MoreHorizontal },
 ];
 
-function isSubscription(expense: Expense): boolean {
-  const combined = `${expense.title} ${expense.merchant} ${expense.description} ${expense.cost_center}`.toLowerCase();
-  return SUBSCRIPTION_PATTERNS.test(combined);
+function getSmartCategory(expense: Expense): string {
+  const combined = `${expense.title} ${expense.merchant} ${expense.description} ${expense.cost_center}`;
+  if (isSubscriptionMerchant(combined)) return 'Subscription';
+  return smartCategoryFromMerchant(expense.merchant || '', expense.title);
 }
 
 function getCategoryIcon(category: string) {
   const cat = category?.toLowerCase() || '';
   if (cat.includes('subscription')) return Repeat;
-  if (cat.includes('food') || cat.includes('dining') || cat.includes('restaurant')) return Utensils;
+  if (cat.includes('food') || cat.includes('dining') || cat.includes('meal')) return Utensils;
   if (cat.includes('petrol') || cat.includes('fuel') || cat.includes('gas')) return Fuel;
   if (cat.includes('toll')) return Car;
   if (cat.includes('parking')) return ParkingCircle;
@@ -55,39 +56,18 @@ function getCategoryIcon(category: string) {
 
 function matchesCategory(expense: Expense, filter: string): boolean {
   if (filter === 'all') return true;
-  if (filter === 'subscriptions') return isSubscription(expense);
-
-  const title = (expense.title || '').toLowerCase();
-  const merchant = (expense.merchant || '').toLowerCase();
-  const desc = (expense.description || '').toLowerCase();
-  const combined = `${title} ${merchant} ${desc}`;
-
+  const cat = getSmartCategory(expense).toLowerCase();
   switch (filter) {
-    case 'food_dining': return /food|dining|restaurant|cafe|pizza|burger|domino|swiggy|zomato/.test(combined);
-    case 'petrol': return /petrol|fuel|gas|diesel|petroleum|hp|indian oil|bharat/.test(combined);
-    case 'toll': return /toll|fastag|highway/.test(combined);
-    case 'parking': return /parking|park/.test(combined);
-    case 'shopping': return /shopping|retail|store|mall|amazon|flipkart|myntra|ajio/.test(combined);
-    case 'utilities': return /utilities|electric|water|internet|broadband|phone|recharge/.test(combined);
-    case 'other': {
-      if (isSubscription(expense)) return false;
-      const allPatterns = /food|dining|restaurant|cafe|pizza|burger|domino|swiggy|zomato|petrol|fuel|gas|diesel|petroleum|toll|fastag|highway|parking|park|shopping|retail|store|mall|amazon|flipkart|utilities|electric|water|internet|broadband|phone|recharge/;
-      return !allPatterns.test(combined);
-    }
+    case 'subscriptions': return cat === 'subscription';
+    case 'food_dining': return cat.includes('food') || cat.includes('dining') || cat.includes('meal') || cat.includes('grocery');
+    case 'petrol': return cat.includes('petrol') || cat.includes('fuel');
+    case 'toll': return cat.includes('toll');
+    case 'parking': return cat.includes('parking');
+    case 'shopping': return cat.includes('shopping');
+    case 'utilities': return cat.includes('utilities') || cat.includes('software');
+    case 'other': return cat === 'other';
     default: return true;
   }
-}
-
-function getCategoryLabel(expense: Expense): string {
-  if (isSubscription(expense)) return 'Subscription';
-  const combined = `${expense.title} ${expense.merchant} ${expense.description}`.toLowerCase();
-  if (/food|dining|restaurant|cafe|pizza|burger|domino|swiggy|zomato/.test(combined)) return 'Food & Dining';
-  if (/petrol|fuel|gas|diesel|petroleum/.test(combined)) return 'Petrol';
-  if (/toll|fastag|highway/.test(combined)) return 'Toll';
-  if (/parking|park/.test(combined)) return 'Parking';
-  if (/shopping|retail|store|mall|amazon|flipkart/.test(combined)) return 'Shopping';
-  if (/utilities|electric|water|internet|broadband|phone|recharge/.test(combined)) return 'Utilities';
-  return 'Other';
 }
 
 export default function MyExpenses() {
@@ -99,13 +79,11 @@ export default function MyExpenses() {
   const [categoryFilter, setCategoryFilter] = useState('all');
   const { toast } = useToast();
 
-  // Multi-select state
   const [selectMode, setSelectMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
-  // Duplicate detection state
   const [duplicates, setDuplicates] = useState<DuplicateGroup[]>([]);
   const [showDuplicateDialog, setShowDuplicateDialog] = useState(false);
   const [isDeletingDuplicates, setIsDeletingDuplicates] = useState(false);
@@ -122,7 +100,6 @@ export default function MyExpenses() {
 
   useEffect(() => { fetchExpenses(); }, [user]);
 
-  // Check for duplicates when navigated with ?checkDupes=1
   useEffect(() => {
     if (searchParams.get('checkDupes') === '1' && user) {
       detectDuplicates();
@@ -203,7 +180,6 @@ export default function MyExpenses() {
     if (selectedIds.size === 0) return;
     setDeleting(true);
     const ids = Array.from(selectedIds);
-    // Also remove processed_emails so Gmail rescan can re-import these
     await supabase.from('processed_emails').delete().in('expense_id', ids);
     const { error } = await supabase.from('expenses').delete().in('id', ids);
     setDeleting(false);
@@ -298,10 +274,11 @@ export default function MyExpenses() {
       ) : (
         <div className="space-y-2">
           {filteredExpenses.map(exp => {
-            const catLabel = getCategoryLabel(exp);
+            const catLabel = getSmartCategory(exp);
             const CategoryIcon = getCategoryIcon(catLabel);
-            const isSub = isSubscription(exp);
+            const isSub = catLabel === 'Subscription';
             const isSelected = selectedIds.has(exp.id);
+            const currSym = getCurrencySymbol(exp.currency || 'INR');
 
             const cardContent = (
               <div className="flex items-center gap-3">
@@ -332,7 +309,7 @@ export default function MyExpenses() {
                 </div>
                 <div className="text-right shrink-0">
                   <p className="font-bold text-sm text-foreground tabular-nums">
-                    ₹{Number(exp.amount).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    {currSym}{Number(exp.amount).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </p>
                   <p className="text-[11px] text-muted-foreground mt-0.5">
                     {new Date(exp.expense_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}

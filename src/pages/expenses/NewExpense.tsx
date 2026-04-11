@@ -14,10 +14,11 @@ import { useToast } from '@/hooks/use-toast';
 import {
   ArrowLeft, Upload, FileText, X, Camera, Eye, Loader2, CheckCircle2,
   Pencil, Save, Send, Users, Package, CreditCard, Calendar,
-  Store, Hash, Receipt, IndianRupee, FileImage
+  Store, Hash, Receipt, IndianRupee, FileImage, Trash2, PartyPopper
 } from 'lucide-react';
 import type { ExpenseCategory } from '@/lib/types';
 import { CURRENCIES, getCurrencySymbol } from '@/lib/countries';
+import { smartCategoryFromMerchant } from '@/lib/smart-category';
 
 interface LineItem {
   name: string;
@@ -67,8 +68,8 @@ function cleanDescription(desc: string | null | undefined): string {
   if (!desc) return '';
   const idx = desc.indexOf(LINE_ITEMS_MARKER);
   let clean = idx >= 0 ? desc.slice(0, idx) : desc;
-  // Remove structured prefixes
   clean = clean.replace(/Invoice:\s*[^|]+\|?\s*/g, '').replace(/Payment:\s*[^|]+\|?\s*/g, '').replace(/\d+ item\(s\)\s*\|?\s*/g, '');
+  clean = clean.replace(/Tax:\s*[^|]+\|?\s*/g, '').replace(/Discount:\s*[^|]+\|?\s*/g, '').replace(/Subtotal:\s*[^|]+\|?\s*/g, '');
   return clean.trim();
 }
 
@@ -78,13 +79,26 @@ function parseFieldFromDesc(desc: string | null | undefined, key: string): strin
   return match ? match[1].trim() : '';
 }
 
+async function convertHeicToJpeg(file: File): Promise<File> {
+  const ext = file.name.toLowerCase();
+  if (!ext.endsWith('.heic') && !ext.endsWith('.heif')) return file;
+  try {
+    const heic2any = (await import('heic2any')).default;
+    const blob = await heic2any({ blob: file, toType: 'image/jpeg', quality: 0.85 }) as Blob;
+    return new File([blob], file.name.replace(/\.hei[cf]$/i, '.jpg'), { type: 'image/jpeg' });
+  } catch (e) {
+    console.error('HEIC conversion failed:', e);
+    return file;
+  }
+}
+
 export default function NewExpense() {
   const { user, profile } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [searchParams] = useSearchParams();
-  const mode = searchParams.get('mode'); // 'scan' | 'upload' | null (manual)
-  const editId = searchParams.get('edit'); // expense ID when editing
+  const mode = searchParams.get('mode');
+  const editId = searchParams.get('edit');
 
   const [categories, setCategories] = useState<ExpenseCategory[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -95,10 +109,10 @@ export default function NewExpense() {
   const [extractionData, setExtractionData] = useState<ExtractedData | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [activeTab, setActiveTab] = useState<string>('ebill');
+  const [submitSuccess, setSubmitSuccess] = useState(false);
   const scanInputRef = useRef<HTMLInputElement>(null);
   const uploadInputRef = useRef<HTMLInputElement>(null);
 
-  // Editable form fields (populated from extraction or manual)
   const [form, setForm] = useState({
     title: '', merchant: '', amount: '', expense_date: new Date().toISOString().slice(0, 10),
     category_id: '', category_name: '', cost_center: '', description: '',
@@ -113,14 +127,12 @@ export default function NewExpense() {
     });
   }, []);
 
-  // Load existing expense for edit mode
   useEffect(() => {
     if (!editId || !user) return;
     (async () => {
       const { data: exp } = await supabase.from('expenses').select('*').eq('id', editId).single();
       if (!exp) return;
       const e = exp as any;
-      // Parse line items from description
       const lineItems = parseStoredLineItems(e.description);
       const descClean = cleanDescription(e.description);
       setForm({
@@ -134,15 +146,14 @@ export default function NewExpense() {
         description: descClean,
         payment_method: e.cost_center || '',
         invoice_number: parseFieldFromDesc(e.description, 'Invoice'),
-        tax_amount: '',
-        subtotal: '',
-        discount: '',
+        tax_amount: parseFieldFromDesc(e.description, 'Tax') || '',
+        subtotal: parseFieldFromDesc(e.description, 'Subtotal') || '',
+        discount: parseFieldFromDesc(e.description, 'Discount') || '',
         currency: e.currency || profile?.default_currency || 'INR',
       });
       setEditLineItems(lineItems);
       setExtractionData({ line_items: lineItems });
 
-      // Load receipt
       const { data: receipts } = await supabase.from('expense_receipts').select('*').eq('expense_id', editId).limit(1);
       if (receipts && receipts.length > 0) {
         const r = receipts[0] as any;
@@ -160,7 +171,6 @@ export default function NewExpense() {
     return () => { if (receiptPreviewUrl) URL.revokeObjectURL(receiptPreviewUrl); };
   }, [receiptPreviewUrl]);
 
-  // Auto-open camera for scan mode
   useEffect(() => {
     if (mode === 'scan') {
       setTimeout(() => scanInputRef.current?.click(), 300);
@@ -175,7 +185,9 @@ export default function NewExpense() {
       reader.readAsDataURL(file);
     });
 
-  const handleFileSelected = async (file: File) => {
+  const handleFileSelected = async (originalFile: File) => {
+    // Convert HEIC to JPEG for preview
+    const file = await convertHeicToJpeg(originalFile);
     setReceiptFile(file);
     if (receiptPreviewUrl) URL.revokeObjectURL(receiptPreviewUrl);
     setReceiptPreviewUrl(URL.createObjectURL(file));
@@ -184,9 +196,11 @@ export default function NewExpense() {
     setIsEditing(false);
 
     try {
-      const base64 = await fileToBase64(file);
+      // Use original file for extraction (AI handles HEIC fine)
+      const base64 = await fileToBase64(originalFile);
       if (!base64) throw new Error('Could not read file');
-      const fileType = file.type || (file.name?.toLowerCase().endsWith('.pdf') ? 'application/pdf' : 'image/jpeg');
+      const fileType = originalFile.type || (originalFile.name?.toLowerCase().endsWith('.pdf') ? 'application/pdf'
+        : originalFile.name?.toLowerCase().match(/\.hei[cf]$/) ? 'image/heic' : 'image/jpeg');
       const { data, error } = await supabase.functions.invoke('extract-receipt', {
         body: { file_base64: base64, file_type: fileType },
       });
@@ -217,6 +231,18 @@ export default function NewExpense() {
       return match?.id || '';
     };
 
+    // Smart category: AI first, then merchant-based fallback
+    let categoryName = data.category !== 'Not Found' ? (data.category || '') : '';
+    let categoryId = matchCategory(data.category);
+    if (!categoryId && data.merchant_name && data.merchant_name !== 'Not Found') {
+      const smartCat = smartCategoryFromMerchant(data.merchant_name);
+      if (smartCat !== 'Other') {
+        categoryName = smartCat;
+        const match = categories.find(c => c.name.toLowerCase() === smartCat.toLowerCase());
+        categoryId = match?.id || '';
+      }
+    }
+
     setForm({
       title: data.bill_invoice_number && data.bill_invoice_number !== 'Not Found'
         ? `Invoice ${data.bill_invoice_number}`
@@ -226,8 +252,8 @@ export default function NewExpense() {
       amount: data.amount != null ? String(data.amount) : '',
       expense_date: data.date_time && data.date_time !== 'Not Found'
         ? data.date_time.slice(0, 10) : new Date().toISOString().slice(0, 10),
-      category_id: matchCategory(data.category),
-      category_name: data.category !== 'Not Found' ? (data.category || '') : '',
+      category_id: categoryId,
+      category_name: categoryName,
       cost_center: data.payment_method !== 'Not Found' ? (data.payment_method || '') : '',
       description: '',
       payment_method: data.payment_method !== 'Not Found' ? (data.payment_method || '') : '',
@@ -240,7 +266,7 @@ export default function NewExpense() {
     setEditLineItems(data.line_items || []);
   };
 
-  const handleSubmit = async (asDraft = false) => {
+  const handleSubmit = async () => {
     if (!user) return;
     setIsSubmitting(true);
 
@@ -259,7 +285,6 @@ export default function NewExpense() {
     let expenseId: string;
 
     if (editId) {
-      // Update existing expense
       const { error } = await supabase.from('expenses').update(payload).eq('id', editId);
       if (error) {
         toast({ title: 'Error', description: error.message, variant: 'destructive' });
@@ -268,7 +293,6 @@ export default function NewExpense() {
       }
       expenseId = editId;
     } else {
-      // Insert new expense
       const { data: expense, error } = await supabase.from('expenses').insert({
         user_id: user.id, ...payload,
       } as any).select().single();
@@ -292,13 +316,26 @@ export default function NewExpense() {
 
     await supabase.from('audit_logs').insert({
       expense_id: expenseId, user_id: user.id,
-      action: editId ? 'updated' : asDraft ? 'created_draft' : 'submitted',
+      action: editId ? 'updated' : 'submitted',
       details: { amount: form.amount, title: form.title },
     } as any);
 
-    toast({ title: editId ? 'Bill updated ✅' : asDraft ? 'Draft saved' : 'Bill submitted ✅' });
     setIsSubmitting(false);
-    navigate(editId ? `/expenses/${editId}` : '/expenses');
+
+    // Show success animation
+    setSubmitSuccess(true);
+    setTimeout(() => {
+      navigate(editId ? `/expenses/${editId}` : '/expenses');
+    }, 1800);
+  };
+
+  const handleDelete = async () => {
+    if (!editId || !confirm('Delete this bill permanently?')) return;
+    await supabase.from('processed_emails').delete().eq('expense_id', editId);
+    await supabase.from('expense_receipts').delete().eq('expense_id', editId);
+    await supabase.from('expenses').delete().eq('id', editId);
+    toast({ title: 'Bill deleted' });
+    navigate('/expenses');
   };
 
   const buildDescription = () => {
@@ -306,9 +343,11 @@ export default function NewExpense() {
     if (form.invoice_number) parts.push(`Invoice: ${form.invoice_number}`);
     if (form.payment_method) parts.push(`Payment: ${form.payment_method}`);
     if (editLineItems.length > 0) parts.push(`${editLineItems.length} item(s)`);
+    if (form.subtotal) parts.push(`Subtotal: ${form.subtotal}`);
+    if (form.tax_amount) parts.push(`Tax: ${form.tax_amount}`);
+    if (form.discount) parts.push(`Discount: ${form.discount}`);
     if (form.description) parts.push(form.description);
     let desc = parts.join(' | ');
-    // Append line items as JSON
     if (editLineItems.length > 0) {
       desc += `${LINE_ITEMS_MARKER}${JSON.stringify(editLineItems)}::END_ITEMS::`;
     }
@@ -323,12 +362,27 @@ export default function NewExpense() {
     setForm(f => ({ ...f, subtotal: String(subtotal), amount: String(subtotal + tax - discount) }));
   };
   const isValid = (form.merchant.trim() || form.title.trim()) && form.amount && parseFloat(form.amount) > 0;
+  const currencySymbol = getCurrencySymbol(form.currency);
+
+  // ─── SUCCESS SCREEN ───
+  if (submitSuccess) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] animate-in fade-in zoom-in-95 duration-500">
+        <div className="h-20 w-20 rounded-full bg-green-500/20 flex items-center justify-center mb-4 animate-bounce">
+          <CheckCircle2 className="h-10 w-10 text-green-500" />
+        </div>
+        <h2 className="text-xl font-bold text-foreground mb-1">
+          {editId ? 'Bill Updated!' : 'Bill Saved!'}
+        </h2>
+        <p className="text-sm text-muted-foreground">Redirecting to your bills...</p>
+      </div>
+    );
+  }
 
   // ─── UPLOAD/SCAN/EDIT PAGE ───
   if (mode === 'upload' || mode === 'scan' || editId) {
     return (
       <div className="max-w-2xl mx-auto space-y-4 pb-24">
-        {/* Header */}
         <div className="flex items-center gap-2">
           <Button variant="ghost" size="sm" className="h-8 px-2" onClick={() => navigate(-1)}>
             <ArrowLeft className="h-4 w-4" />
@@ -338,7 +392,7 @@ export default function NewExpense() {
           </h1>
         </div>
 
-        {/* Upload Area (shown when no file yet and not editing) */}
+        {/* Upload Area */}
         {!editId && !receiptFile && !isExtracting && (
           <Card className="border-0 bg-card/80 backdrop-blur">
             <CardContent className="pt-6 pb-6">
@@ -349,7 +403,6 @@ export default function NewExpense() {
                     : <FileImage className="h-10 w-10 text-primary" />
                   }
                 </div>
-
                 <div>
                   <h2 className="text-base font-semibold text-foreground mb-1">
                     {mode === 'scan' ? 'Take a Photo' : 'Upload from Gallery'}
@@ -359,7 +412,6 @@ export default function NewExpense() {
                     AI will extract all bill details automatically.
                   </p>
                 </div>
-
                 <div className="flex flex-wrap justify-center gap-2 text-[10px] text-muted-foreground">
                   <span className="flex items-center gap-1 bg-secondary px-2 py-1 rounded-full">
                     <Store className="h-3 w-3" /> Smart Merchant Detection
@@ -374,17 +426,11 @@ export default function NewExpense() {
                     <CreditCard className="h-3 w-3" /> Payment Method
                   </span>
                 </div>
-
-                <Button
-                  size="lg"
-                  className="w-full max-w-xs min-h-[48px] mt-2"
-                  onClick={() => (mode === 'scan' ? scanInputRef : uploadInputRef).current?.click()}
-                >
+                <Button size="lg" className="w-full max-w-xs min-h-[48px] mt-2"
+                  onClick={() => (mode === 'scan' ? scanInputRef : uploadInputRef).current?.click()}>
                   <Upload className="h-5 w-5 mr-2" />
                   {mode === 'scan' ? 'Open Camera' : 'Choose File'}
                 </Button>
-
-                {/* Hidden inputs */}
                 <input ref={scanInputRef} type="file" accept="image/*" capture="environment"
                   className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) handleFileSelected(f); e.target.value = ''; }} />
                 <input ref={uploadInputRef} type="file" accept="image/*,.pdf,.heic,.heif"
@@ -460,7 +506,6 @@ export default function NewExpense() {
 
               {/* ─── E-BILL TAB ─── */}
               <TabsContent value="ebill" className="mt-3 space-y-3">
-                {/* Header with edit toggle */}
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <CheckCircle2 className="h-4 w-4 text-green-500" />
@@ -480,7 +525,6 @@ export default function NewExpense() {
                 {/* Merchant & Core Info */}
                 <Card className="border-0 bg-card/80 backdrop-blur">
                   <CardContent className="pt-4 pb-4 space-y-3">
-                    {/* Merchant */}
                     <EBillField icon={Store} label="Merchant" value={form.merchant}
                       editing={isEditing} onChange={v => setForm(f => ({ ...f, merchant: v }))} />
                     {/* Category */}
@@ -502,7 +546,6 @@ export default function NewExpense() {
                     ) : (
                       <EBillField icon={Package} label="Category" value={form.category_name || 'Not detected'} editing={false} />
                     )}
-                    {/* Invoice # */}
                     <EBillField icon={Hash} label="Invoice Number" value={form.invoice_number}
                       editing={isEditing} onChange={v => setForm(f => ({ ...f, invoice_number: v }))} />
                     {/* Date */}
@@ -516,9 +559,24 @@ export default function NewExpense() {
                     ) : (
                       <EBillField icon={Calendar} label="Date" value={form.expense_date} editing={false} />
                     )}
-                    {/* Payment Method */}
                     <EBillField icon={CreditCard} label="Payment Method" value={form.payment_method}
                       editing={isEditing} onChange={v => setForm(f => ({ ...f, payment_method: v }))} />
+                    {/* Currency */}
+                    {isEditing ? (
+                      <div className="space-y-1">
+                        <label className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">Currency</label>
+                        <Select value={form.currency} onValueChange={v => setForm(f => ({ ...f, currency: v }))}>
+                          <SelectTrigger className="min-h-[40px] bg-secondary/30 border-border/30">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent className="max-h-60">
+                            {CURRENCIES.map(c => <SelectItem key={c.code} value={c.code}>{c.symbol} {c.code}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    ) : (
+                      <EBillField icon={IndianRupee} label="Currency" value={`${currencySymbol} ${form.currency}`} editing={false} />
+                    )}
                   </CardContent>
                 </Card>
 
@@ -530,7 +588,7 @@ export default function NewExpense() {
                         Items ({editLineItems.length})
                       </p>
                       <div className="space-y-2">
-                {editLineItems.map((item, i) => (
+                        {editLineItems.map((item, i) => (
                           <div key={i} className="flex items-start gap-3 py-2 border-b border-border/20 last:border-0">
                             <div className="h-8 w-8 rounded-lg bg-secondary/50 flex items-center justify-center shrink-0 mt-0.5">
                               <span className="text-xs font-bold text-muted-foreground">{i + 1}</span>
@@ -558,7 +616,7 @@ export default function NewExpense() {
                                         }} />
                                     </div>
                                     <div className="flex-1">
-                                      <label className="text-[9px] text-muted-foreground">Unit ₹</label>
+                                      <label className="text-[9px] text-muted-foreground">Unit {currencySymbol}</label>
                                       <Input type="number" step="0.01" value={item.unit_price} className="text-xs h-7 bg-secondary/30 border-border/30"
                                         onChange={e => {
                                           const updated = [...editLineItems];
@@ -575,13 +633,13 @@ export default function NewExpense() {
                               )}
                               {!isEditing && (
                                 <p className="text-[11px] text-muted-foreground">
-                                  Qty: {item.quantity} × ₹{item.unit_price?.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                                  Qty: {item.quantity} × {currencySymbol}{item.unit_price?.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                                 </p>
                               )}
                             </div>
                             <div className="flex items-center gap-1 shrink-0">
                               <p className="text-sm font-semibold text-foreground tabular-nums">
-                                ₹{item.total_price?.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                                {currencySymbol}{item.total_price?.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                               </p>
                               {isEditing && (
                                 <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => {
@@ -616,19 +674,37 @@ export default function NewExpense() {
                     {val(form.subtotal) && (
                       <div className="flex justify-between text-sm">
                         <span className="text-muted-foreground">Subtotal</span>
-                        <span className="text-foreground">₹{Number(form.subtotal).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                        {isEditing ? (
+                          <Input value={form.subtotal} type="number" step="0.01"
+                            className="w-28 text-right text-xs h-7 bg-secondary/30 border-border/30"
+                            onChange={e => setForm(f => ({ ...f, subtotal: e.target.value }))} />
+                        ) : (
+                          <span className="text-foreground">{currencySymbol}{Number(form.subtotal).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                        )}
                       </div>
                     )}
-                    {val(form.tax_amount) && (
+                    {(val(form.tax_amount) || isEditing) && (
                       <div className="flex justify-between text-sm">
                         <span className="text-muted-foreground">Tax {extractionData?.tax_details && extractionData.tax_details !== 'Not Found' ? `(${extractionData.tax_details})` : ''}</span>
-                        <span className="text-foreground">₹{Number(form.tax_amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                        {isEditing ? (
+                          <Input value={form.tax_amount} type="number" step="0.01"
+                            className="w-28 text-right text-xs h-7 bg-secondary/30 border-border/30"
+                            onChange={e => setForm(f => ({ ...f, tax_amount: e.target.value }))} />
+                        ) : (
+                          <span className="text-foreground">{currencySymbol}{Number(form.tax_amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                        )}
                       </div>
                     )}
-                    {val(form.discount) && (
+                    {(val(form.discount) || isEditing) && (
                       <div className="flex justify-between text-sm">
                         <span className="text-muted-foreground">Discount</span>
-                        <span className="text-green-500">-₹{Number(form.discount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                        {isEditing ? (
+                          <Input value={form.discount} type="number" step="0.01"
+                            className="w-28 text-right text-xs h-7 bg-secondary/30 border-border/30"
+                            onChange={e => setForm(f => ({ ...f, discount: e.target.value }))} />
+                        ) : (
+                          <span className="text-green-500">-{currencySymbol}{Number(form.discount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                        )}
                       </div>
                     )}
                     <div className="flex justify-between items-center pt-2 border-t border-border/30">
@@ -639,7 +715,7 @@ export default function NewExpense() {
                           onChange={e => setForm(f => ({ ...f, amount: e.target.value }))} />
                       ) : (
                         <span className="text-lg font-bold text-gold">
-                          ₹{form.amount ? Number(form.amount).toLocaleString('en-IN', { minimumFractionDigits: 2 }) : '0.00'}
+                          {currencySymbol}{form.amount ? Number(form.amount).toLocaleString('en-IN', { minimumFractionDigits: 2 }) : '0.00'}
                         </span>
                       )}
                     </div>
@@ -661,20 +737,18 @@ export default function NewExpense() {
                 {/* Action Buttons */}
                 <div className="space-y-2 pt-2">
                   <Button className="w-full min-h-[48px] text-sm font-semibold" disabled={isSubmitting || !isValid}
-                    onClick={() => handleSubmit(false)}>
-                    <Send className="h-4 w-4 mr-2" />
-                    {isSubmitting ? 'Submitting...' : 'Confirm & Submit Bill'}
+                    onClick={handleSubmit}>
+                    {isSubmitting ? (
+                      <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Saving...</>
+                    ) : (
+                      <><Send className="h-4 w-4 mr-2" /> {editId ? 'Update Bill' : 'Confirm & Save Bill'}</>
+                    )}
                   </Button>
-                  <div className="grid grid-cols-2 gap-2">
-                    <Button variant="outline" className="min-h-[44px] text-xs" disabled={isSubmitting || !isValid}
-                      onClick={() => handleSubmit(true)}>
-                      <Save className="h-3.5 w-3.5 mr-1" /> Draft
+                  {editId && (
+                    <Button variant="destructive" className="w-full min-h-[44px] text-xs" onClick={handleDelete}>
+                      <Trash2 className="h-3.5 w-3.5 mr-1" /> Delete Bill
                     </Button>
-                    <Button variant="outline" className="min-h-[44px] text-xs"
-                      onClick={() => toast({ title: 'Coming soon', description: 'Split bill feature is under development.' })}>
-                      <Users className="h-3.5 w-3.5 mr-1" /> Split
-                    </Button>
-                  </div>
+                  )}
                 </div>
               </TabsContent>
             </Tabs>
@@ -769,7 +843,6 @@ export default function NewExpense() {
               className="bg-secondary/30 border-border/30" rows={2} />
           </div>
 
-          {/* Receipt upload (optional for manual, hidden in edit mode) */}
           {!editId && (
             <div className="space-y-1">
               <Label className="text-xs font-medium">Attach Receipt (optional)</Label>
@@ -789,7 +862,7 @@ export default function NewExpense() {
                 <label className="flex items-center justify-center gap-2 rounded-lg border border-dashed border-border/50 bg-secondary/20 p-4 cursor-pointer hover:bg-secondary/30 transition-colors">
                   <Upload className="h-4 w-4 text-muted-foreground" />
                   <span className="text-xs text-muted-foreground">Tap to attach receipt</span>
-                  <input type="file" accept="image/*,.pdf" className="hidden" onChange={e => {
+                  <input type="file" accept="image/*,.pdf,.heic,.heif" className="hidden" onChange={e => {
                     const f = e.target.files?.[0];
                     if (f) { setReceiptFile(f); setReceiptPreviewUrl(URL.createObjectURL(f)); }
                   }} />
@@ -799,12 +872,12 @@ export default function NewExpense() {
           )}
 
           <div className="space-y-2 pt-2 border-t border-border/30">
-            <Button className="w-full min-h-[48px]" disabled={isSubmitting || !isValid} onClick={() => handleSubmit(false)}>
-              <Send className="h-4 w-4 mr-2" /> {isSubmitting ? 'Submitting...' : 'Submit Bill'}
-            </Button>
-            <Button variant="outline" className="w-full min-h-[44px]" disabled={isSubmitting || !isValid}
-              onClick={() => handleSubmit(true)}>
-              <Save className="h-4 w-4 mr-2" /> Save as Draft
+            <Button className="w-full min-h-[48px]" disabled={isSubmitting || !isValid} onClick={handleSubmit}>
+              {isSubmitting ? (
+                <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Saving...</>
+              ) : (
+                <><Send className="h-4 w-4 mr-2" /> Save Bill</>
+              )}
             </Button>
           </div>
         </CardContent>
@@ -813,7 +886,6 @@ export default function NewExpense() {
   );
 }
 
-// Reusable E-Bill field component
 function EBillField({ icon: Icon, label, value, editing, onChange }: {
   icon: any; label: string; value: string; editing: boolean; onChange?: (v: string) => void;
 }) {
