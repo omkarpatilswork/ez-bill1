@@ -231,7 +231,7 @@ export default function Dashboard() {
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-muted-foreground">{exp.merchant || '—'} · {new Date(exp.expense_date).toLocaleDateString()}</span>
-                  {['submitted', 'manager_approved', 'approved', 'reimbursed', 'rejected'].includes(exp.status) && (
+                  {['submitted', 'manager_approved', 'approved', 'rejected'].includes(exp.status) && (
                     <StatusBadge status={exp.status as ExpenseStatus} />
                   )}
                 </div>
@@ -305,7 +305,7 @@ export default function Dashboard() {
                 </div>
                 <div className="text-right shrink-0 ml-3">
                   <p className="text-sm font-bold tabular-nums text-foreground">₹{Number(exp.amount).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-                  {['submitted', 'manager_approved', 'approved', 'reimbursed', 'rejected'].includes(exp.status) && (
+                  {['submitted', 'manager_approved', 'approved', 'rejected'].includes(exp.status) && (
                     <StatusBadge status={exp.status as ExpenseStatus} />
                   )}
                 </div>
