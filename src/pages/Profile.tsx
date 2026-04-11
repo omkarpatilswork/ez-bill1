@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { User, Mail, Building2, ArrowLeft, LogOut, Globe, Coins, Phone, Pencil, Save } from 'lucide-react';
@@ -17,10 +17,19 @@ export default function Profile() {
 
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [displayName, setDisplayName] = useState(profile?.display_name || profile?.full_name || user?.user_metadata?.full_name || '');
-  const [phone, setPhone] = useState(profile?.phone || '');
-  const [country, setCountry] = useState(profile?.country || 'IN');
-  const [currency, setCurrency] = useState(profile?.default_currency || 'INR');
+  const [displayName, setDisplayName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [country, setCountry] = useState('IN');
+  const [currency, setCurrency] = useState('INR');
+
+  useEffect(() => {
+    if (profile) {
+      setDisplayName(profile.display_name || profile.full_name || user?.user_metadata?.full_name || '');
+      setPhone(profile.phone || '');
+      setCountry(profile.country || 'IN');
+      setCurrency(profile.default_currency || 'INR');
+    }
+  }, [profile, user]);
 
   const email = user?.email || '';
   const department = profile?.department || '—';
