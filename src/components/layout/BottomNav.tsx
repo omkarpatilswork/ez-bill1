@@ -15,6 +15,7 @@ const tabs = [
 const addActions = [
   { label: 'Scan Bill', icon: Camera, description: 'Take a photo of your receipt', path: '/expenses/new?mode=scan' },
   { label: 'Upload File', icon: Upload, description: 'Upload from gallery or files', path: '/expenses/new?mode=upload' },
+  { label: 'Bulk Upload', icon: FileImage, description: 'Upload multiple bills at once', path: '/bulk-upload' },
   { label: 'Add Manually', icon: FileText, description: 'Enter details by hand', path: '/expenses/new' },
 ];
 

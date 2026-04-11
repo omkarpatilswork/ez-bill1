@@ -16,6 +16,7 @@ import SplitBill from "./pages/expenses/SplitBill";
 import Analytics from "./pages/expenses/Analytics";
 import AskAI from "./pages/AskAI";
 import EmailBills from "./pages/expenses/EmailBills";
+import BulkUpload from "./pages/expenses/BulkUpload";
 import Profile from "./pages/Profile";
 import Onboarding from "./pages/Onboarding";
 import TermsAndConditions from "./pages/TermsAndConditions";
@@ -44,6 +45,7 @@ const App = () => (
           <Route path="/expenses" element={<ProtectedRoute><AppLayout><MyExpenses /></AppLayout></ProtectedRoute>} />
           <Route path="/analytics" element={<ProtectedRoute><AppLayout><Analytics /></AppLayout></ProtectedRoute>} />
           <Route path="/email-bills" element={<ProtectedRoute><AppLayout><EmailBills /></AppLayout></ProtectedRoute>} />
+          <Route path="/bulk-upload" element={<ProtectedRoute><AppLayout><BulkUpload /></AppLayout></ProtectedRoute>} />
           <Route path="/ask-ai" element={<ProtectedRoute><AppLayout><AskAI /></AppLayout></ProtectedRoute>} />
           <Route path="/profile" element={<ProtectedRoute><AppLayout><Profile /></AppLayout></ProtectedRoute>} />
           <Route path="*" element={<NotFound />} />
