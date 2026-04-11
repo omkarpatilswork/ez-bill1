@@ -38,11 +38,11 @@ function cleanDescription(desc: string | null | undefined): string {
   if (!desc) return '';
   const idx = desc.indexOf(LINE_ITEMS_MARKER);
   let clean = idx >= 0 ? desc.slice(0, idx) : desc;
-  clean = clean.replace(/Invoice:\s*[^|]+\|?\s*/g, '').replace(/Payment:\s*[^|]+\|?\s*/g, '')
+  clean = clean.replace(/Category:\s*[^|]+\|?\s*/g, '').replace(/Invoice:\s*[^|]+\|?\s*/g, '').replace(/Payment:\s*[^|]+\|?\s*/g, '')
     .replace(/\d+ item\(s\)\s*\|?\s*/g, '').replace(/Tax:\s*[^|]+\|?\s*/g, '')
     .replace(/Discount:\s*[^|]+\|?\s*/g, '').replace(/Subtotal:\s*[^|]+\|?\s*/g, '')
     .replace(/From email:\s*[^|]+\|?\s*/g, '').replace(/\[Subscription\]\s*\|?\s*/g, '');
-  return clean.trim();
+  return clean.replace(/\|\s*$/g, '').trim();
 }
 
 function parseField(description: string | null | undefined, key: string): string {
