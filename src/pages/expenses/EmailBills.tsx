@@ -249,10 +249,12 @@ export default function EmailBills() {
 
             const matchAiCategory = (name?: string) => {
               if (!name || name === 'Not Found') return null;
-              return categories.find(c => c.name.toLowerCase() === name.toLowerCase())?.id || null;
+              return findCategoryByName(name, categories);
             };
-            const categoryId = matchAiCategory(ext.category)
-              || smartCategoryMatch(ext.merchant_name || '', email.subject, categories);
+            const aiResult = matchAiCategory(ext.category);
+            const smartResult = smartCategoryMatch(ext.merchant_name || '', email.subject, categories);
+            const categoryId = aiResult?.id || smartResult.id || null;
+            const categoryLabel = aiResult?.label || smartResult.label || 'Other';
 
             const merchantName = val(ext.merchant_name);
             const invoiceNumber = val(ext.bill_invoice_number);
