@@ -17,6 +17,7 @@ import {
   Store, Hash, Receipt, IndianRupee, FileImage
 } from 'lucide-react';
 import type { ExpenseCategory } from '@/lib/types';
+import { CURRENCIES, getCurrencySymbol } from '@/lib/countries';
 
 interface LineItem {
   name: string;
@@ -78,7 +79,7 @@ function parseFieldFromDesc(desc: string | null | undefined, key: string): strin
 }
 
 export default function NewExpense() {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [searchParams] = useSearchParams();
@@ -102,6 +103,7 @@ export default function NewExpense() {
     title: '', merchant: '', amount: '', expense_date: new Date().toISOString().slice(0, 10),
     category_id: '', category_name: '', cost_center: '', description: '',
     payment_method: '', invoice_number: '', tax_amount: '', subtotal: '', discount: '',
+    currency: profile?.default_currency || 'INR',
   });
   const [editLineItems, setEditLineItems] = useState<LineItem[]>([]);
 
@@ -244,6 +246,7 @@ export default function NewExpense() {
       title: form.title || `Bill - ${form.merchant}`,
       merchant: form.merchant,
       amount: parseFloat(form.amount),
+      currency: form.currency,
       expense_date: form.expense_date,
       category_id: form.category_id || null,
       cost_center: form.payment_method || form.cost_center,
