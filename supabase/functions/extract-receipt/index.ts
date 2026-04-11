@@ -60,7 +60,7 @@ serve(async (req) => {
     }
   ],
   "total_items": "number - total count of line items, or 0",
-  "currency": "string - INR, USD, etc. Default INR for Indian bills"
+  "currency": "string - MUST be a valid 3-letter ISO code: INR, USD, GBP, EUR, AED, etc. Default INR for Indian bills. Rs/₹ = INR. DHS/Dirham = AED. $/Dollar = USD. £/Pound = GBP. €/Euro = EUR."
 }
 
 Rules:
@@ -72,6 +72,9 @@ Rules:
 - For Indian bills, look for GSTIN, FSSAI, and tax breakdowns (CGST/SGST/IGST).
 - Payment method: look for UPI ID, card last 4 digits, "CASH", "PAID BY" etc.
 - Normalize date to YYYY-MM-DD HH:MM:SS when possible.
+- CURRENCY: Rs, ₹, or Rupees means INR. DHS or Dirham means AED. Always return 3-letter ISO code.
+- If the bill is from an Indian merchant (Swiggy, Zomato, Flipkart, etc.) the currency is ALWAYS INR regardless of any symbol shown.
+- Smart discount: if you see offers, coupons, or items with reduced/struck prices, extract the total discount amount.
 - Return ONLY the JSON object. No markdown, no explanation.`;
 
     const isPdf = mimeType === "application/pdf";

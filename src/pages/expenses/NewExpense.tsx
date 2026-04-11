@@ -200,7 +200,7 @@ export default function NewExpense() {
     });
 
   const handleFileSelected = async (originalFile: File) => {
-    // Convert HEIC to JPEG for preview
+    // Convert HEIC to JPEG for preview AND extraction (AI doesn't support HEIC MIME)
     const file = await convertHeicToJpeg(originalFile);
     setReceiptFile(file);
     if (receiptPreviewUrl) URL.revokeObjectURL(receiptPreviewUrl);
@@ -210,11 +210,10 @@ export default function NewExpense() {
     setIsEditing(false);
 
     try {
-      // Use original file for extraction (AI handles HEIC fine)
-      const base64 = await fileToBase64(originalFile);
+      // Use converted file for extraction (HEIC not supported by AI gateway)
+      const base64 = await fileToBase64(file);
       if (!base64) throw new Error('Could not read file');
-      const fileType = originalFile.type || (originalFile.name?.toLowerCase().endsWith('.pdf') ? 'application/pdf'
-        : originalFile.name?.toLowerCase().match(/\.hei[cf]$/) ? 'image/heic' : 'image/jpeg');
+      const fileType = file.type || (file.name?.toLowerCase().endsWith('.pdf') ? 'application/pdf' : 'image/jpeg');
       const { data, error } = await supabase.functions.invoke('extract-receipt', {
         body: { file_base64: base64, file_type: fileType },
       });
