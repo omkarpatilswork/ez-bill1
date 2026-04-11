@@ -136,16 +136,28 @@ export default function NewExpense() {
       const e = exp as any;
       const lineItems = parseStoredLineItems(e.description);
       const descClean = cleanDescription(e.description);
+      const savedCategory = parseFieldFromDesc(e.description, 'Category');
+      const paymentMethod = parseFieldFromDesc(e.description, 'Payment') || e.cost_center || '';
+      // If no category_id but we have a saved category name, try to match
+      let catId = e.category_id || '';
+      let catName = savedCategory || '';
+      if (!catId && savedCategory) {
+        const match = categories.find(c => c.name.toLowerCase() === savedCategory.toLowerCase());
+        if (match) catId = match.id;
+      }
+      if (!catName && e.merchant) {
+        catName = smartCategoryFromMerchant(e.merchant, e.title);
+      }
       setForm({
         title: e.title || '',
         merchant: e.merchant || '',
         amount: String(e.amount || ''),
         expense_date: e.expense_date || new Date().toISOString().slice(0, 10),
-        category_id: e.category_id || '',
-        category_name: e.cost_center || '',
-        cost_center: e.cost_center || '',
+        category_id: catId,
+        category_name: catName,
+        cost_center: paymentMethod,
         description: descClean,
-        payment_method: e.cost_center || '',
+        payment_method: paymentMethod,
         invoice_number: parseFieldFromDesc(e.description, 'Invoice'),
         tax_amount: parseFieldFromDesc(e.description, 'Tax') || '',
         subtotal: parseFieldFromDesc(e.description, 'Subtotal') || '',
