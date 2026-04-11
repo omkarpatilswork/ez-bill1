@@ -661,7 +661,7 @@ export default function EmailBills() {
               ))}
             </div>
           )}
-        </TabsContent>
+        </TabsContent>}
       </Tabs>
 
       {/* Import Dialog (Gmail) */}
