@@ -118,7 +118,7 @@ export default function NewExpense() {
   const [form, setForm] = useState({
     title: '', merchant: '', amount: '', expense_date: new Date().toISOString().slice(0, 10),
     category_id: '', category_name: '', cost_center: '', description: '',
-    payment_method: '', invoice_number: '', tax_amount: '', subtotal: '', discount: '',
+    payment_method: '', invoice_number: '', tax_amount: '', tax_details: '', subtotal: '', discount: '',
     currency: profile?.default_currency || 'INR',
   });
   const [editLineItems, setEditLineItems] = useState<LineItem[]>([]);
@@ -462,6 +462,7 @@ export default function NewExpense() {
     const numSafe = (v: string) => { const n = Number(v); return !isNaN(n) && n > 0 ? String(n) : ''; };
     const st = numSafe(form.subtotal); if (st) parts.push(`Subtotal: ${st}`);
     const tx = numSafe(form.tax_amount); if (tx) parts.push(`Tax: ${tx}`);
+    if (form.tax_details) parts.push(`TaxDetails: ${form.tax_details}`);
     const dc = numSafe(form.discount); if (dc) parts.push(`Discount: ${dc}`);
     if (form.description) parts.push(form.description);
     let desc = parts.join(' | ');
