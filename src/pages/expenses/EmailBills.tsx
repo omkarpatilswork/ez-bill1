@@ -48,36 +48,6 @@ interface UpiTransaction {
 }
 
 
-const MERCHANT_CATEGORY_MAP: Record<string, string> = {
-  swiggy: 'Meals', zomato: 'Meals', dominos: 'Meals', "domino's": 'Meals', "mcdonald's": 'Meals',
-  mcdonalds: 'Meals', kfc: 'Meals', 'burger king': 'Meals', 'pizza hut': 'Meals',
-  starbucks: 'Meals', 'cafe coffee day': 'Meals', dunkin: 'Meals', subway: 'Meals',
-  amazon: 'Shopping', flipkart: 'Shopping', myntra: 'Shopping', ajio: 'Shopping',
-  meesho: 'Shopping', nykaa: 'Shopping', tatacliq: 'Shopping',
-  uber: 'Transportation', ola: 'Transportation', rapido: 'Transportation',
-  netflix: 'Software', hotstar: 'Software', spotify: 'Software', 'prime video': 'Software',
-  'youtube premium': 'Software', 'apple music': 'Software', zee5: 'Software',
-  'sony liv': 'Software', 'amazon prime': 'Software', 'disney+': 'Software',
-  chatgpt: 'Software', notion: 'Software', figma: 'Software', canva: 'Software',
-  jio: 'Utilities', airtel: 'Utilities', vi: 'Utilities', bsnl: 'Utilities',
-  'tata play': 'Utilities', 'dish tv': 'Utilities', 'act fibernet': 'Utilities',
-  bigbasket: 'Grocery', blinkit: 'Grocery', zepto: 'Grocery', jiomart: 'Grocery',
-  dmart: 'Grocery', 'nature basket': 'Grocery', dunzo: 'Grocery', swiggy_instamart: 'Grocery',
-  hpcl: 'Fuel', bpcl: 'Fuel', iocl: 'Fuel', 'indian oil': 'Fuel',
-  'hp petrol': 'Fuel', 'bharat petroleum': 'Fuel',
-  makemytrip: 'Travel', cleartrip: 'Travel', yatra: 'Travel', ixigo: 'Travel',
-  irctc: 'Travel', goibibo: 'Travel',
-  oyo: 'Accommodation', airbnb: 'Accommodation', treebo: 'Accommodation',
-};
-
-const SUBSCRIPTION_MERCHANTS = [
-  'netflix', 'hotstar', 'spotify', 'prime video', 'youtube premium', 'apple music',
-  'zee5', 'sony liv', 'disney+', 'amazon prime', 'chatgpt', 'notion', 'figma', 'canva',
-  'jio', 'airtel', 'vi', 'bsnl', 'tata play', 'dish tv', 'act fibernet',
-  'credit card', 'hdfc card', 'icici card', 'sbi card', 'axis card', 'kotak card',
-  'amex', 'citi card', 'insurance', 'lic', 'term plan',
-];
-
 const DATE_RANGE_OPTIONS = [
   { label: 'Last 7 days', value: 7 },
   { label: 'Last 15 days', value: 15 },
@@ -87,14 +57,10 @@ const DATE_RANGE_OPTIONS = [
 ];
 
 function smartCategoryMatch(merchantName: string, emailSubject: string, categories: ExpenseCategory[]): string | null {
-  const text = `${merchantName} ${emailSubject}`.toLowerCase();
-  for (const [keyword, catName] of Object.entries(MERCHANT_CATEGORY_MAP)) {
-    if (text.includes(keyword)) {
-      const match = categories.find(c => c.name.toLowerCase() === catName.toLowerCase());
-      if (match) return match.id;
-    }
-  }
-  return null;
+  const catName = smartCategoryFromMerchant(merchantName, emailSubject);
+  if (catName === 'Other') return null;
+  const match = categories.find(c => c.name.toLowerCase() === catName.toLowerCase());
+  return match?.id || null;
 }
 
 export default function EmailBills() {
