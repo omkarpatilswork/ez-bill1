@@ -56,11 +56,44 @@ const DATE_RANGE_OPTIONS = [
   { label: 'Last 90 days', value: 90 },
 ];
 
-function smartCategoryMatch(merchantName: string, emailSubject: string, categories: ExpenseCategory[]): string | null {
+const CATEGORY_ALIASES: Record<string, string[]> = {
+  'food & dining': ['food & dining', 'meals', 'food', 'dining'],
+  'petrol & fuel': ['petrol & fuel', 'fuel', 'petrol'],
+  'grocery': ['grocery'],
+  'shopping': ['shopping'],
+  'transportation': ['transportation', 'transport'],
+  'travel': ['travel'],
+  'accommodation': ['accommodation', 'hotel'],
+  'utilities': ['utilities'],
+  'software': ['software'],
+  'medical': ['medical', 'health'],
+  'toll': ['toll'],
+  'parking': ['parking'],
+  'entertainment': ['entertainment'],
+  'education': ['education', 'training'],
+  'subscription': ['subscription'],
+  'office supplies': ['office supplies'],
+  'other': ['other'],
+};
+
+function findCategoryByName(name: string, categories: ExpenseCategory[]): { id: string; label: string } | null {
+  if (!name || name === 'Not Found') return null;
+  const lower = name.toLowerCase();
+  const direct = categories.find(c => c.name.toLowerCase() === lower);
+  if (direct) return { id: direct.id, label: direct.name };
+  const aliases = CATEGORY_ALIASES[lower] || [lower];
+  for (const alias of aliases) {
+    const match = categories.find(c => c.name.toLowerCase() === alias);
+    if (match) return { id: match.id, label: match.name };
+  }
+  return null;
+}
+
+function smartCategoryMatch(merchantName: string, emailSubject: string, categories: ExpenseCategory[]): { id: string | null; label: string } {
   const catName = smartCategoryFromMerchant(merchantName, emailSubject);
-  if (catName === 'Other') return null;
-  const match = categories.find(c => c.name.toLowerCase() === catName.toLowerCase());
-  return match?.id || null;
+  if (catName === 'Other') return { id: null, label: 'Other' };
+  const found = findCategoryByName(catName, categories);
+  return found ? { id: found.id, label: found.label } : { id: null, label: catName };
 }
 
 export default function EmailBills() {
