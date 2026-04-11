@@ -14,7 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import {
   ArrowLeft, Upload, FileText, X, Camera, Eye, Loader2, CheckCircle2,
   Pencil, Save, Send, Users, Package, CreditCard, Calendar,
-  Store, Hash, Receipt, IndianRupee, FileImage, Trash2, PartyPopper
+  Store, Hash, Receipt, IndianRupee, FileImage, Trash2, PartyPopper, AlertTriangle
 } from 'lucide-react';
 import type { ExpenseCategory } from '@/lib/types';
 import { CURRENCIES, getCurrencySymbol } from '@/lib/countries';
@@ -111,6 +111,7 @@ export default function NewExpense() {
   const [isEditing, setIsEditing] = useState(false);
   const [activeTab, setActiveTab] = useState<string>('ebill');
   const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [duplicateWarning, setDuplicateWarning] = useState<{ id: string; merchant: string; amount: number } | null>(null);
   const scanInputRef = useRef<HTMLInputElement>(null);
   const uploadInputRef = useRef<HTMLInputElement>(null);
 
@@ -228,6 +229,40 @@ export default function NewExpense() {
       setExtractionData(data);
       populateFormFromExtraction(data);
       setActiveTab('ebill');
+
+      // Check for duplicate after extraction
+      if (user && data) {
+        const invoiceNo = data.bill_invoice_number && data.bill_invoice_number !== 'Not Found' ? data.bill_invoice_number : null;
+        const amount = data.amount;
+        const date = data.date_time && data.date_time !== 'Not Found' ? data.date_time.slice(0, 10) : null;
+
+        if (invoiceNo || (amount && date)) {
+          const { data: existing } = await supabase
+            .from('expenses')
+            .select('id, merchant, amount, description')
+            .eq('user_id', user.id);
+
+          if (existing) {
+            const match = (existing as any[]).find(e => {
+              // Check by invoice number
+              if (invoiceNo) {
+                const desc = e.description || '';
+                const invMatch = desc.match(/Invoice:\s*([^|]+)/);
+                if (invMatch && invMatch[1].trim().toLowerCase() === invoiceNo.toLowerCase()) return true;
+              }
+              // Check by amount + date
+              if (amount && date && Number(e.amount) === Number(amount)) {
+                return true;
+              }
+              return false;
+            });
+            if (match) {
+              setDuplicateWarning({ id: match.id, merchant: match.merchant || 'Unknown', amount: match.amount });
+            }
+          }
+        }
+      }
+
       toast({ title: '✅ Bill scanned successfully', description: 'AI extracted all details. Review your E-Bill below.' });
     } catch (err: any) {
       console.error('Extraction error:', err);
