@@ -13,7 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import {
   ArrowLeft, Upload, FileText, X, Camera, Eye, Loader2, CheckCircle2,
-  Pencil, Save, Send, Users, ShieldCheck, Package, CreditCard, Calendar,
+  Pencil, Save, Send, Users, Package, CreditCard, Calendar,
   Store, Hash, Receipt, IndianRupee, FileImage
 } from 'lucide-react';
 import type { ExpenseCategory } from '@/lib/types';
@@ -253,7 +253,7 @@ export default function NewExpense() {
       category_id: form.category_id || null,
       cost_center: form.payment_method || form.cost_center,
       description: buildDescription(),
-      status: asDraft ? 'draft' : 'submitted',
+      status: 'draft',
     } as any;
 
     let expenseId: string;
