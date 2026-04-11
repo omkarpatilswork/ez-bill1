@@ -38,11 +38,11 @@ function cleanDescription(desc: string | null | undefined): string {
   if (!desc) return '';
   const idx = desc.indexOf(LINE_ITEMS_MARKER);
   let clean = idx >= 0 ? desc.slice(0, idx) : desc;
-  clean = clean.replace(/Invoice:\s*[^|]+\|?\s*/g, '').replace(/Payment:\s*[^|]+\|?\s*/g, '')
+  clean = clean.replace(/Category:\s*[^|]+\|?\s*/g, '').replace(/Invoice:\s*[^|]+\|?\s*/g, '').replace(/Payment:\s*[^|]+\|?\s*/g, '')
     .replace(/\d+ item\(s\)\s*\|?\s*/g, '').replace(/Tax:\s*[^|]+\|?\s*/g, '')
     .replace(/Discount:\s*[^|]+\|?\s*/g, '').replace(/Subtotal:\s*[^|]+\|?\s*/g, '')
     .replace(/From email:\s*[^|]+\|?\s*/g, '').replace(/\[Subscription\]\s*\|?\s*/g, '');
-  return clean.trim();
+  return clean.replace(/\|\s*$/g, '').trim();
 }
 
 function parseField(description: string | null | undefined, key: string): string {
@@ -109,11 +109,21 @@ export default function ExpenseDetail() {
   const paymentMethod = expense.cost_center || parseField(expense.description, 'Payment') || '—';
   const lineItems = parseStoredLineItems(expense.description);
   const notes = cleanDescription(expense.description);
-  const subtotal = parseField(expense.description, 'Subtotal');
-  const taxAmount = parseField(expense.description, 'Tax');
-  const discount = parseField(expense.description, 'Discount');
+  const rawSubtotal = parseField(expense.description, 'Subtotal');
+  const rawTax = parseField(expense.description, 'Tax');
+  const rawDiscount = parseField(expense.description, 'Discount');
+  // Safe number formatting — avoid NaN
+  const safeNum = (v: string) => { const n = Number(v); return !isNaN(n) && n > 0 ? n : 0; };
+  const subtotal = safeNum(rawSubtotal);
+  const taxAmount = safeNum(rawTax);
+  const discount = safeNum(rawDiscount);
+  // Smart discount: if items total > amount and no stored discount
+  const itemsSum = lineItems.reduce((s, i) => s + (Number(i.total_price) || 0), 0);
+  const inferredDiscount = !discount && itemsSum > 0 && Number(expense.amount) > 0 && (itemsSum + taxAmount) > Number(expense.amount) + 0.5
+    ? Math.round(((itemsSum + taxAmount) - Number(expense.amount)) * 100) / 100 : discount;
   const currencySymbol = getCurrencySymbol(expense.currency || 'INR');
-  const categoryLabel = expense.cost_center || smartCategoryFromMerchant(expense.merchant || '', expense.title);
+  const savedCategory = parseField(expense.description, 'Category');
+  const categoryLabel = savedCategory || smartCategoryFromMerchant(expense.merchant || '', expense.title);
 
   return (
     <div className="max-w-3xl mx-auto space-y-4 pb-24">
@@ -183,25 +193,25 @@ export default function ExpenseDetail() {
           <Card className="border-0 bg-card/80 backdrop-blur">
             <CardContent className="pt-4 pb-4 space-y-2">
               <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium mb-2">Bill Summary</p>
-              {subtotal && (
+              {subtotal > 0 && (
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Subtotal</span>
-                  <span className="text-foreground">{currencySymbol}{Number(subtotal).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                  <span className="text-foreground">{currencySymbol}{subtotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                 </div>
               )}
-              {taxAmount && (
+              {taxAmount > 0 && (
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Tax</span>
-                  <span className="text-foreground">{currencySymbol}{Number(taxAmount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                  <span className="text-foreground">{currencySymbol}{taxAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                 </div>
               )}
-              {discount && (
+              {inferredDiscount > 0 && (
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Discount</span>
-                  <span className="text-green-500">-{currencySymbol}{Number(discount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                  <span className="text-green-500">-{currencySymbol}{inferredDiscount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                 </div>
               )}
-              <div className={`flex justify-between items-center ${(subtotal || taxAmount || discount) ? 'pt-2 border-t border-border/30' : ''}`}>
+              <div className={`flex justify-between items-center ${(subtotal > 0 || taxAmount > 0 || inferredDiscount > 0) ? 'pt-2 border-t border-border/30' : ''}`}>
                 <span className="font-semibold text-foreground">Total Amount</span>
                 <span className="text-lg font-bold text-gold tabular-nums">
                   {currencySymbol}{Number(expense.amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}

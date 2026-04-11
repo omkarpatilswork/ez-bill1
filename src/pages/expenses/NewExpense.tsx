@@ -200,7 +200,7 @@ export default function NewExpense() {
     });
 
   const handleFileSelected = async (originalFile: File) => {
-    // Convert HEIC to JPEG for preview
+    // Convert HEIC to JPEG for preview AND extraction (AI doesn't support HEIC MIME)
     const file = await convertHeicToJpeg(originalFile);
     setReceiptFile(file);
     if (receiptPreviewUrl) URL.revokeObjectURL(receiptPreviewUrl);
@@ -210,11 +210,10 @@ export default function NewExpense() {
     setIsEditing(false);
 
     try {
-      // Use original file for extraction (AI handles HEIC fine)
-      const base64 = await fileToBase64(originalFile);
+      // Use converted file for extraction (HEIC not supported by AI gateway)
+      const base64 = await fileToBase64(file);
       if (!base64) throw new Error('Could not read file');
-      const fileType = originalFile.type || (originalFile.name?.toLowerCase().endsWith('.pdf') ? 'application/pdf'
-        : originalFile.name?.toLowerCase().match(/\.hei[cf]$/) ? 'image/heic' : 'image/jpeg');
+      const fileType = file.type || (file.name?.toLowerCase().endsWith('.pdf') ? 'application/pdf' : 'image/jpeg');
       const { data, error } = await supabase.functions.invoke('extract-receipt', {
         body: { file_base64: base64, file_type: fileType },
       });
@@ -272,6 +271,22 @@ export default function NewExpense() {
     }
   };
 
+  const normalizeCurrency = (raw?: string): string => {
+    if (!raw) return profile?.default_currency || 'INR';
+    const u = raw.toUpperCase().trim();
+    // Map common misdetections
+    if (['RS', 'RS.', 'INR', '₹', 'RUPEES', 'RUPEE'].includes(u)) return 'INR';
+    if (['DHS', 'AED', 'DHIRAM', 'DIRHAM', 'DIRHAMS', 'د.إ'].includes(u)) return 'AED';
+    if (['$', 'USD', 'DOLLARS', 'DOLLAR'].includes(u)) return 'USD';
+    if (['£', 'GBP', 'POUNDS', 'POUND'].includes(u)) return 'GBP';
+    if (['€', 'EUR', 'EURO', 'EUROS'].includes(u)) return 'EUR';
+    if (['¥', 'JPY', 'YEN'].includes(u)) return 'JPY';
+    if (['S$', 'SGD'].includes(u)) return 'SGD';
+    // If it's a valid 3-letter code, keep it
+    if (/^[A-Z]{3}$/.test(u)) return u;
+    return profile?.default_currency || 'INR';
+  };
+
   const populateFormFromExtraction = (data: ExtractedData) => {
     // Alias map: AI/smart names → possible DB names
     const CATEGORY_ALIASES: Record<string, string[]> = {
@@ -322,13 +337,34 @@ export default function NewExpense() {
     const categoryId = result.id;
     const categoryName = result.label || aiCategory;
 
+    // Normalize currency — default to INR for Indian merchants
+    const detectedCurrency = normalizeCurrency(data.currency);
+    // If merchant is clearly Indian (Swiggy, Zomato, etc.) force INR
+    const merchantLower = (data.merchant_name || '').toLowerCase();
+    const isIndianMerchant = ['swiggy', 'zomato', 'flipkart', 'amazon.in', 'bigbasket', 'blinkit', 'zepto', 'jiomart', 'ola', 'rapido', 'myntra', 'ajio', 'pharmeasy', '1mg', 'dunzo', 'irctc'].some(m => merchantLower.includes(m));
+    const finalCurrency = isIndianMerchant ? 'INR' : detectedCurrency;
+
+    // Smart discount detection: if items total > amount, infer discount
+    const itemsTotal = (data.line_items || []).reduce((s, i) => s + (Number(i.total_price) || 0), 0);
+    const totalAmount = Number(data.amount) || 0;
+    const taxAmt = Number(data.tax_amount) || 0;
+    let discountAmt = Number(data.discount) || 0;
+    if (!discountAmt && itemsTotal > 0 && totalAmount > 0) {
+      const expectedTotal = itemsTotal + taxAmt;
+      if (expectedTotal > totalAmount + 0.5) {
+        discountAmt = Math.round((expectedTotal - totalAmount) * 100) / 100;
+      }
+    }
+
+    const safeNum = (v: any) => { const n = Number(v); return isNaN(n) || v === null || v === undefined ? '' : String(n); };
+
     setForm({
       title: data.bill_invoice_number && data.bill_invoice_number !== 'Not Found'
         ? `Invoice ${data.bill_invoice_number}`
         : data.merchant_name && data.merchant_name !== 'Not Found'
           ? `Bill - ${data.merchant_name}` : '',
       merchant: data.merchant_name !== 'Not Found' ? (data.merchant_name || '') : '',
-      amount: data.amount != null ? String(data.amount) : '',
+      amount: safeNum(data.amount),
       expense_date: data.date_time && data.date_time !== 'Not Found'
         ? data.date_time.slice(0, 10) : new Date().toISOString().slice(0, 10),
       category_id: categoryId,
@@ -337,10 +373,10 @@ export default function NewExpense() {
       description: '',
       payment_method: data.payment_method !== 'Not Found' ? (data.payment_method || '') : '',
       invoice_number: data.bill_invoice_number !== 'Not Found' ? (data.bill_invoice_number || '') : '',
-      tax_amount: data.tax_amount != null ? String(data.tax_amount) : '',
-      subtotal: data.subtotal != null ? String(data.subtotal) : '',
-      discount: data.discount != null ? String(data.discount) : '',
-      currency: data.currency || profile?.default_currency || 'INR',
+      tax_amount: safeNum(data.tax_amount),
+      subtotal: safeNum(data.subtotal),
+      discount: discountAmt ? String(discountAmt) : safeNum(data.discount),
+      currency: finalCurrency,
     });
     setEditLineItems(data.line_items || []);
   };
@@ -423,9 +459,10 @@ export default function NewExpense() {
     if (form.invoice_number) parts.push(`Invoice: ${form.invoice_number}`);
     if (form.payment_method) parts.push(`Payment: ${form.payment_method}`);
     if (editLineItems.length > 0) parts.push(`${editLineItems.length} item(s)`);
-    if (form.subtotal) parts.push(`Subtotal: ${form.subtotal}`);
-    if (form.tax_amount) parts.push(`Tax: ${form.tax_amount}`);
-    if (form.discount) parts.push(`Discount: ${form.discount}`);
+    const numSafe = (v: string) => { const n = Number(v); return !isNaN(n) && n > 0 ? String(n) : ''; };
+    const st = numSafe(form.subtotal); if (st) parts.push(`Subtotal: ${st}`);
+    const tx = numSafe(form.tax_amount); if (tx) parts.push(`Tax: ${tx}`);
+    const dc = numSafe(form.discount); if (dc) parts.push(`Discount: ${dc}`);
     if (form.description) parts.push(form.description);
     let desc = parts.join(' | ');
     if (editLineItems.length > 0) {
