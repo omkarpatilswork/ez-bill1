@@ -404,7 +404,7 @@ export default function NewExpense() {
     // Show success animation
     setSubmitSuccess(true);
     setTimeout(() => {
-      navigate(editId ? `/expenses/${editId}` : '/expenses');
+      navigate(editId ? `/expenses/${editId}` : '/expenses?checkDupes=1');
     }, 1800);
   };
 
