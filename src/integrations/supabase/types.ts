@@ -400,7 +400,33 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      gmail_connections_safe: {
+        Row: {
+          connected_at: string | null
+          email_address: string | null
+          id: string | null
+          token_expires_at: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          connected_at?: string | null
+          email_address?: string | null
+          id?: string | null
+          token_expires_at?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          connected_at?: string | null
+          email_address?: string | null
+          id?: string | null
+          token_expires_at?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       has_role: {
@@ -414,6 +440,7 @@ export type Database = {
         Args: { _employee_id: string; _manager_id: string }
         Returns: boolean
       }
+      update_my_profile: { Args: { _full_name: string }; Returns: undefined }
     }
     Enums: {
       app_role: "employee" | "manager" | "finance"
