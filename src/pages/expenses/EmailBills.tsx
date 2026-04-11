@@ -96,6 +96,7 @@ export default function EmailBills() {
   const [isExtracting, setIsExtracting] = useState(false);
   const [extractProgress, setExtractProgress] = useState({ current: 0, total: 0 });
   const [isBulkImporting, setIsBulkImporting] = useState(false);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
 
   // Single import dialog (fallback)
   const [showImportDialog, setShowImportDialog] = useState(false);
