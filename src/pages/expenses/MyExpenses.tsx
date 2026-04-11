@@ -2,14 +2,12 @@ import { useEffect, useState, useRef } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { StatusBadge } from '@/components/expenses/StatusBadge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Search, Receipt, Utensils, Fuel, Car, ParkingCircle, ShoppingBag, Zap, MoreHorizontal, FileWarning, CheckCircle2 } from 'lucide-react';
+import { Search, Receipt, Utensils, Fuel, Car, ParkingCircle, ShoppingBag, Zap, MoreHorizontal } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import type { Expense, ExpenseStatus } from '@/lib/types';
+import type { Expense } from '@/lib/types';
 
 const CATEGORIES = [
   { label: 'All', value: 'all', icon: Receipt },
@@ -98,7 +96,6 @@ export default function MyExpenses() {
 
   return (
     <div className="space-y-4 pb-20">
-      {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-foreground">All Bills</h1>
         <p className="text-sm text-muted-foreground mt-0.5">
@@ -106,7 +103,6 @@ export default function MyExpenses() {
         </p>
       </div>
 
-      {/* Search */}
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
@@ -117,7 +113,6 @@ export default function MyExpenses() {
         />
       </div>
 
-      {/* Category Chips */}
       <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide -mx-1 px-1">
         {CATEGORIES.map(cat => {
           const active = categoryFilter === cat.value;
@@ -138,7 +133,6 @@ export default function MyExpenses() {
         })}
       </div>
 
-      {/* Bills List */}
       {loading ? (
         <div className="flex items-center justify-center py-12">
           <div className="h-6 w-6 animate-spin rounded-full border-3 border-primary border-t-transparent" />
@@ -161,12 +155,9 @@ export default function MyExpenses() {
                 className="block rounded-xl bg-card border border-border/30 p-3.5 hover:bg-muted/20 active:bg-muted/40 transition-colors"
               >
                 <div className="flex items-center gap-3">
-                  {/* Icon */}
                   <div className="h-11 w-11 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
                     <CategoryIcon className="h-5 w-5 text-primary" />
                   </div>
-
-                  {/* Details */}
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-sm text-foreground truncate">
                       {exp.merchant || exp.title}
@@ -181,8 +172,6 @@ export default function MyExpenses() {
                       {exp.cost_center ? exp.cost_center : 'UPI'}
                     </p>
                   </div>
-
-                  {/* Amount & Date */}
                   <div className="text-right shrink-0">
                     <p className="font-bold text-sm text-foreground tabular-nums">
                       ₹{Number(exp.amount).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
