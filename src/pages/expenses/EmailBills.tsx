@@ -120,9 +120,7 @@ export default function EmailBills() {
   const [importProgress, setImportProgress] = useState({ phase: '', current: 0, total: 0 });
   const [importResult, setImportResult] = useState<{ saved: number; skipped: number; total: number } | null>(null);
 
-  const [duplicates, setDuplicates] = useState<DuplicateGroup[]>([]);
-  const [showDuplicateDialog, setShowDuplicateDialog] = useState(false);
-  const [isDeletingDuplicates, setIsDeletingDuplicates] = useState(false);
+  // Duplicate detection removed — handled in All Bills page
 
   const [smsText, setSmsText] = useState('');
   const [isParsing, setIsParsing] = useState(false);
