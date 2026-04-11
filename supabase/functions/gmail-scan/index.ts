@@ -109,7 +109,7 @@ serve(async (req) => {
     const { max_results = 50, days = 30 } = await req.json().catch(() => ({}));
 
     // More focused query: bills & receipts only, exclude statements
-    const query = `has:attachment (subject:(invoice OR receipt OR bill OR payment OR "order confirmation" OR purchase) OR from:(swiggy OR zomato OR amazon OR flipkart OR uber OR ola OR paytm OR phonepe OR gpay OR razorpay OR paypal OR netflix OR spotify OR bigbasket OR myntra OR ajio OR bookmyshow OR makemytrip OR cleartrip OR dunzo OR blinkit OR zepto OR jiomart)) -subject:"statement of account" -subject:"account statement" -subject:"bank statement" -subject:"contract note" -subject:"portfolio" -subject:"holdings" -subject:"P&L" -subject:"weekly report" newer_than:${days}d`;
+    const query = `has:attachment (subject:(invoice OR receipt OR bill OR payment OR "order confirmation" OR purchase OR "credit card" OR subscription) OR from:(swiggy OR zomato OR amazon OR flipkart OR uber OR ola OR paytm OR phonepe OR gpay OR razorpay OR paypal OR netflix OR spotify OR bigbasket OR myntra OR ajio OR bookmyshow OR makemytrip OR cleartrip OR dunzo OR blinkit OR zepto OR jiomart OR "hdfc bank" OR "icici bank" OR "sbi card" OR "axis bank" OR "kotak" OR "amex" OR "american express" OR "citi" OR hotstar OR "youtube premium" OR "apple" OR airtel OR jio OR vi OR bsnl)) -subject:"statement of account" -subject:"account statement" -subject:"bank statement" -subject:"contract note" -subject:"portfolio" -subject:"holdings" -subject:"P&L" -subject:"weekly report" newer_than:${days}d`;
 
     // Fetch more results to compensate for filtering
     const fetchMax = Math.min(max_results * 2, 100);

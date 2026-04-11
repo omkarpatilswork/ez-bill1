@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { isNativeApp, isAndroid, scanUpiSmsFromDevice } from '@/lib/sms-reader';
 import { supabase } from '@/integrations/supabase/client';
@@ -7,18 +7,15 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import {
-  Mail, Link2, Unlink, RefreshCw, Loader2, FileText, Download,
-  CheckCircle2, AlertCircle, Eye, ScanLine, ArrowRight,
+  Mail, Link2, Unlink, Loader2, Download,
+  CheckCircle2, AlertCircle, ScanLine,
   Smartphone, Send, IndianRupee, Clock, CreditCard, Filter,
-  Check, X,
+  Trash2,
 } from 'lucide-react';
 import type { ExpenseCategory } from '@/lib/types';
 
@@ -38,23 +35,6 @@ interface EmailBill {
   already_imported?: boolean;
 }
 
-interface ExtractedBill {
-  message_id: string;
-  subject: string;
-  from: string;
-  date: string;
-  attachment: EmailAttachment;
-  extracted: {
-    merchant_name?: string;
-    amount?: number | null;
-    date_time?: string;
-    bill_invoice_number?: string;
-    category?: string;
-  };
-  selected: boolean;
-  already_imported: boolean;
-}
-
 interface UpiTransaction {
   merchant_name: string;
   amount: number;
@@ -66,6 +46,43 @@ interface UpiTransaction {
   description: string;
 }
 
+interface DuplicateGroup {
+  merchant: string;
+  amount: number;
+  expense_date: string;
+  ids: string[];
+}
+
+const MERCHANT_CATEGORY_MAP: Record<string, string> = {
+  swiggy: 'Meals', zomato: 'Meals', dominos: 'Meals', "domino's": 'Meals', "mcdonald's": 'Meals',
+  mcdonalds: 'Meals', kfc: 'Meals', 'burger king': 'Meals', 'pizza hut': 'Meals',
+  starbucks: 'Meals', 'cafe coffee day': 'Meals', dunkin: 'Meals', subway: 'Meals',
+  amazon: 'Shopping', flipkart: 'Shopping', myntra: 'Shopping', ajio: 'Shopping',
+  meesho: 'Shopping', nykaa: 'Shopping', tatacliq: 'Shopping',
+  uber: 'Transportation', ola: 'Transportation', rapido: 'Transportation',
+  netflix: 'Software', hotstar: 'Software', spotify: 'Software', 'prime video': 'Software',
+  'youtube premium': 'Software', 'apple music': 'Software', zee5: 'Software',
+  'sony liv': 'Software', 'amazon prime': 'Software', 'disney+': 'Software',
+  chatgpt: 'Software', notion: 'Software', figma: 'Software', canva: 'Software',
+  jio: 'Utilities', airtel: 'Utilities', vi: 'Utilities', bsnl: 'Utilities',
+  'tata play': 'Utilities', 'dish tv': 'Utilities', 'act fibernet': 'Utilities',
+  bigbasket: 'Grocery', blinkit: 'Grocery', zepto: 'Grocery', jiomart: 'Grocery',
+  dmart: 'Grocery', 'nature basket': 'Grocery', dunzo: 'Grocery', swiggy_instamart: 'Grocery',
+  hpcl: 'Fuel', bpcl: 'Fuel', iocl: 'Fuel', 'indian oil': 'Fuel',
+  'hp petrol': 'Fuel', 'bharat petroleum': 'Fuel',
+  makemytrip: 'Travel', cleartrip: 'Travel', yatra: 'Travel', ixigo: 'Travel',
+  irctc: 'Travel', goibibo: 'Travel',
+  oyo: 'Accommodation', airbnb: 'Accommodation', treebo: 'Accommodation',
+};
+
+const SUBSCRIPTION_MERCHANTS = [
+  'netflix', 'hotstar', 'spotify', 'prime video', 'youtube premium', 'apple music',
+  'zee5', 'sony liv', 'disney+', 'amazon prime', 'chatgpt', 'notion', 'figma', 'canva',
+  'jio', 'airtel', 'vi', 'bsnl', 'tata play', 'dish tv', 'act fibernet',
+  'credit card', 'hdfc card', 'icici card', 'sbi card', 'axis card', 'kotak card',
+  'amex', 'citi card', 'insurance', 'lic', 'term plan',
+];
+
 const DATE_RANGE_OPTIONS = [
   { label: 'Last 7 days', value: 7 },
   { label: 'Last 15 days', value: 15 },
@@ -73,6 +90,17 @@ const DATE_RANGE_OPTIONS = [
   { label: 'Last 60 days', value: 60 },
   { label: 'Last 90 days', value: 90 },
 ];
+
+function smartCategoryMatch(merchantName: string, emailSubject: string, categories: ExpenseCategory[]): string | null {
+  const text = `${merchantName} ${emailSubject}`.toLowerCase();
+  for (const [keyword, catName] of Object.entries(MERCHANT_CATEGORY_MAP)) {
+    if (text.includes(keyword)) {
+      const match = categories.find(c => c.name.toLowerCase() === catName.toLowerCase());
+      if (match) return match.id;
+    }
+  }
+  return null;
+}
 
 export default function EmailBills() {
   const { user } = useAuth();
@@ -86,32 +114,16 @@ export default function EmailBills() {
   const [connectedEmail, setConnectedEmail] = useState('');
   const [isChecking, setIsChecking] = useState(true);
   const [isScanning, setIsScanning] = useState(false);
-  const [emails, setEmails] = useState<EmailBill[]>([]);
   const [categories, setCategories] = useState<ExpenseCategory[]>([]);
   const [dateRange, setDateRange] = useState(30);
 
-  // Preview & bulk import state
-  const [previewBills, setPreviewBills] = useState<ExtractedBill[]>([]);
-  const [showPreviewScreen, setShowPreviewScreen] = useState(false);
-  const [isExtracting, setIsExtracting] = useState(false);
-  const [extractProgress, setExtractProgress] = useState({ current: 0, total: 0 });
-  const [isBulkImporting, setIsBulkImporting] = useState(false);
-  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [importProgress, setImportProgress] = useState({ phase: '', current: 0, total: 0 });
+  const [importResult, setImportResult] = useState<{ saved: number; skipped: number; total: number } | null>(null);
 
-  // Single import dialog (fallback)
-  const [showImportDialog, setShowImportDialog] = useState(false);
-  const [importForm, setImportForm] = useState({
-    title: '', merchant: '', amount: '', expense_date: '', category_id: '', description: '',
-  });
-  const [isImporting, setIsImporting] = useState(false);
-  const [currentEmailMsgId, setCurrentEmailMsgId] = useState('');
-  const [extractedData, setExtractedData] = useState<any>(null);
-  const [attachmentPreview, setAttachmentPreview] = useState<string | null>(null);
-  const [attachmentMime, setAttachmentMime] = useState('');
-  const [showDocPreview, setShowDocPreview] = useState(false);
-  const [processingId, setProcessingId] = useState<string | null>(null);
+  const [duplicates, setDuplicates] = useState<DuplicateGroup[]>([]);
+  const [showDuplicateDialog, setShowDuplicateDialog] = useState(false);
+  const [isDeletingDuplicates, setIsDeletingDuplicates] = useState(false);
 
-  // UPI state
   const [smsText, setSmsText] = useState('');
   const [isParsing, setIsParsing] = useState(false);
   const [upiTransactions, setUpiTransactions] = useState<UpiTransaction[]>([]);
@@ -127,11 +139,6 @@ export default function EmailBills() {
     });
   }, []);
 
-  const getAuthHeader = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    return session?.access_token ? `Bearer ${session.access_token}` : '';
-  };
-
   const checkConnection = async () => {
     setIsChecking(true);
     try {
@@ -143,7 +150,6 @@ export default function EmailBills() {
         setConnectedEmail(data.email);
       }
     } catch {
-      // Not connected
     } finally {
       setIsChecking(false);
     }
@@ -165,7 +171,6 @@ export default function EmailBills() {
     }
   };
 
-  // Handle OAuth callback
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const code = params.get('code');
@@ -195,261 +200,165 @@ export default function EmailBills() {
     if (!error) {
       setIsConnected(false);
       setConnectedEmail('');
-      setEmails([]);
-      setPreviewBills([]);
-      setShowPreviewScreen(false);
+      setImportResult(null);
       toast({ title: 'Disconnected', description: 'Gmail has been disconnected.' });
     }
   };
 
-  const scanEmails = async () => {
+  const autoImportBills = async () => {
+    if (!user) return;
     setIsScanning(true);
-    setPreviewBills([]);
-    setShowPreviewScreen(false);
+    setImportResult(null);
+    setDuplicates([]);
+
     try {
-      const { data, error } = await supabase.functions.invoke('gmail-scan', {
+      setImportProgress({ phase: 'Scanning inbox...', current: 0, total: 0 });
+      const { data: scanData, error: scanError } = await supabase.functions.invoke('gmail-scan', {
         body: { max_results: 50, days: dateRange },
       });
-      if (error) throw new Error('Failed to scan emails');
-      if (data?.error) throw new Error(data.error);
+      if (scanError) throw new Error('Failed to scan emails');
+      if (scanData?.error) throw new Error(scanData.error);
 
-      const allEmails: EmailBill[] = (data?.emails || []).map((e: any) => ({
-        ...e,
-        already_imported: !!e.already_imported,
-      }));
+      const emails: EmailBill[] = scanData?.emails || [];
+      if (emails.length === 0) {
+        toast({ title: 'No bills found', description: 'No bill emails found in the selected date range.' });
+        setIsScanning(false);
+        return;
+      }
 
-      setEmails(allEmails);
-      const newCount = allEmails.filter(e => !e.already_imported).length;
-      const importedCount = allEmails.filter(e => e.already_imported).length;
-      toast({
-        title: 'Scan complete',
-        description: `Found ${newCount} new + ${importedCount} previously imported bills.`,
-      });
-    } catch (err: any) {
-      toast({ title: 'Scan failed', description: err.message, variant: 'destructive' });
-    } finally {
-      setIsScanning(false);
-    }
-  };
+      let saved = 0;
+      let skipped = 0;
+      let totalAttachments = 0;
+      for (const e of emails) totalAttachments += e.attachments.length;
 
-  // Extract all new bills for preview
-  const extractAllBills = async () => {
-    if (emails.length === 0) {
-      toast({ title: 'No bills found', description: 'Scan your inbox first.' });
-      return;
-    }
+      setImportProgress({ phase: 'Extracting & importing bills...', current: 0, total: totalAttachments });
+      let processed = 0;
 
-    setIsExtracting(true);
-    setExtractProgress({ current: 0, total: emails.length });
-    const extracted: ExtractedBill[] = [];
+      for (const email of emails) {
+        for (const att of email.attachments) {
+          processed++;
+          setImportProgress({ phase: 'Extracting & importing bills...', current: processed, total: totalAttachments });
 
-    for (const email of emails) {
-      for (const att of email.attachments) {
-        try {
-          setExtractProgress(p => ({ ...p, current: p.current + 1 }));
+          try {
+            const { data: attData, error: attError } = await supabase.functions.invoke('gmail-attachment', {
+              body: { message_id: email.message_id, attachment_id: att.id },
+            });
+            if (attError || attData?.error) { skipped++; continue; }
 
-          const { data: attData, error: attError } = await supabase.functions.invoke('gmail-attachment', {
-            body: { message_id: email.message_id, attachment_id: att.id },
-          });
-          if (attError || attData?.error) continue;
+            const { data: ext, error: extError } = await supabase.functions.invoke('extract-receipt', {
+              body: { file_base64: attData.data, file_type: att.mimeType },
+            });
+            if (extError || ext?.error) { skipped++; continue; }
 
-          const { data: ext, error: extError } = await supabase.functions.invoke('extract-receipt', {
-            body: { file_base64: attData.data, file_type: att.mimeType },
-          });
-          if (extError || ext?.error) continue;
+            const amount = ext.amount;
+            if (amount == null || amount === 0) { skipped++; continue; }
 
-          extracted.push({
-            message_id: email.message_id,
-            subject: email.subject,
-            from: email.from,
-            date: email.date,
-            attachment: att,
-            extracted: ext,
-            selected: !email.already_imported,
-            already_imported: !!email.already_imported,
-          });
-        } catch {
-          // skip failed extractions
+            const matchAiCategory = (name?: string) => {
+              if (!name || name === 'Not Found') return null;
+              return categories.find(c => c.name.toLowerCase() === name.toLowerCase())?.id || null;
+            };
+            const categoryId = matchAiCategory(ext.category)
+              || smartCategoryMatch(ext.merchant_name || '', email.subject, categories);
+
+            const merchantName = ext.merchant_name && ext.merchant_name !== 'Not Found' ? ext.merchant_name : '';
+            const title = ext.bill_invoice_number && ext.bill_invoice_number !== 'Not Found'
+              ? `Invoice ${ext.bill_invoice_number}`
+              : merchantName ? `Expense at ${merchantName}` : email.subject || 'Email Bill';
+
+            const expenseDate = ext.date_time && ext.date_time !== 'Not Found'
+              ? ext.date_time.slice(0, 10) : new Date().toISOString().slice(0, 10);
+
+            const isSubscription = SUBSCRIPTION_MERCHANTS.some(s =>
+              `${merchantName} ${email.subject}`.toLowerCase().includes(s)
+            );
+
+            const { data: expense, error } = await supabase.from('expenses').insert({
+              user_id: user.id,
+              title,
+              merchant: merchantName,
+              amount,
+              expense_date: expenseDate,
+              category_id: categoryId,
+              description: `From email: ${email.subject}\nSender: ${email.from}${isSubscription ? '\n[Subscription]' : ''}`,
+              status: 'draft',
+              cost_center: isSubscription ? 'Subscription' : '',
+            } as any).select().single();
+
+            if (error) { skipped++; continue; }
+
+            await supabase.from('processed_emails').insert({
+              user_id: user.id,
+              gmail_message_id: email.message_id,
+              subject: title,
+              sender: merchantName || email.from,
+              expense_id: (expense as any)?.id,
+            } as any);
+
+            saved++;
+          } catch {
+            skipped++;
+          }
         }
       }
-    }
 
-    setPreviewBills(extracted);
-    setShowPreviewScreen(true);
-    setIsExtracting(false);
+      setImportResult({ saved, skipped, total: totalAttachments });
+      toast({
+        title: 'Import complete',
+        description: `Imported ${saved} bill(s). ${skipped > 0 ? `${skipped} skipped (no amount or extraction failed).` : ''}`,
+      });
 
-    if (extracted.length === 0) {
-      toast({ title: 'No data extracted', description: 'Could not extract data from any attachments.' });
-    } else {
-      toast({ title: 'Preview ready', description: `Extracted ${extracted.length} bill(s). Review and save.` });
-    }
-  };
-
-  // Bulk save all selected bills
-  const bulkSaveBills = async () => {
-    if (!user) return;
-    const selected = previewBills.filter(b => b.selected);
-    if (selected.length === 0) {
-      toast({ title: 'None selected', description: 'Select at least one bill to import.' });
-      return;
-    }
-
-    setIsBulkImporting(true);
-    let saved = 0;
-
-    for (const bill of selected) {
-      try {
-        const matchCategory = (name?: string) => {
-          if (!name || name === 'Not Found') return null;
-          return categories.find(c => c.name.toLowerCase() === name.toLowerCase())?.id || null;
-        };
-
-        const title = bill.extracted.bill_invoice_number && bill.extracted.bill_invoice_number !== 'Not Found'
-          ? `Invoice ${bill.extracted.bill_invoice_number}`
-          : bill.extracted.merchant_name && bill.extracted.merchant_name !== 'Not Found'
-            ? `Expense at ${bill.extracted.merchant_name}` : bill.subject || 'Email Bill';
-
-        const { data: expense, error } = await supabase.from('expenses').insert({
-          user_id: user.id,
-          title,
-          merchant: bill.extracted.merchant_name !== 'Not Found' ? (bill.extracted.merchant_name || '') : '',
-          amount: bill.extracted.amount ?? 0,
-          expense_date: bill.extracted.date_time && bill.extracted.date_time !== 'Not Found'
-            ? bill.extracted.date_time.slice(0, 10) : new Date().toISOString().slice(0, 10),
-          category_id: matchCategory(bill.extracted.category),
-          description: `From email: ${bill.subject}\nSender: ${bill.from}`,
-          status: 'submitted',
-        } as any).select().single();
-
-        if (error) continue;
-
-        await supabase.from('processed_emails').insert({
-          user_id: user.id,
-          gmail_message_id: bill.message_id,
-          subject: title,
-          sender: bill.extracted.merchant_name || bill.from,
-          expense_id: (expense as any)?.id,
-        } as any);
-
-        saved++;
-      } catch {
-        // continue with others
+      if (saved > 0) {
+        await detectDuplicates();
       }
-    }
-
-    // Mark saved ones as imported
-    setPreviewBills(prev =>
-      prev.map(b => b.selected && !b.already_imported ? { ...b, already_imported: true, selected: false } : b)
-    );
-    setIsBulkImporting(false);
-    setShowConfirmDialog(false);
-    toast({ title: 'Import complete', description: `Saved ${saved} of ${selected.length} bill(s).` });
-  };
-
-  // Toggle selection — allow selecting already imported bills for re-import
-  const toggleBillSelection = (messageId: string) => {
-    setPreviewBills(prev =>
-      prev.map(b => b.message_id === messageId ? { ...b, selected: !b.selected } : b)
-    );
-  };
-
-  const selectAll = () => {
-    setPreviewBills(prev => prev.map(b => ({ ...b, selected: true })));
-  };
-
-  const deselectAll = () => {
-    setPreviewBills(prev => prev.map(b => ({ ...b, selected: false })));
-  };
-
-  // Single attachment process (legacy fallback)
-  const processAttachment = async (email: EmailBill, attachment: EmailAttachment) => {
-    const processingKey = `${email.message_id}-${attachment.id}`;
-    setProcessingId(processingKey);
-    setCurrentEmailMsgId(email.message_id);
-
-    try {
-      const { data: attData, error: attError } = await supabase.functions.invoke('gmail-attachment', {
-        body: { message_id: email.message_id, attachment_id: attachment.id },
-      });
-      if (attError || attData?.error) throw new Error(attData?.error || 'Failed to fetch attachment');
-
-      const base64 = attData.data;
-      setAttachmentPreview(`data:${attachment.mimeType};base64,${base64}`);
-      setAttachmentMime(attachment.mimeType);
-
-      const { data: extracted, error: extractError } = await supabase.functions.invoke('extract-receipt', {
-        body: { file_base64: base64, file_type: attachment.mimeType },
-      });
-
-      if (extractError || extracted?.error) throw new Error(extracted?.error || 'Extraction failed');
-      setExtractedData(extracted);
-
-      const matchCategory = (name?: string) => {
-        if (!name || name === 'Not Found') return '';
-        return categories.find(c => c.name.toLowerCase() === name.toLowerCase())?.id || '';
-      };
-
-      setImportForm({
-        title: extracted.bill_invoice_number && extracted.bill_invoice_number !== 'Not Found'
-          ? `Invoice ${extracted.bill_invoice_number}`
-          : extracted.merchant_name && extracted.merchant_name !== 'Not Found'
-            ? `Expense at ${extracted.merchant_name}` : email.subject || 'Email Bill',
-        merchant: extracted.merchant_name !== 'Not Found' ? (extracted.merchant_name || '') : '',
-        amount: extracted.amount != null ? String(extracted.amount) : '',
-        expense_date: extracted.date_time && extracted.date_time !== 'Not Found'
-          ? extracted.date_time.slice(0, 10) : new Date().toISOString().slice(0, 10),
-        category_id: matchCategory(extracted.category),
-        description: `From email: ${email.subject}\nSender: ${email.from}`,
-      });
-
-      setShowImportDialog(true);
-    } catch (err: any) {
-      toast({ title: 'Processing failed', description: err.message, variant: 'destructive' });
-    } finally {
-      setProcessingId(null);
-    }
-  };
-
-  const handleImport = async () => {
-    if (!user) return;
-    setIsImporting(true);
-
-    try {
-      const { data: expense, error } = await supabase.from('expenses').insert({
-        user_id: user.id,
-        title: importForm.title,
-        merchant: importForm.merchant,
-        amount: parseFloat(importForm.amount),
-        expense_date: importForm.expense_date,
-        category_id: importForm.category_id || null,
-        description: importForm.description,
-        status: 'submitted',
-      } as any).select().single();
-
-      if (error) throw error;
-
-      await supabase.from('processed_emails').insert({
-        user_id: user.id,
-        gmail_message_id: currentEmailMsgId,
-        subject: importForm.title,
-        sender: importForm.merchant,
-        expense_id: (expense as any)?.id,
-      } as any);
-
-      setEmails(prev => prev.filter(e => e.message_id !== currentEmailMsgId));
-      setShowImportDialog(false);
-      setExtractedData(null);
-      setAttachmentPreview(null);
-
-      toast({ title: 'Expense saved', description: 'The bill has been saved successfully.' });
     } catch (err: any) {
       toast({ title: 'Import failed', description: err.message, variant: 'destructive' });
     } finally {
-      setIsImporting(false);
+      setIsScanning(false);
+      setImportProgress({ phase: '', current: 0, total: 0 });
     }
   };
 
-  // UPI SMS parsing
+  const detectDuplicates = async () => {
+    if (!user) return;
+    const { data } = await supabase
+      .from('expenses')
+      .select('id, merchant, amount, expense_date')
+      .eq('user_id', user.id);
+
+    if (!data) return;
+
+    const groups = new Map<string, { merchant: string; amount: number; expense_date: string; ids: string[] }>();
+    for (const row of data as any[]) {
+      const key = `${(row.merchant || '').toLowerCase().trim()}|${row.amount}|${row.expense_date}`;
+      if (!groups.has(key)) {
+        groups.set(key, { merchant: row.merchant || 'Unknown', amount: row.amount, expense_date: row.expense_date, ids: [] });
+      }
+      groups.get(key)!.ids.push(row.id);
+    }
+
+    const dupes = Array.from(groups.values()).filter(g => g.ids.length > 1);
+    if (dupes.length > 0) {
+      setDuplicates(dupes);
+      setShowDuplicateDialog(true);
+    }
+  };
+
+  const deleteDuplicates = async () => {
+    setIsDeletingDuplicates(true);
+    let deleted = 0;
+    for (const group of duplicates) {
+      const toDelete = group.ids.slice(1);
+      for (const id of toDelete) {
+        const { error } = await supabase.from('expenses').delete().eq('id', id);
+        if (!error) deleted++;
+      }
+    }
+    setIsDeletingDuplicates(false);
+    setShowDuplicateDialog(false);
+    setDuplicates([]);
+    toast({ title: 'Duplicates removed', description: `Deleted ${deleted} duplicate bill(s).` });
+  };
+
   const parseUpiSms = async () => {
     if (!smsText.trim()) {
       toast({ title: 'Empty input', description: 'Please paste your UPI SMS message(s).', variant: 'destructive' });
@@ -510,12 +419,6 @@ export default function EmailBills() {
     );
   }
 
-  const newBillCount = emails.filter(e => !e.already_imported).length;
-  const importedBillCount = emails.filter(e => e.already_imported).length;
-  const selectedPreviewBills = previewBills.filter(b => b.selected && !b.already_imported);
-  const selectedPreviewCount = selectedPreviewBills.length;
-  const selectedTotal = selectedPreviewBills.reduce((sum, b) => sum + (b.extracted.amount ?? 0), 0);
-
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <div>
@@ -537,9 +440,7 @@ export default function EmailBills() {
           )}
         </TabsList>
 
-        {/* Gmail Tab */}
         <TabsContent value="gmail" className="space-y-6">
-          {/* Connection Card */}
           <Card className="shadow-md border-0">
             <CardContent className="pt-6">
               <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
@@ -558,11 +459,9 @@ export default function EmailBills() {
                 </div>
                 <div className="flex gap-2 w-full sm:w-auto">
                   {isConnected ? (
-                    <>
-                      <Button variant="outline" onClick={disconnectGmail} className="min-h-[44px]">
-                        <Unlink className="h-4 w-4 mr-1" /> Disconnect
-                      </Button>
-                    </>
+                    <Button variant="outline" onClick={disconnectGmail} className="min-h-[44px]">
+                      <Unlink className="h-4 w-4 mr-1" /> Disconnect
+                    </Button>
                   ) : (
                     <Button onClick={connectGmail} className="min-h-[44px] w-full sm:w-auto">
                       <Link2 className="h-4 w-4 mr-2" /> Connect Gmail
@@ -573,8 +472,7 @@ export default function EmailBills() {
             </CardContent>
           </Card>
 
-          {/* Scan controls */}
-          {isConnected && !showPreviewScreen && (
+          {isConnected && (
             <Card className="shadow-md border-0">
               <CardContent className="pt-6 space-y-4">
                 <div className="flex flex-col sm:flex-row gap-3">
@@ -591,15 +489,60 @@ export default function EmailBills() {
                       </SelectContent>
                     </Select>
                   </div>
-                  <Button onClick={scanEmails} disabled={isScanning} className="min-h-[44px]">
-                    {isScanning ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Scanning...</> : <><RefreshCw className="h-4 w-4 mr-2" /> Scan Inbox</>}
+                  <Button onClick={autoImportBills} disabled={isScanning} className="min-h-[44px]">
+                    {isScanning ? (
+                      <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> {importProgress.phase || 'Working...'} {importProgress.total > 0 ? `(${importProgress.current}/${importProgress.total})` : ''}</>
+                    ) : (
+                      <><ScanLine className="h-4 w-4 mr-2" /> Scan & Import All</>
+                    )}
                   </Button>
+                </div>
+
+                {isScanning && importProgress.total > 0 && (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between text-xs text-muted-foreground">
+                      <span>{importProgress.phase}</span>
+                      <span>{importProgress.current}/{importProgress.total}</span>
+                    </div>
+                    <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-primary rounded-full transition-all duration-300"
+                        style={{ width: `${(importProgress.current / importProgress.total) * 100}%` }}
+                      />
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
+          {importResult && !isScanning && (
+            <Card className="shadow-md border-0 bg-green-500/5">
+              <CardContent className="pt-6">
+                <div className="flex items-start gap-3">
+                  <CheckCircle2 className="h-6 w-6 text-green-500 shrink-0 mt-0.5" />
+                  <div className="space-y-1">
+                    <h3 className="font-semibold text-foreground">Import Complete</h3>
+                    <p className="text-sm text-muted-foreground">
+                      <span className="font-medium text-foreground">{importResult.saved}</span> bill(s) imported successfully.
+                      {importResult.skipped > 0 && (
+                        <> <span className="font-medium text-muted-foreground">{importResult.skipped}</span> skipped (no amount or extraction failed).</>
+                      )}
+                    </p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="mt-2"
+                      onClick={() => navigate('/expenses')}
+                    >
+                      View All Bills →
+                    </Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>
           )}
 
-          {/* How It Works */}
           {!isConnected && (
             <Card className="shadow-md border-0 bg-primary/5">
               <CardHeader>
@@ -608,9 +551,8 @@ export default function EmailBills() {
               <CardContent className="space-y-3">
                 {[
                   { step: '1', title: 'Connect', desc: 'Securely link your Gmail account with read-only access' },
-                  { step: '2', title: 'Scan', desc: 'We search for emails with invoices, receipts, and bills' },
-                  { step: '3', title: 'Preview', desc: 'AI extracts details — review all bills before importing' },
-                  { step: '4', title: 'Save All', desc: 'Import selected bills in one click' },
+                  { step: '2', title: 'Scan & Import', desc: 'AI scans your inbox, extracts bill details, and auto-imports everything' },
+                  { step: '3', title: 'Review', desc: 'View all imported bills in your All Bills section, edit as needed' },
                 ].map(item => (
                   <div key={item.step} className="flex items-start gap-3">
                     <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold">
@@ -626,193 +568,20 @@ export default function EmailBills() {
             </Card>
           )}
 
-          {/* Scan results — email list with Extract All button */}
-          {isConnected && !showPreviewScreen && emails.length > 0 && (
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold text-foreground">
-                  Found Bills ({emails.length})
-                </h2>
-                {newBillCount > 0 && (
-                  <Button
-                    onClick={extractAllBills}
-                    disabled={isExtracting}
-                    className="min-h-[40px]"
-                  >
-                    {isExtracting ? (
-                      <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Extracting {extractProgress.current}/{extractProgress.total}...</>
-                    ) : (
-                      <><ScanLine className="h-4 w-4 mr-2" /> Extract All ({newBillCount})</>
-                    )}
-                  </Button>
-                )}
-              </div>
-
-              {emails.map(email => (
-                <Card key={email.message_id} className={`shadow-sm border-0 ${email.already_imported ? 'opacity-60' : ''}`}>
-                  <CardContent className="pt-4 pb-4">
-                    <div className="flex flex-col gap-3">
-                      <div className="flex items-start gap-3">
-                        <FileText className="h-5 w-5 text-primary shrink-0 mt-0.5" />
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <p className="font-medium text-sm text-foreground truncate">{email.subject || 'No subject'}</p>
-                            {email.already_imported && (
-                              <Badge variant="secondary" className="text-[10px] shrink-0 bg-muted text-muted-foreground">
-                                <Check className="h-3 w-3 mr-0.5" /> Already Imported
-                              </Badge>
-                            )}
-                          </div>
-                          <p className="text-xs text-muted-foreground truncate">From: {email.from}</p>
-                          <p className="text-xs text-muted-foreground">{email.date ? new Date(email.date).toLocaleDateString() : ''}</p>
-                        </div>
-                      </div>
-                      {!email.already_imported && (
-                        <div className="flex flex-wrap gap-2">
-                          {email.attachments.map(att => {
-                            const key = `${email.message_id}-${att.id}`;
-                            const isProcessing = processingId === key;
-                            return (
-                              <Button
-                                key={att.id}
-                                variant="outline"
-                                size="sm"
-                                className="min-h-[40px] text-xs"
-                                disabled={!!processingId}
-                                onClick={() => processAttachment(email, att)}
-                              >
-                                {isProcessing ? (
-                                  <><Loader2 className="h-3 w-3 mr-1.5 animate-spin" /> Processing...</>
-                                ) : (
-                                  <><ScanLine className="h-3 w-3 mr-1.5" /> {att.filename} <ArrowRight className="h-3 w-3 ml-1" /></>
-                                )}
-                              </Button>
-                            );
-                          })}
-                        </div>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
-
-          {/* Preview Screen — bulk import */}
-          {showPreviewScreen && (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between flex-wrap gap-2">
-              <div>
-                  <h2 className="text-lg font-semibold text-foreground">Preview Extracted Bills</h2>
-                  <p className="text-xs text-muted-foreground">
-                    {selectedPreviewCount} selected · Total: ₹{selectedTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                  </p>
-                </div>
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm" onClick={() => setShowPreviewScreen(false)}>
-                    <X className="h-3.5 w-3.5 mr-1" /> Back
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={selectAll}>Select All</Button>
-                  <Button variant="outline" size="sm" onClick={deselectAll}>Deselect All</Button>
-                </div>
-              </div>
-
-              {previewBills.map((bill, idx) => (
-                <Card key={`${bill.message_id}-${idx}`} className={`shadow-sm border-0 ${bill.already_imported ? 'opacity-50' : ''}`}>
-                  <CardContent className="pt-4 pb-4">
-                    <div className="flex items-start gap-3">
-                      {!bill.already_imported && (
-                        <Checkbox
-                          checked={bill.selected}
-                          onCheckedChange={() => toggleBillSelection(bill.message_id)}
-                          className="mt-1"
-                        />
-                      )}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <p className="font-medium text-sm text-foreground truncate">
-                            {bill.extracted.merchant_name && bill.extracted.merchant_name !== 'Not Found'
-                              ? bill.extracted.merchant_name
-                              : bill.subject || 'Unknown'}
-                          </p>
-                          {bill.already_imported && (
-                            <Badge variant="secondary" className="text-[10px] shrink-0 bg-muted text-muted-foreground">
-                              <Check className="h-3 w-3 mr-0.5" /> Already Imported
-                            </Badge>
-                          )}
-                        </div>
-                        {!bill.already_imported && (
-                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
-                            <div className="bg-muted/30 rounded px-2 py-1">
-                              <span className="text-muted-foreground">Amount: </span>
-                              <span className="font-medium text-foreground">
-                                {bill.extracted.amount != null ? `₹${bill.extracted.amount}` : 'N/A'}
-                              </span>
-                            </div>
-                            <div className="bg-muted/30 rounded px-2 py-1">
-                              <span className="text-muted-foreground">Date: </span>
-                              <span className="font-medium text-foreground">
-                                {bill.extracted.date_time && bill.extracted.date_time !== 'Not Found'
-                                  ? bill.extracted.date_time.slice(0, 10)
-                                  : 'N/A'}
-                              </span>
-                            </div>
-                            <div className="bg-muted/30 rounded px-2 py-1">
-                              <span className="text-muted-foreground">Invoice: </span>
-                              <span className="font-medium text-foreground">
-                                {bill.extracted.bill_invoice_number && bill.extracted.bill_invoice_number !== 'Not Found'
-                                  ? bill.extracted.bill_invoice_number
-                                  : 'N/A'}
-                              </span>
-                            </div>
-                            <div className="bg-muted/30 rounded px-2 py-1">
-                              <span className="text-muted-foreground">Category: </span>
-                              <span className="font-medium text-foreground">
-                                {bill.extracted.category && bill.extracted.category !== 'Not Found'
-                                  ? bill.extracted.category
-                                  : 'N/A'}
-                              </span>
-                            </div>
-                          </div>
-                        )}
-                        <p className="text-[11px] text-muted-foreground mt-1 truncate">
-                          From: {bill.from} · {bill.attachment.filename}
-                        </p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-
-              {/* Bulk Save Button */}
-              {selectedPreviewCount > 0 && (
-                <div className="sticky bottom-20 md:bottom-4 z-10">
-                  <Button
-                    onClick={() => setShowConfirmDialog(true)}
-                    className="w-full min-h-[48px] shadow-lg"
-                    size="lg"
-                  >
-                    <CheckCircle2 className="h-4 w-4 mr-2" /> Confirm & Save ({selectedPreviewCount} bills · ₹{selectedTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })})
-                  </Button>
-                </div>
-              )}
-            </div>
-          )}
-
-          {isConnected && !isScanning && !showPreviewScreen && emails.length === 0 && (
+          {isConnected && !isScanning && !importResult && (
             <Card className="shadow-md border-0">
               <CardContent className="py-12 text-center">
                 <Mail className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-                <h3 className="font-semibold text-foreground mb-1">No bills found yet</h3>
-                <p className="text-sm text-muted-foreground mb-4">Click "Scan Inbox" to search for bills and receipts in your email.</p>
+                <h3 className="font-semibold text-foreground mb-1">Ready to import</h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Select a date range and click "Scan & Import All" to auto-import bills from your Gmail.
+                </p>
               </CardContent>
             </Card>
           )}
         </TabsContent>
 
-        {/* UPI SMS Tab — only available on native mobile */}
         {isNative && <TabsContent value="upi" className="space-y-6">
-          {/* Auto Scan Card — shown only on Android native app */}
           {showNativeScan && (
             <Card className="shadow-md border-0 bg-primary/5">
               <CardHeader>
@@ -853,7 +622,6 @@ export default function EmailBills() {
             </Card>
           )}
 
-          {/* Manual Paste Card */}
           <Card className="shadow-md border-0">
             <CardHeader>
               <CardTitle className="text-base flex items-center gap-2">
@@ -886,7 +654,6 @@ export default function EmailBills() {
             </CardContent>
           </Card>
 
-          {/* How It Works for UPI */}
           {upiTransactions.length === 0 && !isParsing && (
             <Card className="shadow-md border-0 bg-primary/5">
               <CardHeader>
@@ -913,7 +680,6 @@ export default function EmailBills() {
             </Card>
           )}
 
-          {/* Parsed UPI Transactions */}
           {upiTransactions.length > 0 && (
             <div className="space-y-3">
               <h2 className="text-lg font-semibold text-foreground">
@@ -985,143 +751,55 @@ export default function EmailBills() {
         </TabsContent>}
       </Tabs>
 
-      {/* Import Dialog (single Gmail bill) */}
-      <Dialog open={showImportDialog} onOpenChange={setShowImportDialog}>
-        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+      <Dialog open={showDuplicateDialog} onOpenChange={setShowDuplicateDialog}>
+        <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <CheckCircle2 className="h-5 w-5 text-green-600" />
-              Import Expense
-            </DialogTitle>
-          </DialogHeader>
-
-          {extractedData && (
-            <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-2">
-              <p className="text-xs font-medium text-muted-foreground">AI Extracted Fields</p>
-              <div className="grid grid-cols-2 gap-2 text-xs">
-                {([
-                  ['Merchant', extractedData.merchant_name],
-                  ['Amount', extractedData.amount != null ? `₹${extractedData.amount}` : null],
-                  ['Date', extractedData.date_time],
-                  ['Category', extractedData.category],
-                ] as [string, any][]).map(([label, value]) => (
-                  <div key={label} className="flex items-center gap-1.5 bg-background rounded px-2 py-1.5">
-                    <span className="text-muted-foreground">{label}:</span>
-                    <span className={`font-medium ${!value || value === 'Not Found' ? 'text-muted-foreground italic' : 'text-foreground'}`}>
-                      {!value || value === 'Not Found' ? 'N/A' : String(value)}
-                    </span>
-                  </div>
-                ))}
-              </div>
-              {attachmentPreview && (
-                <Button variant="outline" size="sm" className="w-full mt-2" onClick={() => setShowDocPreview(true)}>
-                  <Eye className="h-3.5 w-3.5 mr-1.5" /> View Original Document
-                </Button>
-              )}
-            </div>
-          )}
-
-          <div className="space-y-4">
-            <div className="space-y-1.5">
-              <Label className="text-sm">Title</Label>
-              <Input className="min-h-[44px]" value={importForm.title} onChange={e => setImportForm(p => ({ ...p, title: e.target.value }))} />
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label className="text-sm">Merchant</Label>
-                <Input className="min-h-[44px]" value={importForm.merchant} onChange={e => setImportForm(p => ({ ...p, merchant: e.target.value }))} />
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-sm">Amount (₹)</Label>
-                <Input className="min-h-[44px]" type="number" step="0.01" value={importForm.amount} onChange={e => setImportForm(p => ({ ...p, amount: e.target.value }))} />
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label className="text-sm">Date</Label>
-                <Input className="min-h-[44px]" type="date" value={importForm.expense_date} onChange={e => setImportForm(p => ({ ...p, expense_date: e.target.value }))} />
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-sm">Category</Label>
-                <Select value={importForm.category_id} onValueChange={v => setImportForm(p => ({ ...p, category_id: v }))}>
-                  <SelectTrigger className="min-h-[44px]"><SelectValue placeholder="Select" /></SelectTrigger>
-                  <SelectContent>
-                    {categories.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div className="flex gap-2 pt-2">
-              <Button
-                onClick={handleImport}
-                disabled={isImporting || !importForm.title || !importForm.amount}
-                className="flex-1 min-h-[44px]"
-              >
-                {isImporting ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Saving...</> : <><CheckCircle2 className="h-4 w-4 mr-2" /> Save Expense</>}
-              </Button>
-              <Button variant="outline" onClick={() => setShowImportDialog(false)} className="min-h-[44px]">Cancel</Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Document Preview Dialog */}
-      <Dialog open={showDocPreview} onOpenChange={setShowDocPreview}>
-        <DialogContent className="max-w-3xl max-h-[85vh]">
-          <DialogHeader>
-            <DialogTitle>Document Preview</DialogTitle>
-          </DialogHeader>
-          <div className="overflow-auto max-h-[70vh] rounded-lg border border-border bg-muted/20 flex items-center justify-center p-2">
-            {attachmentPreview && (
-              attachmentMime === 'application/pdf' ? (
-                <iframe src={attachmentPreview} className="w-full h-[65vh] rounded" title="Document" />
-              ) : (
-                <img src={attachmentPreview} alt="Document" className="max-w-full max-h-[65vh] object-contain rounded" />
-              )
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Confirmation Dialog for Bulk Save */}
-      <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <CheckCircle2 className="h-5 w-5 text-primary" />
-              Confirm Import
+              <AlertCircle className="h-5 w-5 text-yellow-500" />
+              Duplicate Bills Found
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-2">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Bills to save</span>
-                <span className="font-bold text-foreground">{selectedPreviewCount}</span>
-              </div>
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Total amount</span>
-                <span className="font-bold text-foreground text-lg">
-                  ₹{selectedTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                </span>
-              </div>
-            </div>
-            <p className="text-xs text-muted-foreground">
-              All selected bills will be saved as expenses. Duplicates are automatically skipped.
+            <p className="text-sm text-muted-foreground">
+              {duplicates.length} group(s) of duplicate bills were found. Would you like to remove the extras?
             </p>
+            <div className="space-y-2 max-h-[40vh] overflow-y-auto">
+              {duplicates.map((group, idx) => (
+                <div key={idx} className="rounded-lg border border-border bg-muted/30 p-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-foreground">{group.merchant || 'Unknown'}</p>
+                      <p className="text-xs text-muted-foreground">
+                        ₹{group.amount} · {new Date(group.expense_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+                      </p>
+                    </div>
+                    <Badge variant="secondary" className="text-xs">
+                      {group.ids.length} copies
+                    </Badge>
+                  </div>
+                </div>
+              ))}
+            </div>
             <div className="flex gap-2 pt-1">
               <Button
-                onClick={bulkSaveBills}
-                disabled={isBulkImporting}
+                onClick={deleteDuplicates}
+                disabled={isDeletingDuplicates}
+                variant="destructive"
                 className="flex-1 min-h-[44px]"
               >
-                {isBulkImporting ? (
-                  <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Saving...</>
+                {isDeletingDuplicates ? (
+                  <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Removing...</>
                 ) : (
-                  <><CheckCircle2 className="h-4 w-4 mr-2" /> Save {selectedPreviewCount} Bills</>
+                  <><Trash2 className="h-4 w-4 mr-2" /> Remove Duplicates</>
                 )}
               </Button>
-              <Button variant="outline" onClick={() => setShowConfirmDialog(false)} disabled={isBulkImporting} className="min-h-[44px]">
-                Cancel
+              <Button
+                variant="outline"
+                onClick={() => setShowDuplicateDialog(false)}
+                disabled={isDeletingDuplicates}
+                className="min-h-[44px]"
+              >
+                Keep All
               </Button>
             </div>
           </div>
