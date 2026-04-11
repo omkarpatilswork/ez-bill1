@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -207,7 +207,7 @@ export default function Onboarding() {
                 className="mt-0.5"
               />
               <label htmlFor="terms" className="text-sm text-muted-foreground leading-relaxed cursor-pointer">
-                I accept the <span className="text-primary underline">Terms of Service</span> and <span className="text-primary underline">Privacy Policy</span>
+                I accept the <Link to="/terms" target="_blank" className="text-primary underline">Terms of Service</Link> and <Link to="/privacy" target="_blank" className="text-primary underline">Privacy Policy</Link>
               </label>
             </div>
 
