@@ -1,6 +1,6 @@
 import {
-  LayoutDashboard, Receipt, PlusCircle, Users, CheckSquare,
-  Building2, BarChart3, LogOut, ChevronDown, PieChart, MessageSquare, Mail,
+  LayoutDashboard, Receipt, PlusCircle,
+  PieChart, LogOut, MessageSquare, Mail,
 } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { NavLink } from '@/components/NavLink';
@@ -10,27 +10,15 @@ import {
   SidebarGroupContent, SidebarGroupLabel, SidebarHeader,
   SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar,
 } from '@/components/ui/sidebar';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 
-const employeeItems = [
+const menuItems = [
   { title: 'Dashboard', url: '/', icon: LayoutDashboard },
-  { title: 'New Expense', url: '/expenses/new', icon: PlusCircle },
-  { title: 'My Expenses', url: '/expenses', icon: Receipt },
+  { title: 'New Bill', url: '/expenses/new', icon: PlusCircle },
+  { title: 'All Bills', url: '/expenses', icon: Receipt },
   { title: 'Analytics', url: '/analytics', icon: PieChart },
   { title: 'Ask AI', url: '/ask-ai', icon: MessageSquare },
   { title: 'Import Bills', url: '/email-bills', icon: Mail },
-];
-
-const managerItems = [
-  { title: 'Team Dashboard', url: '/manager', icon: Users },
-  { title: 'Pending Approvals', url: '/manager/approvals', icon: CheckSquare },
-];
-
-const financeItems = [
-  { title: 'Finance Dashboard', url: '/finance', icon: Building2 },
-  { title: 'All Expenses', url: '/finance/expenses', icon: Receipt },
-  { title: 'Reports', url: '/finance/reports', icon: BarChart3 },
 ];
 
 export function AppSidebar() {
@@ -38,7 +26,7 @@ export function AppSidebar() {
   const collapsed = !isMobile && state === 'collapsed';
   const location = useLocation();
   const navigate = useNavigate();
-  const { profile, hasRole, signOut } = useAuth();
+  const { profile, signOut } = useAuth();
 
   const isActive = (path: string) => location.pathname === path;
   const initials = profile?.full_name?.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() || '?';
@@ -65,10 +53,10 @@ export function AppSidebar() {
 
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel className="text-muted-foreground">Expenses</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-muted-foreground">Menu</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {employeeItems.map(item => (
+              {menuItems.map(item => (
                 <SidebarMenuItem key={item.url}>
                   <SidebarMenuButton asChild isActive={isActive(item.url)}>
                     <NavLink to={item.url} end>
@@ -81,64 +69,6 @@ export function AppSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
-
-        {hasRole('manager') && (
-          <Collapsible defaultOpen className="group/collapsible">
-            <SidebarGroup>
-              <CollapsibleTrigger asChild>
-                <SidebarGroupLabel className="cursor-pointer text-muted-foreground">
-                  Manager
-                  {!collapsed && <ChevronDown className="ml-auto h-4 w-4 transition-transform group-data-[state=open]/collapsible:rotate-180" />}
-                </SidebarGroupLabel>
-              </CollapsibleTrigger>
-              <CollapsibleContent>
-                <SidebarGroupContent>
-                  <SidebarMenu>
-                    {managerItems.map(item => (
-                      <SidebarMenuItem key={item.url}>
-                        <SidebarMenuButton asChild isActive={isActive(item.url)}>
-                          <NavLink to={item.url} end>
-                            <item.icon className="h-4 w-4" />
-                            {!collapsed && <span>{item.title}</span>}
-                          </NavLink>
-                        </SidebarMenuButton>
-                      </SidebarMenuItem>
-                    ))}
-                  </SidebarMenu>
-                </SidebarGroupContent>
-              </CollapsibleContent>
-            </SidebarGroup>
-          </Collapsible>
-        )}
-
-        {hasRole('finance') && (
-          <Collapsible defaultOpen className="group/collapsible">
-            <SidebarGroup>
-              <CollapsibleTrigger asChild>
-                <SidebarGroupLabel className="cursor-pointer text-muted-foreground">
-                  Finance
-                  {!collapsed && <ChevronDown className="ml-auto h-4 w-4 transition-transform group-data-[state=open]/collapsible:rotate-180" />}
-                </SidebarGroupLabel>
-              </CollapsibleTrigger>
-              <CollapsibleContent>
-                <SidebarGroupContent>
-                  <SidebarMenu>
-                    {financeItems.map(item => (
-                      <SidebarMenuItem key={item.url}>
-                        <SidebarMenuButton asChild isActive={isActive(item.url)}>
-                          <NavLink to={item.url} end>
-                            <item.icon className="h-4 w-4" />
-                            {!collapsed && <span>{item.title}</span>}
-                          </NavLink>
-                        </SidebarMenuButton>
-                      </SidebarMenuItem>
-                    ))}
-                  </SidebarMenu>
-                </SidebarGroupContent>
-              </CollapsibleContent>
-            </SidebarGroup>
-          </Collapsible>
-        )}
       </SidebarContent>
 
       <SidebarFooter>

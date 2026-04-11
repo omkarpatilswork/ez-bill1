@@ -2,30 +2,15 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { StatusBadge } from '@/components/expenses/StatusBadge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import {
   ArrowLeft, Store, Package, Hash, Calendar, CreditCard, IndianRupee,
-  Receipt, Eye, Users, ShieldCheck, Pencil, FileText, CheckCircle, XCircle,
-  Clock, DollarSign, Send, Trash2, Headphones
+  Receipt, Eye, Users, Pencil, FileText, Trash2, Headphones
 } from 'lucide-react';
-import type { Expense, ExpenseStatus, ApprovalAction, AuditLog } from '@/lib/types';
-
-const STATUS_FLOW: { status: ExpenseStatus; label: string; icon: typeof Clock }[] = [
-  { status: 'draft', label: 'Draft', icon: FileText },
-  { status: 'submitted', label: 'Submitted', icon: Clock },
-  { status: 'manager_approved', label: 'Manager', icon: CheckCircle },
-  { status: 'approved', label: 'Approved', icon: CheckCircle },
-];
-
-function getStatusStep(status: ExpenseStatus): number {
-  if (status === 'rejected') return -1;
-  const idx = STATUS_FLOW.findIndex(s => s.status === status);
-  return idx >= 0 ? idx : 0;
-}
+import type { Expense } from '@/lib/types';
 
 interface LineItem {
   name: string;
@@ -67,26 +52,18 @@ export default function ExpenseDetail() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [expense, setExpense] = useState<Expense | null>(null);
-  const [approvals, setApprovals] = useState<ApprovalAction[]>([]);
-  const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [receiptUrl, setReceiptUrl] = useState<string | null>(null);
   const [receiptName, setReceiptName] = useState<string>('');
   const [activeTab, setActiveTab] = useState<string>('ebill');
-  const [showApprovalFlow, setShowApprovalFlow] = useState(false);
-  
 
   useEffect(() => {
     if (!id) return;
     Promise.all([
       supabase.from('expenses').select('*').eq('id', id).single(),
-      supabase.from('approval_actions').select('*').eq('expense_id', id).order('created_at'),
-      supabase.from('audit_logs').select('*').eq('expense_id', id).order('created_at'),
       supabase.from('expense_receipts').select('*').eq('expense_id', id).limit(1),
-    ]).then(async ([expRes, appRes, logRes, receiptRes]) => {
+    ]).then(async ([expRes, receiptRes]) => {
       setExpense(expRes.data as unknown as Expense);
-      setApprovals((appRes.data as unknown as ApprovalAction[]) || []);
-      setAuditLogs((logRes.data as unknown as AuditLog[]) || []);
 
       const receipts = receiptRes.data as any[];
       if (receipts && receipts.length > 0) {
@@ -102,22 +79,9 @@ export default function ExpenseDetail() {
     });
   }, [id]);
 
-  const handleSubmitForApproval = async () => {
-    if (!expense || !user) return;
-    await supabase.from('expenses').update({ status: 'submitted' } as any).eq('id', expense.id);
-    await supabase.from('audit_logs').insert({
-      expense_id: expense.id, user_id: user.id, action: 'submitted', details: {},
-    } as any);
-    toast({ title: 'Submitted for Approval', description: 'Your bill is now pending approval.' });
-    navigate('/expenses');
-  };
-
-  
-
   const handleDelete = async () => {
     if (!expense || !confirm('Delete this bill permanently?')) return;
     await supabase.from('expense_receipts').delete().eq('expense_id', expense.id);
-    await supabase.from('audit_logs').delete().eq('expense_id', expense.id);
     await supabase.from('expenses').delete().eq('id', expense.id);
     toast({ title: 'Bill deleted' });
     navigate('/expenses');
@@ -139,137 +103,7 @@ export default function ExpenseDetail() {
   const paymentMethod = expense.cost_center || parseField(expense.description, 'Payment') || '—';
   const lineItems = parseStoredLineItems(expense.description);
   const notes = cleanDescription(expense.description);
-  const currentStep = getStatusStep(expense.status as ExpenseStatus);
-  const isRejected = expense.status === 'rejected';
-  const isInApprovalFlow = ['submitted', 'manager_approved', 'approved', 'rejected'].includes(expense.status);
 
-  // ─── Reimbursement view ───
-  if (showApprovalFlow) {
-    return (
-      <div className="max-w-3xl mx-auto space-y-5 pb-24">
-        <div className="flex items-center gap-2">
-          <Button variant="ghost" size="sm" className="h-8 px-2" onClick={() => {
-            setShowApprovalFlow(false);
-          }}>
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-          <h1 className="text-lg font-bold text-foreground">Approval Status</h1>
-          <div className="ml-auto"><StatusBadge status={expense.status as ExpenseStatus} /></div>
-        </div>
-
-        {/* Status Flow */}
-        {!isRejected && (
-          <Card className="shadow-md border-0">
-            <CardContent className="py-4">
-              <div className="flex items-center justify-between">
-                {STATUS_FLOW.map((step, i) => {
-                  const isActive = i <= currentStep;
-                  const isCurrent = i === currentStep;
-                  const StepIcon = step.icon;
-                  return (
-                    <div key={step.status} className="flex items-center flex-1 last:flex-none">
-                      <div className="flex flex-col items-center gap-1">
-                        <div className={`h-8 w-8 rounded-full flex items-center justify-center transition-colors ${
-                          isCurrent ? 'bg-primary text-primary-foreground ring-2 ring-primary/30' :
-                          isActive ? 'bg-green-600 text-primary-foreground' : 'bg-muted text-muted-foreground'
-                        }`}>
-                          <StepIcon className="h-4 w-4" />
-                        </div>
-                        <span className={`text-[10px] font-medium ${isCurrent ? 'text-primary' : isActive ? 'text-green-500' : 'text-muted-foreground'}`}>
-                          {step.label}
-                        </span>
-                      </div>
-                      {i < STATUS_FLOW.length - 1 && (
-                        <div className={`flex-1 h-0.5 mx-2 rounded-full ${i < currentStep ? 'bg-green-600' : 'bg-muted'}`} />
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {isRejected && (
-          <Card className="shadow-md border-0 border-l-4 border-l-destructive">
-            <CardContent className="py-4 flex items-center gap-3">
-              <XCircle className="h-5 w-5 text-destructive shrink-0" />
-              <div>
-                <p className="font-medium text-destructive">Bill Rejected</p>
-                <p className="text-sm text-muted-foreground">Check the approval history below.</p>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Bill summary */}
-        <Card className="shadow-md border-0">
-          <CardHeader className="pb-3"><CardTitle className="text-base">Bill Details</CardTitle></CardHeader>
-          <CardContent>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <InfoRow icon={IndianRupee} label="Amount" value={`₹${Number(expense.amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`} />
-              <InfoRow icon={Store} label="Merchant" value={expense.merchant || '—'} />
-              <InfoRow icon={Calendar} label="Date" value={new Date(expense.expense_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })} />
-              <InfoRow icon={CreditCard} label="Payment" value={paymentMethod} />
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Approval History */}
-        {approvals.length > 0 && (
-          <Card className="shadow-md border-0">
-            <CardHeader className="pb-3"><CardTitle className="text-base">Approval History</CardTitle></CardHeader>
-            <CardContent className="space-y-3">
-              {approvals.map(a => (
-                <div key={a.id} className="flex items-start gap-3 p-2.5 rounded-lg bg-muted/30">
-                  <div className={`mt-0.5 h-6 w-6 rounded-full flex items-center justify-center shrink-0 ${a.action === 'approved' ? 'bg-green-600/20 text-green-500' : 'bg-destructive/20 text-destructive'}`}>
-                    {a.action === 'approved' ? <CheckCircle className="h-3.5 w-3.5" /> : <XCircle className="h-3.5 w-3.5" />}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between gap-2">
-                      <p className="text-sm font-medium">
-                        {a.level === 'manager' ? 'Manager' : 'Finance'} — <span className={a.action === 'approved' ? 'text-green-500' : 'text-destructive'}>{a.action}</span>
-                      </p>
-                      <span className="text-xs text-muted-foreground shrink-0">{new Date(a.created_at).toLocaleDateString()}</span>
-                    </div>
-                    {a.comments && <p className="text-sm text-muted-foreground mt-0.5">{a.comments}</p>}
-                  </div>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Activity Log */}
-        {auditLogs.length > 0 && (
-          <Card className="shadow-md border-0">
-            <CardHeader className="pb-3"><CardTitle className="text-base">Activity Log</CardTitle></CardHeader>
-            <CardContent>
-              <div className="relative pl-4 border-l-2 border-border space-y-3">
-                {auditLogs.map(log => (
-                  <div key={log.id} className="relative">
-                    <div className="absolute -left-[21px] top-1 h-2.5 w-2.5 rounded-full bg-border border-2 border-card" />
-                    <div className="flex flex-col sm:flex-row sm:justify-between gap-0.5">
-                      <span className="text-sm font-medium">{log.action.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</span>
-                      <span className="text-xs text-muted-foreground">{new Date(log.created_at).toLocaleString()}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {expense.status === 'draft' && expense.user_id === user?.id && (
-          <Button className="w-full min-h-[48px]" onClick={handleSubmitForApproval}>
-            <Send className="h-4 w-4 mr-2" /> Submit for Approval
-          </Button>
-        )}
-      </div>
-    );
-  }
-
-  // ─── Default: E-Bill / Original Bill view ───
   return (
     <div className="max-w-3xl mx-auto space-y-4 pb-24">
       {/* Header */}
@@ -278,9 +112,6 @@ export default function ExpenseDetail() {
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <h1 className="text-lg font-bold text-foreground truncate flex-1">{expense.merchant || expense.title}</h1>
-        {['submitted', 'manager_approved', 'approved', 'rejected'].includes(expense.status) && (
-          <StatusBadge status={expense.status as ExpenseStatus} />
-        )}
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -295,7 +126,6 @@ export default function ExpenseDetail() {
 
         {/* ─── E-BILL TAB ─── */}
         <TabsContent value="ebill" className="mt-3 space-y-3">
-          {/* Merchant & Core Info */}
           <Card className="border-0 bg-card/80 backdrop-blur">
             <CardContent className="pt-4 pb-4 space-y-3">
               <EBillRow icon={Store} label="Merchant" value={expense.merchant || '—'} />
@@ -306,7 +136,6 @@ export default function ExpenseDetail() {
             </CardContent>
           </Card>
 
-          {/* Line Items */}
           {lineItems.length > 0 && (
             <Card className="border-0 bg-card/80 backdrop-blur">
               <CardContent className="pt-4 pb-4">
@@ -330,7 +159,6 @@ export default function ExpenseDetail() {
             </Card>
           )}
 
-          {/* Notes */}
           {notes && (
             <Card className="border-0 bg-card/80 backdrop-blur">
               <CardContent className="pt-4 pb-4">
@@ -340,7 +168,6 @@ export default function ExpenseDetail() {
             </Card>
           )}
 
-          {/* Total */}
           <Card className="border-0 bg-card/80 backdrop-blur">
             <CardContent className="pt-4 pb-4">
               <div className="flex justify-between items-center">
@@ -383,7 +210,7 @@ export default function ExpenseDetail() {
       </Tabs>
 
       {/* Action Buttons */}
-      <div className="grid grid-cols-2 gap-2 pt-2">
+      <div className="grid grid-cols-3 gap-2 pt-2">
         <Button variant="outline" className="min-h-[44px] text-xs"
           onClick={() => navigate(`/expenses/new?edit=${expense.id}`)}>
           <Pencil className="h-3.5 w-3.5 mr-1" /> Edit
@@ -394,15 +221,10 @@ export default function ExpenseDetail() {
         </Button>
         <Button variant="outline" className="min-h-[44px] text-xs"
           onClick={() => navigate(`/expenses/${expense.id}/support`)}>
-          <Headphones className="h-3.5 w-3.5 mr-1" /> Get Support
-        </Button>
-        <Button className="min-h-[44px] text-xs"
-          onClick={() => setShowApprovalFlow(true)}>
-          <ShieldCheck className="h-3.5 w-3.5 mr-1" /> Approval Status
+          <Headphones className="h-3.5 w-3.5 mr-1" /> Support
         </Button>
       </div>
 
-      {/* Delete — prominent at bottom */}
       <Button variant="destructive" className="w-full min-h-[48px] text-sm" onClick={handleDelete}>
         <Trash2 className="h-4 w-4 mr-2" /> Delete Bill
       </Button>
@@ -421,18 +243,6 @@ function EBillRow({ icon: Icon, label, value }: { icon: any; label: string; valu
         <p className={`text-sm font-medium truncate ${value && value !== '—' ? 'text-foreground' : 'text-muted-foreground italic'}`}>
           {value}
         </p>
-      </div>
-    </div>
-  );
-}
-
-function InfoRow({ icon: Icon, label, value }: { icon: any; label: string; value: string }) {
-  return (
-    <div className="flex items-start gap-3">
-      <Icon className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
-      <div>
-        <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">{label}</p>
-        <p className="font-medium text-foreground">{value}</p>
       </div>
     </div>
   );

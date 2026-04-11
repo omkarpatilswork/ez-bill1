@@ -191,7 +191,7 @@ export default function AskAI() {
               </div>
               <h2 className="text-xl font-bold text-foreground mb-2">How can I help you?</h2>
               <p className="text-sm text-muted-foreground mb-8 max-w-md leading-relaxed">
-                I have access to all your expense data. Ask me about spending patterns, category breakdowns, approval statuses, or specific transactions.
+                I have access to all your expense data. Ask me about spending patterns, category breakdowns, or specific transactions.
               </p>
               {loadingSuggestions ? (
                 <div className="grid grid-cols-2 gap-3 max-w-lg w-full">

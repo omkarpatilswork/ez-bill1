@@ -16,11 +16,6 @@ import SplitBill from "./pages/expenses/SplitBill";
 import Analytics from "./pages/expenses/Analytics";
 import AskAI from "./pages/AskAI";
 import EmailBills from "./pages/expenses/EmailBills";
-import ManagerDashboard from "./pages/manager/ManagerDashboard";
-import PendingApprovals from "./pages/manager/PendingApprovals";
-import FinanceDashboard from "./pages/finance/FinanceDashboard";
-import AllExpenses from "./pages/finance/AllExpenses";
-import Reports from "./pages/finance/Reports";
 import Profile from "./pages/Profile";
 import Onboarding from "./pages/Onboarding";
 import TermsAndConditions from "./pages/TermsAndConditions";
@@ -51,11 +46,6 @@ const App = () => (
           <Route path="/email-bills" element={<ProtectedRoute><AppLayout><EmailBills /></AppLayout></ProtectedRoute>} />
           <Route path="/ask-ai" element={<ProtectedRoute><AppLayout><AskAI /></AppLayout></ProtectedRoute>} />
           <Route path="/profile" element={<ProtectedRoute><AppLayout><Profile /></AppLayout></ProtectedRoute>} />
-          <Route path="/manager" element={<ProtectedRoute><AppLayout><ManagerDashboard /></AppLayout></ProtectedRoute>} />
-          <Route path="/manager/approvals" element={<ProtectedRoute><AppLayout><PendingApprovals /></AppLayout></ProtectedRoute>} />
-          <Route path="/finance" element={<ProtectedRoute><AppLayout><FinanceDashboard /></AppLayout></ProtectedRoute>} />
-          <Route path="/finance/expenses" element={<ProtectedRoute><AppLayout><AllExpenses /></AppLayout></ProtectedRoute>} />
-          <Route path="/finance/reports" element={<ProtectedRoute><AppLayout><Reports /></AppLayout></ProtectedRoute>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
