@@ -8,20 +8,13 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, AreaChart, Area,
 } from 'recharts';
-import { TrendingUp, DollarSign, Clock, CheckCircle, XCircle, ArrowUpRight } from 'lucide-react';
-import type { Expense, ExpenseCategory, ExpenseStatus } from '@/lib/types';
-import { STATUS_CONFIG } from '@/lib/types';
+import { TrendingUp, DollarSign, ArrowUpRight, Receipt } from 'lucide-react';
+import type { Expense, ExpenseCategory } from '@/lib/types';
 
 const CHART_COLORS = [
   'hsl(152, 57%, 42%)', 'hsl(221, 83%, 53%)', 'hsl(38, 92%, 50%)',
   'hsl(0, 84%, 60%)', 'hsl(199, 89%, 48%)', 'hsl(280, 67%, 55%)', 'hsl(330, 65%, 50%)',
 ];
-
-const STATUS_COLORS: Record<string, string> = {
-  draft: 'hsl(215, 16%, 47%)', submitted: 'hsl(221, 83%, 53%)',
-  manager_approved: 'hsl(38, 92%, 50%)', approved: 'hsl(152, 57%, 42%)',
-  rejected: 'hsl(0, 84%, 60%)',
-};
 
 export default function Analytics() {
   const { user } = useAuth();
@@ -54,12 +47,6 @@ export default function Analytics() {
   }, [expenses, timeRange]);
 
   const totalAmount = filteredExpenses.reduce((s, e) => s + Number(e.amount), 0);
-  const pendingExpenses = filteredExpenses.filter(e => ['submitted', 'manager_approved'].includes(e.status));
-  const approvedExpenses = filteredExpenses.filter(e => e.status === 'approved');
-  const rejectedExpenses = filteredExpenses.filter(e => e.status === 'rejected');
-  const pendingAmount = pendingExpenses.reduce((s, e) => s + Number(e.amount), 0);
-  const approvedAmount = approvedExpenses.reduce((s, e) => s + Number(e.amount), 0);
-  const rejectedAmount = rejectedExpenses.reduce((s, e) => s + Number(e.amount), 0);
   const avgExpense = filteredExpenses.length > 0 ? totalAmount / filteredExpenses.length : 0;
 
   const monthlyTrend = useMemo(() => {
@@ -86,20 +73,6 @@ export default function Analytics() {
   }, [filteredExpenses, categories]);
 
   const totalCategoryAmount = categoryBreakdown.reduce((s, d) => s + d.value, 0);
-
-  const statusBreakdown = useMemo(() => {
-    const counts: Record<string, { count: number; amount: number }> = {};
-    filteredExpenses.forEach(e => {
-      if (!counts[e.status]) counts[e.status] = { count: 0, amount: 0 };
-      counts[e.status].count += 1;
-      counts[e.status].amount += Number(e.amount);
-    });
-    return Object.entries(counts).map(([status, data]) => ({
-      status: STATUS_CONFIG[status as ExpenseStatus]?.label || status,
-      count: data.count, amount: Math.round(data.amount * 100) / 100,
-      fill: STATUS_COLORS[status] || 'hsl(215, 16%, 47%)',
-    }));
-  }, [filteredExpenses]);
 
   const costCenterData = useMemo(() => {
     const map: Record<string, number> = {};
@@ -147,7 +120,7 @@ export default function Analytics() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold">Analytics</h1>
-          <p className="text-muted-foreground mt-1 text-sm sm:text-base">Detailed breakdown of your expense activity</p>
+          <p className="text-muted-foreground mt-1 text-sm sm:text-base">Detailed breakdown of your spending</p>
         </div>
         <Select value={timeRange} onValueChange={setTimeRange}>
           <SelectTrigger className="w-full sm:w-40 border-0 shadow-md bg-card min-h-[44px]">
@@ -164,12 +137,10 @@ export default function Analytics() {
       </div>
 
       {/* Stat Cards */}
-      <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-5">
-        <StatCard title="Total Spent" value={`$${totalAmount.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`} icon={DollarSign} variant="primary" progress={100} description={`${filteredExpenses.length} expenses`} />
-        <StatCard title="Pending" value={`$${pendingAmount.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`} icon={Clock} variant="warning" progress={totalAmount > 0 ? Math.round((pendingAmount / totalAmount) * 100) : 0} description={`${pendingExpenses.length} expenses`} />
-        <StatCard title="Approved" value={`$${approvedAmount.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`} icon={CheckCircle} variant="success" progress={totalAmount > 0 ? Math.round((approvedAmount / totalAmount) * 100) : 0} description={`${approvedExpenses.length} expenses`} />
-        <StatCard title="Rejected" value={`$${rejectedAmount.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`} icon={XCircle} variant="destructive" progress={totalAmount > 0 ? Math.round((rejectedAmount / totalAmount) * 100) : 0} description={`${rejectedExpenses.length} expenses`} />
-        <StatCard title="Avg / Expense" value={`$${avgExpense.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`} icon={TrendingUp} variant="info" progress={65} description="per expense" />
+      <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-3">
+        <StatCard title="Total Spent" value={`₹${totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`} icon={DollarSign} variant="primary" progress={100} description={`${filteredExpenses.length} bills`} />
+        <StatCard title="Total Bills" value={filteredExpenses.length} icon={Receipt} variant="info" description="tracked" />
+        <StatCard title="Avg / Bill" value={`₹${avgExpense.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`} icon={TrendingUp} variant="success" progress={65} description="per bill" />
       </div>
 
       {/* Charts Row 1 */}
@@ -179,8 +150,7 @@ export default function Analytics() {
             <div>
               <CardTitle className="text-base sm:text-lg">Monthly Spending Trend</CardTitle>
               <div className="flex items-baseline gap-2 mt-1">
-                <span className="text-2xl sm:text-3xl font-bold">${totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                <span className="flex items-center text-xs font-medium text-success"><ArrowUpRight className="h-3 w-3 mr-0.5" />7%</span>
+                <span className="text-2xl sm:text-3xl font-bold">₹{totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
               </div>
             </div>
           </CardHeader>
@@ -192,8 +162,8 @@ export default function Analytics() {
                 <BarChart data={monthlyTrend} barSize={14}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} className="opacity-20" />
                   <XAxis dataKey="month" tick={{ fontSize: 10 }} axisLine={false} tickLine={false} />
-                  <YAxis tick={{ fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={v => `$${v}`} />
-                  <Tooltip formatter={(val: number) => [`$${val.toFixed(2)}`, 'Spent']} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} />
+                  <YAxis tick={{ fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={v => `₹${v}`} />
+                  <Tooltip formatter={(val: number) => [`₹${val.toFixed(2)}`, 'Spent']} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} />
                   <Bar dataKey="total" fill="hsl(152, 57%, 42%)" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
@@ -216,7 +186,7 @@ export default function Analytics() {
                     <Pie data={categoryBreakdown} cx="50%" cy="50%" innerRadius={45} outerRadius={70} dataKey="value" paddingAngle={3} strokeWidth={0}>
                       {categoryBreakdown.map((_, i) => (<Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />))}
                     </Pie>
-                    <Tooltip formatter={(val: number) => `$${val.toFixed(2)}`} />
+                    <Tooltip formatter={(val: number) => `₹${val.toFixed(2)}`} />
                   </PieChart>
                 </ResponsiveContainer>
                 <div className="grid grid-cols-2 gap-x-4 sm:gap-x-6 gap-y-1.5 mt-2 w-full">
@@ -255,8 +225,8 @@ export default function Analytics() {
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} className="opacity-20" />
                   <XAxis dataKey="month" tick={{ fontSize: 10 }} axisLine={false} tickLine={false} />
-                  <YAxis tick={{ fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={v => `$${v}`} />
-                  <Tooltip formatter={(val: number) => [`$${val.toFixed(2)}`, 'Cumulative']} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} />
+                  <YAxis tick={{ fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={v => `₹${v}`} />
+                  <Tooltip formatter={(val: number) => [`₹${val.toFixed(2)}`, 'Cumulative']} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} />
                   <Area type="monotone" dataKey="cumulative" stroke="hsl(152, 57%, 42%)" fill="url(#gradCumulative)" strokeWidth={2} />
                 </AreaChart>
               </ResponsiveContainer>
@@ -264,33 +234,6 @@ export default function Analytics() {
           </CardContent>
         </Card>
 
-        <Card className="shadow-md border-0">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base sm:text-lg">Status Breakdown</CardTitle>
-            <CardDescription>Current status of all expenses</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {statusBreakdown.length === 0 ? (
-              <p className="text-muted-foreground text-center py-8">No data yet</p>
-            ) : (
-              <ResponsiveContainer width="100%" height={220}>
-                <BarChart data={statusBreakdown} layout="vertical" barSize={14}>
-                  <CartesianGrid strokeDasharray="3 3" horizontal={false} className="opacity-20" />
-                  <XAxis type="number" tick={{ fontSize: 10 }} axisLine={false} tickLine={false} />
-                  <YAxis dataKey="status" type="category" width={90} tick={{ fontSize: 10 }} axisLine={false} tickLine={false} />
-                  <Tooltip formatter={(val: number, name: string) => name === 'count' ? [val, 'Count'] : [`$${val.toFixed(2)}`, 'Amount']} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} />
-                  <Bar dataKey="count" radius={[0, 6, 6, 0]} name="Count">
-                    {statusBreakdown.map((entry, i) => (<Cell key={i} fill={entry.fill} />))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Charts Row 3 */}
-      <div className="grid gap-4 sm:gap-6 grid-cols-1 lg:grid-cols-2">
         <Card className="shadow-md border-0">
           <CardHeader className="pb-2">
             <CardTitle className="text-base sm:text-lg">Spending by Department</CardTitle>
@@ -304,8 +247,8 @@ export default function Analytics() {
                 <BarChart data={costCenterData} barSize={20}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} className="opacity-20" />
                   <XAxis dataKey="name" tick={{ fontSize: 10 }} axisLine={false} tickLine={false} />
-                  <YAxis tick={{ fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={v => `$${v}`} />
-                  <Tooltip formatter={(val: number) => [`$${val.toFixed(2)}`, 'Amount']} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} />
+                  <YAxis tick={{ fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={v => `₹${v}`} />
+                  <Tooltip formatter={(val: number) => [`₹${val.toFixed(2)}`, 'Amount']} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} />
                   <Bar dataKey="value" radius={[6, 6, 0, 0]}>
                     {costCenterData.map((_, i) => (<Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />))}
                   </Bar>
@@ -314,37 +257,38 @@ export default function Analytics() {
             )}
           </CardContent>
         </Card>
-
-        <Card className="shadow-md border-0">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base sm:text-lg">Top Merchants</CardTitle>
-            <CardDescription>Where you spend the most</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {topMerchants.length === 0 ? (
-              <p className="text-muted-foreground text-center py-8">No data yet</p>
-            ) : (
-              <div className="space-y-3">
-                {topMerchants.map((m, i) => {
-                  const maxAmount = topMerchants[0].amount;
-                  const pct = (m.amount / maxAmount) * 100;
-                  return (
-                    <div key={m.name} className="space-y-1.5">
-                      <div className="flex items-center justify-between text-xs sm:text-sm">
-                        <span className="font-medium truncate">{m.name}</span>
-                        <span className="text-muted-foreground text-xs">${m.amount.toLocaleString()} · {m.count}x</span>
-                      </div>
-                      <div className="h-2 w-full rounded-full bg-muted">
-                        <div className="h-full rounded-full transition-all duration-500" style={{ width: `${pct}%`, backgroundColor: CHART_COLORS[i % CHART_COLORS.length] }} />
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </CardContent>
-        </Card>
       </div>
+
+      {/* Top Merchants */}
+      <Card className="shadow-md border-0">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base sm:text-lg">Top Merchants</CardTitle>
+          <CardDescription>Where you spend the most</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {topMerchants.length === 0 ? (
+            <p className="text-muted-foreground text-center py-8">No data yet</p>
+          ) : (
+            <div className="space-y-3">
+              {topMerchants.map((m, i) => {
+                const maxAmount = topMerchants[0].amount;
+                const pct = (m.amount / maxAmount) * 100;
+                return (
+                  <div key={m.name} className="space-y-1.5">
+                    <div className="flex items-center justify-between text-xs sm:text-sm">
+                      <span className="font-medium truncate">{m.name}</span>
+                      <span className="text-muted-foreground text-xs">₹{m.amount.toLocaleString('en-IN')} · {m.count}x</span>
+                    </div>
+                    <div className="h-2 w-full rounded-full bg-muted">
+                      <div className="h-full rounded-full transition-all duration-500" style={{ width: `${pct}%`, backgroundColor: CHART_COLORS[i % CHART_COLORS.length] }} />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
