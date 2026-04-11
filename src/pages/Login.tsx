@@ -118,7 +118,7 @@ export default function Login() {
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden items-end p-12 bg-gradient-to-br from-secondary via-background to-secondary">
         <div className="relative z-10">
           <h2 className="text-3xl font-bold tracking-tight text-foreground">Your personal money manager</h2>
-          <p className="mt-2 text-lg text-muted-foreground">Automatically handle bills, track spending, and stay on top of reimbursements.</p>
+          <p className="mt-2 text-lg text-muted-foreground">Automatically handle bills, track spending, and stay organized.</p>
         </div>
         {/* Decorative elements */}
         <div className="absolute top-20 right-20 h-64 w-64 rounded-full bg-primary/10 blur-3xl" />

@@ -669,10 +669,6 @@ export default function NewExpense() {
                       onClick={() => toast({ title: 'Coming soon', description: 'Split bill feature is under development.' })}>
                       <Users className="h-3.5 w-3.5 mr-1" /> Split
                     </Button>
-                    <Button variant="outline" className="min-h-[44px] text-xs"
-                      onClick={() => toast({ title: 'Coming soon', description: 'Reimburse feature is under development.' })}>
-                      <ShieldCheck className="h-3.5 w-3.5 mr-1" /> Reimburse
-                    </Button>
                   </div>
                 </div>
               </TabsContent>

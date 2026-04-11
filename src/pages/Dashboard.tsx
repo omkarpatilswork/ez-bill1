@@ -65,7 +65,6 @@ export default function Dashboard() {
 
   const quickActions = [
     { label: 'Split Bills', icon: UsersIcon, action: () => setBillSelectorFor('split'), color: 'text-primary' },
-    { label: 'Reimburse', icon: Wallet, path: '/expenses', color: 'text-success' },
     { label: 'Bill Support', icon: Headphones, action: () => setBillSelectorFor('support'), color: 'text-gold' },
     { label: 'Scan Email', icon: Mail, path: '/email-bills', color: 'text-info' },
     { label: 'UPI Bills', icon: Smartphone, path: '/email-bills?tab=upi', color: 'text-primary' },
@@ -88,7 +87,7 @@ export default function Dashboard() {
     { num: 2, title: 'AI Processes Your Data', desc: 'Automatically extracts merchant, items, amounts, and dates.' },
     { num: 3, title: 'Review & Edit', desc: 'Review extracted data, make edits, adjust category or items.' },
     { num: 4, title: 'Save & Analyze', desc: 'Save to All Bills and track spending with smart insights.' },
-    { num: 5, title: 'Split, Reimburse, or Claim', desc: 'Split with friends, send for reimbursement, or claim warranty.' },
+    { num: 5, title: 'Split or Claim', desc: 'Split with friends or claim warranty support.' },
   ];
 
   const features = [
