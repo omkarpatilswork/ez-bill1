@@ -346,15 +346,15 @@ export default function EmailBills() {
     toast({ title: 'Import complete', description: `Saved ${saved} of ${selected.length} bill(s).` });
   };
 
-  // Toggle selection
+  // Toggle selection — allow selecting already imported bills for re-import
   const toggleBillSelection = (messageId: string) => {
     setPreviewBills(prev =>
-      prev.map(b => b.message_id === messageId && !b.already_imported ? { ...b, selected: !b.selected } : b)
+      prev.map(b => b.message_id === messageId ? { ...b, selected: !b.selected } : b)
     );
   };
 
   const selectAll = () => {
-    setPreviewBills(prev => prev.map(b => b.already_imported ? b : { ...b, selected: true }));
+    setPreviewBills(prev => prev.map(b => ({ ...b, selected: true })));
   };
 
   const deselectAll = () => {
