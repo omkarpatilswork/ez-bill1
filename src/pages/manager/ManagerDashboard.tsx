@@ -22,7 +22,7 @@ export default function ManagerDashboard() {
   }, [user]);
 
   const pending = teamExpenses.filter(e => e.status === 'submitted');
-  const approved = teamExpenses.filter(e => ['manager_approved', 'approved', 'reimbursed'].includes(e.status));
+  const approved = teamExpenses.filter(e => ['manager_approved', 'approved'].includes(e.status));
   const totalAmount = teamExpenses.reduce((s, e) => s + Number(e.amount), 0);
 
   return (
