@@ -6,8 +6,7 @@ import { Button } from '@/components/ui/button';
 import {
   Search, Receipt, Utensils, Fuel, Car, ParkingCircle, ShoppingBag, Zap,
   MoreHorizontal, Repeat, Trash2, X, CheckSquare, Loader2, AlertCircle,
-  ArrowUpDown, Mail, Camera, Upload, PenLine, Hotel, Plane, Heart,
-  GraduationCap, Gamepad2, Briefcase, Pill
+  ArrowUpDown, Hotel, Plane, GraduationCap, Gamepad2, Briefcase, Pill
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
@@ -102,27 +101,6 @@ const BROAD_CATEGORY_ICONS: Record<string, any> = {
   'Other': MoreHorizontal,
 };
 
-// ── Bill source detection ──
-type BillSource = 'email' | 'camera' | 'upload' | 'manual';
-
-function getBillSource(expense: Expense): BillSource {
-  const desc = (expense.description || '').toLowerCase();
-  if (desc.includes('from email') || desc.includes('[email]')) return 'email';
-  if (desc.includes('[camera]') || desc.includes('[scan]')) return 'camera';
-  if (desc.includes('[upload]') || desc.includes('[gallery]')) return 'upload';
-  // If it has a receipt reference or Invoice extracted, likely scanned/uploaded
-  // Check if there's an invoice number — probably came from scan
-  if (desc.includes('invoice:') && (desc.includes('item(s)') || desc.includes('::items::'))) return 'upload';
-  return 'manual';
-}
-
-const SOURCE_CONFIG: Record<BillSource, { label: string; icon: any; color: string }> = {
-  email: { label: 'Email', icon: Mail, color: 'text-blue-400' },
-  camera: { label: 'Camera', icon: Camera, color: 'text-amber-400' },
-  upload: { label: 'Scan', icon: Upload, color: 'text-emerald-400' },
-  manual: { label: 'Manual', icon: PenLine, color: 'text-muted-foreground' },
-};
-
 type SortKey = 'date_desc' | 'date_asc' | 'amount_desc' | 'amount_asc' | 'merchant_asc';
 
 const SORT_OPTIONS: { key: SortKey; label: string }[] = [
@@ -151,7 +129,6 @@ export default function MyExpenses() {
   const [searchParams] = useSearchParams();
   const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '');
   const [categoryFilter, setCategoryFilter] = useState('all');
-  const [sourceFilter, setSourceFilter] = useState<BillSource | 'all'>('all');
   const [sortKey, setSortKey] = useState<SortKey>('date_desc');
   const { toast } = useToast();
 
@@ -238,12 +215,6 @@ export default function MyExpenses() {
     return catSet;
   }, [expenses]);
 
-  // Compute source counts
-  const sourceCounts = useMemo(() => {
-    const counts: Record<BillSource, number> = { email: 0, camera: 0, upload: 0, manual: 0 };
-    expenses.forEach(e => { counts[getBillSource(e)]++; });
-    return counts;
-  }, [expenses]);
 
   const filteredExpenses = useMemo(() => {
     let result = expenses.filter(e => {
@@ -251,10 +222,6 @@ export default function MyExpenses() {
       if (categoryFilter !== 'all') {
         const broad = toBroadCategory(getSmartCategory(e));
         if (broad !== categoryFilter) return false;
-      }
-      // Source filter
-      if (sourceFilter !== 'all') {
-        if (getBillSource(e) !== sourceFilter) return false;
       }
       // Search
       if (searchQuery) {
@@ -277,7 +244,7 @@ export default function MyExpenses() {
     });
 
     return result;
-  }, [expenses, categoryFilter, sourceFilter, searchQuery, sortKey]);
+  }, [expenses, categoryFilter, searchQuery, sortKey]);
 
   const totalFiltered = filteredExpenses.reduce((s, e) => s + Number(e.amount), 0);
 
@@ -403,30 +370,6 @@ export default function MyExpenses() {
         />
       </div>
 
-      {/* Source filter pills */}
-      <div className="flex gap-2 overflow-x-auto pb-0.5 scrollbar-hide -mx-1 px-1">
-        {(['all', 'email', 'camera', 'upload', 'manual'] as const).map(src => {
-          if (src !== 'all' && sourceCounts[src] === 0) return null;
-          const active = sourceFilter === src;
-          const config = src === 'all' ? { label: 'All Sources', icon: Receipt, color: '' } : SOURCE_CONFIG[src];
-          const Icon = config.icon;
-          return (
-            <button
-              key={src}
-              onClick={() => setSourceFilter(src)}
-              className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium whitespace-nowrap transition-all shrink-0 ${
-                active
-                  ? 'bg-primary/15 text-primary border border-primary/30'
-                  : 'bg-card/50 border border-border/30 text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              <Icon className="h-3 w-3" />
-              {config.label}
-              {src !== 'all' && <span className="text-[10px] opacity-70">({sourceCounts[src]})</span>}
-            </button>
-          );
-        })}
-      </div>
 
       {/* Category filter pills — only categories with bills */}
       <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide -mx-1 px-1">
@@ -456,7 +399,7 @@ export default function MyExpenses() {
       ) : filteredExpenses.length === 0 ? (
         <div className="text-center py-10 text-muted-foreground">
           <Receipt className="mx-auto h-12 w-12 mb-3 opacity-40" />
-          <p className="font-medium mb-1">{searchQuery || categoryFilter !== 'all' || sourceFilter !== 'all' ? 'No matching bills' : 'No bills yet'}</p>
+          <p className="font-medium mb-1">{searchQuery || categoryFilter !== 'all' ? 'No matching bills' : 'No bills yet'}</p>
           <p className="text-sm">{searchQuery ? 'Try adjusting your search or filters.' : 'Add your first bill to get started.'}</p>
         </div>
       ) : (
@@ -468,9 +411,6 @@ export default function MyExpenses() {
             const isSub = broadCat === 'Subscriptions';
             const isSelected = selectedIds.has(exp.id);
             const currSym = getCurrencySymbol(exp.currency || 'INR');
-            const source = getBillSource(exp);
-            const srcCfg = SOURCE_CONFIG[source];
-            const SrcIcon = srcCfg.icon;
 
             const cardContent = (
               <div className="flex items-center gap-3">
@@ -488,14 +428,11 @@ export default function MyExpenses() {
                   <p className="font-semibold text-sm text-foreground truncate">
                     {exp.merchant || exp.title}
                   </p>
-                  <p className="text-[11px] text-muted-foreground mt-0.5 flex items-center gap-1 flex-wrap">
+                  <p className="text-[11px] text-muted-foreground mt-0.5">
                     <span>{broadCat}</span>
-                    {isSub && <span className="text-purple-400">· Recurring</span>}
-                    <span className="inline-flex items-center gap-0.5">
-                      · <SrcIcon className={`h-3 w-3 inline ${srcCfg.color}`} />
-                    </span>
+                    {isSub && <span className="text-purple-400"> · Recurring</span>}
                     {exp.description && /\d+\s*item/i.test(exp.description) && (
-                      <span>· {exp.description.match(/(\d+\s*item[s]?)/i)?.[1]}</span>
+                      <> · {exp.description.match(/(\d+\s*item[s]?)/i)?.[1]}</>
                     )}
                   </p>
                   <p className="text-[11px] text-muted-foreground">
