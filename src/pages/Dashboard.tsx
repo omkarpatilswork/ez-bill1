@@ -8,8 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import {
   Receipt, PlusCircle, ArrowUpRight, TrendingUp, Search,
-  Mail, Users as UsersIcon, Wallet, Headphones, RefreshCw, User, Sparkles,
-  Upload, Cpu, Pencil, Save, Scissors, ShieldCheck, Infinity,
+  Mail, Users as UsersIcon, Headphones, RefreshCw, User, Sparkles,
   Smartphone, Zap, ShieldOff, X,
 } from 'lucide-react';
 import {
