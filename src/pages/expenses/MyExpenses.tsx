@@ -101,27 +101,6 @@ const BROAD_CATEGORY_ICONS: Record<string, any> = {
   'Other': MoreHorizontal,
 };
 
-// ── Bill source detection ──
-type BillSource = 'email' | 'camera' | 'upload' | 'manual';
-
-function getBillSource(expense: Expense): BillSource {
-  const desc = (expense.description || '').toLowerCase();
-  if (desc.includes('from email') || desc.includes('[email]')) return 'email';
-  if (desc.includes('[camera]') || desc.includes('[scan]')) return 'camera';
-  if (desc.includes('[upload]') || desc.includes('[gallery]')) return 'upload';
-  // If it has a receipt reference or Invoice extracted, likely scanned/uploaded
-  // Check if there's an invoice number — probably came from scan
-  if (desc.includes('invoice:') && (desc.includes('item(s)') || desc.includes('::items::'))) return 'upload';
-  return 'manual';
-}
-
-const SOURCE_CONFIG: Record<BillSource, { label: string; icon: any; color: string }> = {
-  email: { label: 'Email', icon: Mail, color: 'text-blue-400' },
-  camera: { label: 'Camera', icon: Camera, color: 'text-amber-400' },
-  upload: { label: 'Scan', icon: Upload, color: 'text-emerald-400' },
-  manual: { label: 'Manual', icon: PenLine, color: 'text-muted-foreground' },
-};
-
 type SortKey = 'date_desc' | 'date_asc' | 'amount_desc' | 'amount_asc' | 'merchant_asc';
 
 const SORT_OPTIONS: { key: SortKey; label: string }[] = [
