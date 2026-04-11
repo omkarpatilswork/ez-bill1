@@ -208,26 +208,22 @@ export default function EmailBills() {
     setShowPreviewScreen(false);
     try {
       const { data, error } = await supabase.functions.invoke('gmail-scan', {
-        body: { max_results: 30, days: dateRange },
+        body: { max_results: 50, days: dateRange },
       });
       if (error) throw new Error('Failed to scan emails');
       if (data?.error) throw new Error(data.error);
 
       const allEmails: EmailBill[] = (data?.emails || []).map((e: any) => ({
         ...e,
-        already_imported: false,
+        already_imported: !!e.already_imported,
       }));
 
-      // Mark already imported
-      const alreadyImported: EmailBill[] = (data?.already_imported || []).map((e: any) => ({
-        ...e,
-        already_imported: true,
-      }));
-
-      setEmails([...allEmails, ...alreadyImported]);
+      setEmails(allEmails);
+      const newCount = allEmails.filter(e => !e.already_imported).length;
+      const importedCount = allEmails.filter(e => e.already_imported).length;
       toast({
         title: 'Scan complete',
-        description: `Found ${allEmails.length} new + ${alreadyImported.length} already imported bills.`,
+        description: `Found ${newCount} new + ${importedCount} previously imported bills.`,
       });
     } catch (err: any) {
       toast({ title: 'Scan failed', description: err.message, variant: 'destructive' });
