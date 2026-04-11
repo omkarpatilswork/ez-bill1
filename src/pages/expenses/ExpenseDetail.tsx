@@ -73,7 +73,7 @@ export default function ExpenseDetail() {
   const [receiptUrl, setReceiptUrl] = useState<string | null>(null);
   const [receiptName, setReceiptName] = useState<string>('');
   const [activeTab, setActiveTab] = useState<string>('ebill');
-  const [showReimburse, setShowReimburse] = useState(false);
+  const [showApprovalFlow, setShowApprovalFlow] = useState(false);
   
 
   useEffect(() => {
@@ -102,13 +102,13 @@ export default function ExpenseDetail() {
     });
   }, [id]);
 
-  const handleSubmitForReimbursement = async () => {
+  const handleSubmitForApproval = async () => {
     if (!expense || !user) return;
     await supabase.from('expenses').update({ status: 'submitted' } as any).eq('id', expense.id);
     await supabase.from('audit_logs').insert({
       expense_id: expense.id, user_id: user.id, action: 'submitted', details: {},
     } as any);
-    toast({ title: 'Sent for Reimbursement', description: 'Your bill is now pending approval.' });
+    toast({ title: 'Submitted for Approval', description: 'Your bill is now pending approval.' });
     navigate('/expenses');
   };
 
@@ -141,20 +141,19 @@ export default function ExpenseDetail() {
   const notes = cleanDescription(expense.description);
   const currentStep = getStatusStep(expense.status as ExpenseStatus);
   const isRejected = expense.status === 'rejected';
-  const isInReimbursement = ['submitted', 'manager_approved', 'approved', 'reimbursed', 'rejected'].includes(expense.status);
+  const isInApprovalFlow = ['submitted', 'manager_approved', 'approved', 'rejected'].includes(expense.status);
 
   // ─── Reimbursement view ───
-  if (showReimburse) {
+  if (showApprovalFlow) {
     return (
       <div className="max-w-3xl mx-auto space-y-5 pb-24">
         <div className="flex items-center gap-2">
           <Button variant="ghost" size="sm" className="h-8 px-2" onClick={() => {
-            if (!isInReimbursement) { setShowReimburse(false); return; }
-            setShowReimburse(false);
+            setShowApprovalFlow(false);
           }}>
             <ArrowLeft className="h-4 w-4" />
           </Button>
-          <h1 className="text-lg font-bold text-foreground">Reimbursement</h1>
+          <h1 className="text-lg font-bold text-foreground">Approval Status</h1>
           <div className="ml-auto"><StatusBadge status={expense.status as ExpenseStatus} /></div>
         </div>
 
@@ -262,8 +261,8 @@ export default function ExpenseDetail() {
         )}
 
         {expense.status === 'draft' && expense.user_id === user?.id && (
-          <Button className="w-full min-h-[48px]" onClick={handleSubmitForReimbursement}>
-            <Send className="h-4 w-4 mr-2" /> Send for Reimbursement
+          <Button className="w-full min-h-[48px]" onClick={handleSubmitForApproval}>
+            <Send className="h-4 w-4 mr-2" /> Submit for Approval
           </Button>
         )}
       </div>
@@ -279,7 +278,7 @@ export default function ExpenseDetail() {
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <h1 className="text-lg font-bold text-foreground truncate flex-1">{expense.merchant || expense.title}</h1>
-        {['submitted', 'manager_approved', 'approved', 'reimbursed', 'rejected'].includes(expense.status) && (
+        {['submitted', 'manager_approved', 'approved', 'rejected'].includes(expense.status) && (
           <StatusBadge status={expense.status as ExpenseStatus} />
         )}
       </div>
@@ -398,8 +397,8 @@ export default function ExpenseDetail() {
           <Headphones className="h-3.5 w-3.5 mr-1" /> Get Support
         </Button>
         <Button className="min-h-[44px] text-xs"
-          onClick={() => setShowReimburse(true)}>
-          <ShieldCheck className="h-3.5 w-3.5 mr-1" /> Send to Reimbursement
+          onClick={() => setShowApprovalFlow(true)}>
+          <ShieldCheck className="h-3.5 w-3.5 mr-1" /> Approval Status
         </Button>
       </div>
 

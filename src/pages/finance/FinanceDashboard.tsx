@@ -32,7 +32,7 @@ export default function FinanceDashboard() {
       <div className="grid gap-3 sm:gap-4 grid-cols-2 md:grid-cols-4">
         <StatCard title="Total Expenses" value={expenses.length} icon={Building2} />
         <StatCard title="Pending Review" value={pending.length} icon={Clock} />
-        <StatCard title="Approved (Unreimbursed)" value={approved.length} icon={CheckCircle} />
+        <StatCard title="Approved" value={approved.length} icon={CheckCircle} />
         <StatCard title="Total Volume" value={`$${totalAmount.toFixed(2)}`} icon={DollarSign} />
       </div>
     </div>

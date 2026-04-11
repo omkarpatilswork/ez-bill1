@@ -1,5 +1,5 @@
 export type AppRole = 'employee' | 'manager' | 'finance';
-export type ExpenseStatus = 'draft' | 'submitted' | 'manager_approved' | 'approved' | 'rejected' | 'reimbursed';
+export type ExpenseStatus = 'draft' | 'submitted' | 'manager_approved' | 'approved' | 'rejected';
 export type ApprovalLevel = 'manager' | 'finance';
 
 export interface Profile {
@@ -88,5 +88,4 @@ export const STATUS_CONFIG: Record<ExpenseStatus, { label: string; variant: 'def
   manager_approved: { label: 'Manager Approved', variant: 'outline', className: 'bg-warning/20 text-warning' },
   approved: { label: 'Approved', variant: 'default', className: 'bg-success text-success-foreground' },
   rejected: { label: 'Rejected', variant: 'destructive', className: 'bg-destructive text-destructive-foreground' },
-  reimbursed: { label: 'Reimbursed', variant: 'default', className: 'bg-primary text-primary-foreground' },
 };

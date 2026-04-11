@@ -20,7 +20,7 @@ const CHART_COLORS = [
 const STATUS_COLORS: Record<string, string> = {
   draft: 'hsl(215, 16%, 47%)', submitted: 'hsl(221, 83%, 53%)',
   manager_approved: 'hsl(38, 92%, 50%)', approved: 'hsl(152, 57%, 42%)',
-  rejected: 'hsl(0, 84%, 60%)', reimbursed: 'hsl(199, 89%, 48%)',
+  rejected: 'hsl(0, 84%, 60%)',
 };
 
 export default function Analytics() {
@@ -55,7 +55,7 @@ export default function Analytics() {
 
   const totalAmount = filteredExpenses.reduce((s, e) => s + Number(e.amount), 0);
   const pendingExpenses = filteredExpenses.filter(e => ['submitted', 'manager_approved'].includes(e.status));
-  const approvedExpenses = filteredExpenses.filter(e => ['approved', 'reimbursed'].includes(e.status));
+  const approvedExpenses = filteredExpenses.filter(e => e.status === 'approved');
   const rejectedExpenses = filteredExpenses.filter(e => e.status === 'rejected');
   const pendingAmount = pendingExpenses.reduce((s, e) => s + Number(e.amount), 0);
   const approvedAmount = approvedExpenses.reduce((s, e) => s + Number(e.amount), 0);

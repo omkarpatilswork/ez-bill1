@@ -13,7 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { CheckCircle, XCircle } from 'lucide-react';
 import type { Expense, ExpenseStatus } from '@/lib/types';
 
-const STATUSES: ExpenseStatus[] = ['draft', 'submitted', 'manager_approved', 'approved', 'rejected', 'reimbursed'];
+const STATUSES: ExpenseStatus[] = ['draft', 'submitted', 'manager_approved', 'approved', 'rejected'];
 
 export default function AllExpenses() {
   const { user } = useAuth();
@@ -79,20 +79,6 @@ export default function AllExpenses() {
     fetchExpenses();
   };
 
-  const handleMarkReimbursed = async () => {
-    if (!user || selectedIds.size === 0) return;
-    setProcessing(true);
-    for (const id of selectedIds) {
-      await supabase.from('expenses').update({ status: 'reimbursed' } as any).eq('id', id);
-      await supabase.from('audit_logs').insert({
-        expense_id: id, user_id: user.id, action: 'marked_reimbursed', details: {},
-      } as any);
-    }
-    toast({ title: `${selectedIds.size} expenses marked as reimbursed` });
-    setSelectedIds(new Set());
-    setProcessing(false);
-    fetchExpenses();
-  };
 
   return (
     <div className="space-y-4 sm:space-y-6">
@@ -113,9 +99,6 @@ export default function AllExpenses() {
             </Button>
             <Button size="sm" variant="destructive" className="w-full sm:w-auto min-h-[44px]" onClick={() => handleBatchAction('rejected')} disabled={processing}>
               <XCircle className="mr-1 h-4 w-4" /> Reject ({selectedIds.size})
-            </Button>
-            <Button size="sm" variant="outline" className="w-full sm:w-auto min-h-[44px]" onClick={handleMarkReimbursed} disabled={processing}>
-              Mark Reimbursed ({selectedIds.size})
             </Button>
           </div>
         )}

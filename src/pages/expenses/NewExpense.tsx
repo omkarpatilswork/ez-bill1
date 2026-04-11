@@ -17,6 +17,7 @@ import {
   Store, Hash, Receipt, IndianRupee, FileImage
 } from 'lucide-react';
 import type { ExpenseCategory } from '@/lib/types';
+import { CURRENCIES, getCurrencySymbol } from '@/lib/countries';
 
 interface LineItem {
   name: string;
@@ -78,7 +79,7 @@ function parseFieldFromDesc(desc: string | null | undefined, key: string): strin
 }
 
 export default function NewExpense() {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [searchParams] = useSearchParams();
@@ -102,6 +103,7 @@ export default function NewExpense() {
     title: '', merchant: '', amount: '', expense_date: new Date().toISOString().slice(0, 10),
     category_id: '', category_name: '', cost_center: '', description: '',
     payment_method: '', invoice_number: '', tax_amount: '', subtotal: '', discount: '',
+    currency: profile?.default_currency || 'INR',
   });
   const [editLineItems, setEditLineItems] = useState<LineItem[]>([]);
 
@@ -135,6 +137,7 @@ export default function NewExpense() {
         tax_amount: '',
         subtotal: '',
         discount: '',
+        currency: e.currency || profile?.default_currency || 'INR',
       });
       setEditLineItems(lineItems);
       setExtractionData({ line_items: lineItems });
@@ -232,6 +235,7 @@ export default function NewExpense() {
       tax_amount: data.tax_amount != null ? String(data.tax_amount) : '',
       subtotal: data.subtotal != null ? String(data.subtotal) : '',
       discount: data.discount != null ? String(data.discount) : '',
+      currency: data.currency || profile?.default_currency || 'INR',
     });
     setEditLineItems(data.line_items || []);
   };
@@ -244,6 +248,7 @@ export default function NewExpense() {
       title: form.title || `Bill - ${form.merchant}`,
       merchant: form.merchant,
       amount: parseFloat(form.amount),
+      currency: form.currency,
       expense_date: form.expense_date,
       category_id: form.category_id || null,
       cost_center: form.payment_method || form.cost_center,
@@ -704,9 +709,20 @@ export default function NewExpense() {
             </div>
           </div>
 
-          <div className="grid gap-3 grid-cols-2">
+          <div className="grid gap-3 grid-cols-3">
             <div className="space-y-1">
-              <Label className="text-xs font-medium">Amount (₹) <span className="text-destructive">*</span></Label>
+              <Label className="text-xs font-medium">Currency</Label>
+              <Select value={form.currency} onValueChange={v => setForm(f => ({ ...f, currency: v }))}>
+                <SelectTrigger className="min-h-[44px] bg-secondary/30 border-border/30">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="max-h-60">
+                  {CURRENCIES.map(c => <SelectItem key={c.code} value={c.code}>{c.symbol} {c.code}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs font-medium">Amount <span className="text-destructive">*</span></Label>
               <Input className="min-h-[44px] bg-secondary/30 border-border/30" type="number" step="0.01" min="0" placeholder="0.00"
                 value={form.amount} onChange={e => setForm({ ...form, amount: e.target.value })} required />
             </div>
