@@ -1,16 +1,19 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Search, Receipt, Utensils, Fuel, Car, ParkingCircle, ShoppingBag, Zap, MoreHorizontal } from 'lucide-react';
+import { Search, Receipt, Utensils, Fuel, Car, ParkingCircle, ShoppingBag, Zap, MoreHorizontal, RefreshCw, Repeat } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import type { Expense } from '@/lib/types';
 
+const SUBSCRIPTION_PATTERNS = /netflix|hotstar|spotify|prime video|youtube premium|apple music|zee5|sony liv|disney\+|amazon prime|chatgpt|notion|figma|canva|jio|airtel|vi|bsnl|tata play|dish tv|act fibernet|credit card|hdfc card|icici card|sbi card|axis card|kotak card|amex|citi card|insurance|lic|term plan|\[subscription\]/i;
+
 const CATEGORIES = [
   { label: 'All', value: 'all', icon: Receipt },
+  { label: 'Subscriptions', value: 'subscriptions', icon: Repeat },
   { label: 'Food & Dining', value: 'food_dining', icon: Utensils },
   { label: 'Petrol', value: 'petrol', icon: Fuel },
   { label: 'Toll', value: 'toll', icon: Car },
@@ -20,8 +23,14 @@ const CATEGORIES = [
   { label: 'Other', value: 'other', icon: MoreHorizontal },
 ];
 
+function isSubscription(expense: Expense): boolean {
+  const combined = `${expense.title} ${expense.merchant} ${expense.description} ${expense.cost_center}`.toLowerCase();
+  return SUBSCRIPTION_PATTERNS.test(combined);
+}
+
 function getCategoryIcon(category: string) {
   const cat = category?.toLowerCase() || '';
+  if (cat.includes('subscription')) return Repeat;
   if (cat.includes('food') || cat.includes('dining') || cat.includes('restaurant')) return Utensils;
   if (cat.includes('petrol') || cat.includes('fuel') || cat.includes('gas')) return Fuel;
   if (cat.includes('toll')) return Car;
@@ -33,19 +42,22 @@ function getCategoryIcon(category: string) {
 
 function matchesCategory(expense: Expense, filter: string): boolean {
   if (filter === 'all') return true;
+  if (filter === 'subscriptions') return isSubscription(expense);
+
   const title = (expense.title || '').toLowerCase();
   const merchant = (expense.merchant || '').toLowerCase();
   const desc = (expense.description || '').toLowerCase();
   const combined = `${title} ${merchant} ${desc}`;
-  
+
   switch (filter) {
     case 'food_dining': return /food|dining|restaurant|cafe|pizza|burger|domino|swiggy|zomato/.test(combined);
     case 'petrol': return /petrol|fuel|gas|diesel|petroleum|hp|indian oil|bharat/.test(combined);
     case 'toll': return /toll|fastag|highway/.test(combined);
     case 'parking': return /parking|park/.test(combined);
-    case 'shopping': return /shopping|retail|store|mall|amazon|flipkart/.test(combined);
+    case 'shopping': return /shopping|retail|store|mall|amazon|flipkart|myntra|ajio/.test(combined);
     case 'utilities': return /utilities|electric|water|internet|broadband|phone|recharge/.test(combined);
     case 'other': {
+      if (isSubscription(expense)) return false;
       const allPatterns = /food|dining|restaurant|cafe|pizza|burger|domino|swiggy|zomato|petrol|fuel|gas|diesel|petroleum|toll|fastag|highway|parking|park|shopping|retail|store|mall|amazon|flipkart|utilities|electric|water|internet|broadband|phone|recharge/;
       return !allPatterns.test(combined);
     }
@@ -54,6 +66,7 @@ function matchesCategory(expense: Expense, filter: string): boolean {
 }
 
 function getCategoryLabel(expense: Expense): string {
+  if (isSubscription(expense)) return 'Subscription';
   const combined = `${expense.title} ${expense.merchant} ${expense.description}`.toLowerCase();
   if (/food|dining|restaurant|cafe|pizza|burger|domino|swiggy|zomato/.test(combined)) return 'Food & Dining';
   if (/petrol|fuel|gas|diesel|petroleum/.test(combined)) return 'Petrol';
@@ -146,8 +159,9 @@ export default function MyExpenses() {
       ) : (
         <div className="space-y-2">
           {filteredExpenses.map(exp => {
-            const CategoryIcon = getCategoryIcon(getCategoryLabel(exp));
             const catLabel = getCategoryLabel(exp);
+            const CategoryIcon = getCategoryIcon(catLabel);
+            const isSub = isSubscription(exp);
             return (
               <Link
                 key={exp.id}
@@ -155,8 +169,8 @@ export default function MyExpenses() {
                 className="block rounded-xl bg-card border border-border/30 p-3.5 hover:bg-muted/20 active:bg-muted/40 transition-colors"
               >
                 <div className="flex items-center gap-3">
-                  <div className="h-11 w-11 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-                    <CategoryIcon className="h-5 w-5 text-primary" />
+                  <div className={`h-11 w-11 rounded-xl flex items-center justify-center shrink-0 ${isSub ? 'bg-purple-500/10' : 'bg-primary/10'}`}>
+                    <CategoryIcon className={`h-5 w-5 ${isSub ? 'text-purple-500' : 'text-primary'}`} />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-sm text-foreground truncate">
@@ -164,6 +178,7 @@ export default function MyExpenses() {
                     </p>
                     <p className="text-[11px] text-muted-foreground mt-0.5">
                       {catLabel}
+                      {isSub && <span className="ml-1 text-purple-400">· Recurring</span>}
                       {exp.description && /\d+\s*item/i.test(exp.description) && (
                         <> · {exp.description.match(/(\d+\s*item[s]?)/i)?.[1]}</>
                       )}
