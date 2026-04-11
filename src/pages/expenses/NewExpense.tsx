@@ -68,8 +68,9 @@ function cleanDescription(desc: string | null | undefined): string {
   if (!desc) return '';
   const idx = desc.indexOf(LINE_ITEMS_MARKER);
   let clean = idx >= 0 ? desc.slice(0, idx) : desc;
-  clean = clean.replace(/Invoice:\s*[^|]+\|?\s*/g, '').replace(/Payment:\s*[^|]+\|?\s*/g, '').replace(/\d+ item\(s\)\s*\|?\s*/g, '');
+  clean = clean.replace(/Category:\s*[^|]+\|?\s*/g, '').replace(/Invoice:\s*[^|]+\|?\s*/g, '').replace(/Payment:\s*[^|]+\|?\s*/g, '').replace(/\d+ item\(s\)\s*\|?\s*/g, '');
   clean = clean.replace(/Tax:\s*[^|]+\|?\s*/g, '').replace(/Discount:\s*[^|]+\|?\s*/g, '').replace(/Subtotal:\s*[^|]+\|?\s*/g, '');
+  clean = clean.replace(/From email:\s*[^|]+\|?\s*/g, '').replace(/\[Subscription\]\s*\|?\s*/g, '');
   return clean.trim();
 }
 
@@ -135,16 +136,28 @@ export default function NewExpense() {
       const e = exp as any;
       const lineItems = parseStoredLineItems(e.description);
       const descClean = cleanDescription(e.description);
+      const savedCategory = parseFieldFromDesc(e.description, 'Category');
+      const paymentMethod = parseFieldFromDesc(e.description, 'Payment') || e.cost_center || '';
+      // If no category_id but we have a saved category name, try to match
+      let catId = e.category_id || '';
+      let catName = savedCategory || '';
+      if (!catId && savedCategory) {
+        const match = categories.find(c => c.name.toLowerCase() === savedCategory.toLowerCase());
+        if (match) catId = match.id;
+      }
+      if (!catName && e.merchant) {
+        catName = smartCategoryFromMerchant(e.merchant, e.title);
+      }
       setForm({
         title: e.title || '',
         merchant: e.merchant || '',
         amount: String(e.amount || ''),
         expense_date: e.expense_date || new Date().toISOString().slice(0, 10),
-        category_id: e.category_id || '',
-        category_name: e.cost_center || '',
-        cost_center: e.cost_center || '',
+        category_id: catId,
+        category_name: catName,
+        cost_center: paymentMethod,
         description: descClean,
-        payment_method: e.cost_center || '',
+        payment_method: paymentMethod,
         invoice_number: parseFieldFromDesc(e.description, 'Invoice'),
         tax_amount: parseFieldFromDesc(e.description, 'Tax') || '',
         subtotal: parseFieldFromDesc(e.description, 'Subtotal') || '',
@@ -225,23 +238,54 @@ export default function NewExpense() {
   };
 
   const populateFormFromExtraction = (data: ExtractedData) => {
-    const matchCategory = (name?: string) => {
-      if (!name || name === 'Not Found') return '';
-      const match = categories.find(c => c.name.toLowerCase() === name.toLowerCase());
-      return match?.id || '';
+    // Alias map: AI/smart names → possible DB names
+    const CATEGORY_ALIASES: Record<string, string[]> = {
+      'food & dining': ['food & dining', 'meals', 'food', 'dining'],
+      'petrol & fuel': ['petrol & fuel', 'fuel', 'petrol'],
+      'grocery': ['grocery'],
+      'shopping': ['shopping'],
+      'transportation': ['transportation', 'transport'],
+      'travel': ['travel'],
+      'accommodation': ['accommodation', 'hotel'],
+      'utilities': ['utilities'],
+      'software': ['software'],
+      'medical': ['medical', 'health'],
+      'toll': ['toll'],
+      'parking': ['parking'],
+      'entertainment': ['entertainment'],
+      'education': ['education', 'training'],
+      'subscription': ['subscription'],
+      'office supplies': ['office supplies'],
+      'other': ['other'],
+    };
+
+    const findCategoryId = (name?: string): { id: string; label: string } => {
+      if (!name || name === 'Not Found') return { id: '', label: '' };
+      const lower = name.toLowerCase();
+      // Direct match first
+      const direct = categories.find(c => c.name.toLowerCase() === lower);
+      if (direct) return { id: direct.id, label: direct.name };
+      // Alias match
+      const aliases = CATEGORY_ALIASES[lower] || [lower];
+      for (const alias of aliases) {
+        const match = categories.find(c => c.name.toLowerCase() === alias);
+        if (match) return { id: match.id, label: match.name };
+      }
+      return { id: '', label: name };
     };
 
     // Smart category: AI first, then merchant-based fallback
-    let categoryName = data.category !== 'Not Found' ? (data.category || '') : '';
-    let categoryId = matchCategory(data.category);
-    if (!categoryId && data.merchant_name && data.merchant_name !== 'Not Found') {
-      const smartCat = smartCategoryFromMerchant(data.merchant_name);
+    let aiCategory = data.category !== 'Not Found' ? (data.category || '') : '';
+    let result = findCategoryId(aiCategory);
+    if (!result.id && data.merchant_name && data.merchant_name !== 'Not Found') {
+      const smartCat = smartCategoryFromMerchant(data.merchant_name, data.category);
       if (smartCat !== 'Other') {
-        categoryName = smartCat;
-        const match = categories.find(c => c.name.toLowerCase() === smartCat.toLowerCase());
-        categoryId = match?.id || '';
+        result = findCategoryId(smartCat);
+        if (!result.id) result = { id: '', label: smartCat };
       }
     }
+    const categoryId = result.id;
+    const categoryName = result.label || aiCategory;
 
     setForm({
       title: data.bill_invoice_number && data.bill_invoice_number !== 'Not Found'
@@ -340,6 +384,7 @@ export default function NewExpense() {
 
   const buildDescription = () => {
     const parts: string[] = [];
+    if (form.category_name) parts.push(`Category: ${form.category_name}`);
     if (form.invoice_number) parts.push(`Invoice: ${form.invoice_number}`);
     if (form.payment_method) parts.push(`Payment: ${form.payment_method}`);
     if (editLineItems.length > 0) parts.push(`${editLineItems.length} item(s)`);

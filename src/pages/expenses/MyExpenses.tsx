@@ -37,6 +37,13 @@ const CATEGORIES = [
 ];
 
 function getSmartCategory(expense: Expense): string {
+  // 1. Check saved category in description (Category: XYZ)
+  const descMatch = (expense.description || '').match(/Category:\s*([^|]+)/);
+  if (descMatch) {
+    const saved = descMatch[1].trim();
+    if (saved && saved !== 'Other') return saved;
+  }
+  // 2. Smart detect from merchant
   const combined = `${expense.title} ${expense.merchant} ${expense.description} ${expense.cost_center}`;
   if (isSubscriptionMerchant(combined)) return 'Subscription';
   return smartCategoryFromMerchant(expense.merchant || '', expense.title);
