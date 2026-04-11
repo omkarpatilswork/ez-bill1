@@ -386,6 +386,61 @@ export default function MyExpenses() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={showDuplicateDialog} onOpenChange={setShowDuplicateDialog}>
+        <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertCircle className="h-5 w-5 text-yellow-500" />
+              Duplicate Bills Found
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              {duplicates.length} group(s) of duplicate bills were found. Would you like to remove the extras?
+            </p>
+            <div className="space-y-2 max-h-[40vh] overflow-y-auto">
+              {duplicates.map((group, idx) => (
+                <div key={idx} className="rounded-lg border border-border bg-muted/30 p-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-foreground">{group.merchant || 'Unknown'}</p>
+                      <p className="text-xs text-muted-foreground">
+                        ₹{group.amount} · {new Date(group.expense_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+                      </p>
+                    </div>
+                    <Badge variant="secondary" className="text-xs">
+                      {group.ids.length} copies
+                    </Badge>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="flex gap-2 pt-1">
+              <Button
+                onClick={deleteDuplicates}
+                disabled={isDeletingDuplicates}
+                variant="destructive"
+                className="flex-1 min-h-[44px]"
+              >
+                {isDeletingDuplicates ? (
+                  <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Removing...</>
+                ) : (
+                  <><Trash2 className="h-4 w-4 mr-2" /> Remove Duplicates</>
+                )}
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => setShowDuplicateDialog(false)}
+                disabled={isDeletingDuplicates}
+                className="min-h-[44px]"
+              >
+                Keep All
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
