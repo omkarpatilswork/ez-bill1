@@ -531,7 +531,9 @@ export default function EmailBills() {
 
   const newBillCount = emails.filter(e => !e.already_imported).length;
   const importedBillCount = emails.filter(e => e.already_imported).length;
-  const selectedPreviewCount = previewBills.filter(b => b.selected && !b.already_imported).length;
+  const selectedPreviewBills = previewBills.filter(b => b.selected && !b.already_imported);
+  const selectedPreviewCount = selectedPreviewBills.length;
+  const selectedTotal = selectedPreviewBills.reduce((sum, b) => sum + (b.extracted.amount ?? 0), 0);
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
