@@ -192,6 +192,8 @@ export type Database = {
         Row: {
           amount: number
           category_id: string | null
+          conversion_rate: number | null
+          converted_amount: number | null
           cost_center: string | null
           created_at: string
           currency: string
@@ -199,6 +201,7 @@ export type Database = {
           expense_date: string
           id: string
           merchant: string | null
+          original_currency: string | null
           status: Database["public"]["Enums"]["expense_status"]
           title: string
           updated_at: string
@@ -207,6 +210,8 @@ export type Database = {
         Insert: {
           amount: number
           category_id?: string | null
+          conversion_rate?: number | null
+          converted_amount?: number | null
           cost_center?: string | null
           created_at?: string
           currency?: string
@@ -214,6 +219,7 @@ export type Database = {
           expense_date?: string
           id?: string
           merchant?: string | null
+          original_currency?: string | null
           status?: Database["public"]["Enums"]["expense_status"]
           title: string
           updated_at?: string
@@ -222,6 +228,8 @@ export type Database = {
         Update: {
           amount?: number
           category_id?: string | null
+          conversion_rate?: number | null
+          converted_amount?: number | null
           cost_center?: string | null
           created_at?: string
           currency?: string
@@ -229,6 +237,7 @@ export type Database = {
           expense_date?: string
           id?: string
           merchant?: string | null
+          original_currency?: string | null
           status?: Database["public"]["Enums"]["expense_status"]
           title?: string
           updated_at?: string
@@ -347,27 +356,48 @@ export type Database = {
       }
       profiles: {
         Row: {
+          country: string | null
           created_at: string
+          default_currency: string
           department: string
+          display_name: string
           full_name: string
           id: string
           manager_id: string | null
+          onboarding_completed: boolean
+          phone: string | null
+          phone_verified: boolean
+          terms_accepted_at: string | null
           updated_at: string
         }
         Insert: {
+          country?: string | null
           created_at?: string
+          default_currency?: string
           department?: string
+          display_name?: string
           full_name?: string
           id: string
           manager_id?: string | null
+          onboarding_completed?: boolean
+          phone?: string | null
+          phone_verified?: boolean
+          terms_accepted_at?: string | null
           updated_at?: string
         }
         Update: {
+          country?: string | null
           created_at?: string
+          default_currency?: string
           department?: string
+          display_name?: string
           full_name?: string
           id?: string
           manager_id?: string | null
+          onboarding_completed?: boolean
+          phone?: string | null
+          phone_verified?: boolean
+          terms_accepted_at?: string | null
           updated_at?: string
         }
         Relationships: [

@@ -5,6 +5,13 @@ export type ApprovalLevel = 'manager' | 'finance';
 export interface Profile {
   id: string;
   full_name: string;
+  display_name: string;
+  phone: string | null;
+  phone_verified: boolean;
+  country: string | null;
+  default_currency: string;
+  onboarding_completed: boolean;
+  terms_accepted_at: string | null;
   department: string;
   manager_id: string | null;
   created_at: string;
@@ -30,6 +37,9 @@ export interface Expense {
   description: string;
   amount: number;
   currency: string;
+  original_currency: string | null;
+  converted_amount: number | null;
+  conversion_rate: number | null;
   merchant: string;
   expense_date: string;
   category_id: string | null;
