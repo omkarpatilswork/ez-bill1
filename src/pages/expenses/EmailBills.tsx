@@ -96,6 +96,7 @@ export default function EmailBills() {
   const [isExtracting, setIsExtracting] = useState(false);
   const [extractProgress, setExtractProgress] = useState({ current: 0, total: 0 });
   const [isBulkImporting, setIsBulkImporting] = useState(false);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
 
   // Single import dialog (fallback)
   const [showImportDialog, setShowImportDialog] = useState(false);
@@ -336,7 +337,7 @@ export default function EmailBills() {
             ? bill.extracted.date_time.slice(0, 10) : new Date().toISOString().slice(0, 10),
           category_id: matchCategory(bill.extracted.category),
           description: `From email: ${bill.subject}\nSender: ${bill.from}`,
-          status: 'draft',
+          status: 'submitted',
         } as any).select().single();
 
         if (error) continue;
@@ -360,7 +361,8 @@ export default function EmailBills() {
       prev.map(b => b.selected && !b.already_imported ? { ...b, already_imported: true, selected: false } : b)
     );
     setIsBulkImporting(false);
-    toast({ title: 'Import complete', description: `Saved ${saved} of ${selected.length} bills as drafts.` });
+    setShowConfirmDialog(false);
+    toast({ title: 'Import complete', description: `Saved ${saved} of ${selected.length} bill(s).` });
   };
 
   // Toggle selection
@@ -440,7 +442,7 @@ export default function EmailBills() {
         expense_date: importForm.expense_date,
         category_id: importForm.category_id || null,
         description: importForm.description,
-        status: 'draft',
+        status: 'submitted',
       } as any).select().single();
 
       if (error) throw error;
@@ -458,7 +460,7 @@ export default function EmailBills() {
       setExtractedData(null);
       setAttachmentPreview(null);
 
-      toast({ title: 'Expense imported', description: 'The bill has been saved as a draft expense.' });
+      toast({ title: 'Expense saved', description: 'The bill has been saved successfully.' });
     } catch (err: any) {
       toast({ title: 'Import failed', description: err.message, variant: 'destructive' });
     } finally {
@@ -529,7 +531,9 @@ export default function EmailBills() {
 
   const newBillCount = emails.filter(e => !e.already_imported).length;
   const importedBillCount = emails.filter(e => e.already_imported).length;
-  const selectedPreviewCount = previewBills.filter(b => b.selected && !b.already_imported).length;
+  const selectedPreviewBills = previewBills.filter(b => b.selected && !b.already_imported);
+  const selectedPreviewCount = selectedPreviewBills.length;
+  const selectedTotal = selectedPreviewBills.reduce((sum, b) => sum + (b.extracted.amount ?? 0), 0);
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -717,10 +721,10 @@ export default function EmailBills() {
           {showPreviewScreen && (
             <div className="space-y-4">
               <div className="flex items-center justify-between flex-wrap gap-2">
-                <div>
+              <div>
                   <h2 className="text-lg font-semibold text-foreground">Preview Extracted Bills</h2>
                   <p className="text-xs text-muted-foreground">
-                    {selectedPreviewCount} selected for import
+                    {selectedPreviewCount} selected · Total: ₹{selectedTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                   </p>
                 </div>
                 <div className="flex gap-2">
@@ -803,16 +807,11 @@ export default function EmailBills() {
               {selectedPreviewCount > 0 && (
                 <div className="sticky bottom-20 md:bottom-4 z-10">
                   <Button
-                    onClick={bulkSaveBills}
-                    disabled={isBulkImporting}
+                    onClick={() => setShowConfirmDialog(true)}
                     className="w-full min-h-[48px] shadow-lg"
                     size="lg"
                   >
-                    {isBulkImporting ? (
-                      <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Importing...</>
-                    ) : (
-                      <><Download className="h-4 w-4 mr-2" /> Save All ({selectedPreviewCount} bills)</>
-                    )}
+                    <CheckCircle2 className="h-4 w-4 mr-2" /> Confirm & Save ({selectedPreviewCount} bills · ₹{selectedTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })})
                   </Button>
                 </div>
               )}
@@ -1077,7 +1076,7 @@ export default function EmailBills() {
                 disabled={isImporting || !importForm.title || !importForm.amount}
                 className="flex-1 min-h-[44px]"
               >
-                {isImporting ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Importing...</> : <><Download className="h-4 w-4 mr-2" /> Import as Draft</>}
+                {isImporting ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Saving...</> : <><CheckCircle2 className="h-4 w-4 mr-2" /> Save Expense</>}
               </Button>
               <Button variant="outline" onClick={() => setShowImportDialog(false)} className="min-h-[44px]">Cancel</Button>
             </div>
@@ -1099,6 +1098,51 @@ export default function EmailBills() {
                 <img src={attachmentPreview} alt="Document" className="max-w-full max-h-[65vh] object-contain rounded" />
               )
             )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Confirmation Dialog for Bulk Save */}
+      <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CheckCircle2 className="h-5 w-5 text-primary" />
+              Confirm Import
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-2">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">Bills to save</span>
+                <span className="font-bold text-foreground">{selectedPreviewCount}</span>
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">Total amount</span>
+                <span className="font-bold text-foreground text-lg">
+                  ₹{selectedTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                </span>
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              All selected bills will be saved as expenses. Duplicates are automatically skipped.
+            </p>
+            <div className="flex gap-2 pt-1">
+              <Button
+                onClick={bulkSaveBills}
+                disabled={isBulkImporting}
+                className="flex-1 min-h-[44px]"
+              >
+                {isBulkImporting ? (
+                  <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Saving...</>
+                ) : (
+                  <><CheckCircle2 className="h-4 w-4 mr-2" /> Save {selectedPreviewCount} Bills</>
+                )}
+              </Button>
+              <Button variant="outline" onClick={() => setShowConfirmDialog(false)} disabled={isBulkImporting} className="min-h-[44px]">
+                Cancel
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
