@@ -346,18 +346,20 @@ export default function EmailBills() {
       <div>
         <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Import Bills</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Import bills from Gmail or UPI payment SMS messages.
+          Import bills from Gmail{isNative ? ' or UPI payment SMS messages' : ''}.
         </p>
       </div>
 
       <Tabs defaultValue={initialTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-2 mb-4">
+        <TabsList className={`grid w-full ${isNative ? 'grid-cols-2' : 'grid-cols-1'} mb-4`}>
           <TabsTrigger value="gmail" className="flex items-center gap-2">
             <Mail className="h-4 w-4" /> Gmail
           </TabsTrigger>
-          <TabsTrigger value="upi" className="flex items-center gap-2">
-            <Smartphone className="h-4 w-4" /> UPI SMS
-          </TabsTrigger>
+          {isNative && (
+            <TabsTrigger value="upi" className="flex items-center gap-2">
+              <Smartphone className="h-4 w-4" /> UPI SMS
+            </TabsTrigger>
+          )}
         </TabsList>
 
         {/* Gmail Tab */}
