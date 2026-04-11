@@ -1076,7 +1076,7 @@ export default function EmailBills() {
                 disabled={isImporting || !importForm.title || !importForm.amount}
                 className="flex-1 min-h-[44px]"
               >
-                {isImporting ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Importing...</> : <><Download className="h-4 w-4 mr-2" /> Import as Draft</>}
+                {isImporting ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Saving...</> : <><CheckCircle2 className="h-4 w-4 mr-2" /> Save Expense</>}
               </Button>
               <Button variant="outline" onClick={() => setShowImportDialog(false)} className="min-h-[44px]">Cancel</Button>
             </div>
@@ -1098,6 +1098,51 @@ export default function EmailBills() {
                 <img src={attachmentPreview} alt="Document" className="max-w-full max-h-[65vh] object-contain rounded" />
               )
             )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Confirmation Dialog for Bulk Save */}
+      <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CheckCircle2 className="h-5 w-5 text-primary" />
+              Confirm Import
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-2">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">Bills to save</span>
+                <span className="font-bold text-foreground">{selectedPreviewCount}</span>
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">Total amount</span>
+                <span className="font-bold text-foreground text-lg">
+                  ₹{selectedTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                </span>
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              All selected bills will be saved as expenses. Duplicates are automatically skipped.
+            </p>
+            <div className="flex gap-2 pt-1">
+              <Button
+                onClick={bulkSaveBills}
+                disabled={isBulkImporting}
+                className="flex-1 min-h-[44px]"
+              >
+                {isBulkImporting ? (
+                  <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Saving...</>
+                ) : (
+                  <><CheckCircle2 className="h-4 w-4 mr-2" /> Save {selectedPreviewCount} Bills</>
+                )}
+              </Button>
+              <Button variant="outline" onClick={() => setShowConfirmDialog(false)} disabled={isBulkImporting} className="min-h-[44px]">
+                Cancel
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
