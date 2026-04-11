@@ -241,7 +241,9 @@ export default function EmailBills() {
             if (invoiceNumber) descParts.push(`Invoice: ${invoiceNumber}`);
             if (paymentMethod) descParts.push(`Payment: ${paymentMethod}`);
             if (lineItems.length > 0) descParts.push(`${lineItems.length} item(s)`);
-            if (val(ext.tax_details)) descParts.push(`Tax: ${ext.tax_details}`);
+            if (ext.subtotal != null && ext.subtotal > 0) descParts.push(`Subtotal: ${ext.subtotal}`);
+            if (ext.tax_amount != null && ext.tax_amount > 0) descParts.push(`Tax: ${ext.tax_amount}${val(ext.tax_details) ? ` (${ext.tax_details})` : ''}`);
+            if (ext.discount != null && ext.discount > 0) descParts.push(`Discount: ${ext.discount}`);
             descParts.push(`From email: ${email.subject}`);
             if (isSubscription) descParts.push('[Subscription]');
             let description = descParts.join(' | ');
