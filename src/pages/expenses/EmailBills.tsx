@@ -208,26 +208,22 @@ export default function EmailBills() {
     setShowPreviewScreen(false);
     try {
       const { data, error } = await supabase.functions.invoke('gmail-scan', {
-        body: { max_results: 30, days: dateRange },
+        body: { max_results: 50, days: dateRange },
       });
       if (error) throw new Error('Failed to scan emails');
       if (data?.error) throw new Error(data.error);
 
       const allEmails: EmailBill[] = (data?.emails || []).map((e: any) => ({
         ...e,
-        already_imported: false,
+        already_imported: !!e.already_imported,
       }));
 
-      // Mark already imported
-      const alreadyImported: EmailBill[] = (data?.already_imported || []).map((e: any) => ({
-        ...e,
-        already_imported: true,
-      }));
-
-      setEmails([...allEmails, ...alreadyImported]);
+      setEmails(allEmails);
+      const newCount = allEmails.filter(e => !e.already_imported).length;
+      const importedCount = allEmails.filter(e => e.already_imported).length;
       toast({
         title: 'Scan complete',
-        description: `Found ${allEmails.length} new + ${alreadyImported.length} already imported bills.`,
+        description: `Found ${newCount} new + ${importedCount} previously imported bills.`,
       });
     } catch (err: any) {
       toast({ title: 'Scan failed', description: err.message, variant: 'destructive' });
@@ -238,17 +234,16 @@ export default function EmailBills() {
 
   // Extract all new bills for preview
   const extractAllBills = async () => {
-    const newEmails = emails.filter(e => !e.already_imported);
-    if (newEmails.length === 0) {
-      toast({ title: 'No new bills', description: 'All found bills have already been imported.' });
+    if (emails.length === 0) {
+      toast({ title: 'No bills found', description: 'Scan your inbox first.' });
       return;
     }
 
     setIsExtracting(true);
-    setExtractProgress({ current: 0, total: newEmails.length });
+    setExtractProgress({ current: 0, total: emails.length });
     const extracted: ExtractedBill[] = [];
 
-    for (const email of newEmails) {
+    for (const email of emails) {
       for (const att of email.attachments) {
         try {
           setExtractProgress(p => ({ ...p, current: p.current + 1 }));
@@ -270,8 +265,8 @@ export default function EmailBills() {
             date: email.date,
             attachment: att,
             extracted: ext,
-            selected: true,
-            already_imported: false,
+            selected: !email.already_imported,
+            already_imported: !!email.already_imported,
           });
         } catch {
           // skip failed extractions
@@ -279,21 +274,7 @@ export default function EmailBills() {
       }
     }
 
-    // Also add already-imported markers
-    const importedBills: ExtractedBill[] = emails
-      .filter(e => e.already_imported)
-      .flatMap(e => e.attachments.map(att => ({
-        message_id: e.message_id,
-        subject: e.subject,
-        from: e.from,
-        date: e.date,
-        attachment: att,
-        extracted: {},
-        selected: false,
-        already_imported: true,
-      })));
-
-    setPreviewBills([...extracted, ...importedBills]);
+    setPreviewBills(extracted);
     setShowPreviewScreen(true);
     setIsExtracting(false);
 
@@ -307,7 +288,7 @@ export default function EmailBills() {
   // Bulk save all selected bills
   const bulkSaveBills = async () => {
     if (!user) return;
-    const selected = previewBills.filter(b => b.selected && !b.already_imported);
+    const selected = previewBills.filter(b => b.selected);
     if (selected.length === 0) {
       toast({ title: 'None selected', description: 'Select at least one bill to import.' });
       return;
@@ -365,15 +346,15 @@ export default function EmailBills() {
     toast({ title: 'Import complete', description: `Saved ${saved} of ${selected.length} bill(s).` });
   };
 
-  // Toggle selection
+  // Toggle selection — allow selecting already imported bills for re-import
   const toggleBillSelection = (messageId: string) => {
     setPreviewBills(prev =>
-      prev.map(b => b.message_id === messageId && !b.already_imported ? { ...b, selected: !b.selected } : b)
+      prev.map(b => b.message_id === messageId ? { ...b, selected: !b.selected } : b)
     );
   };
 
   const selectAll = () => {
-    setPreviewBills(prev => prev.map(b => b.already_imported ? b : { ...b, selected: true }));
+    setPreviewBills(prev => prev.map(b => ({ ...b, selected: true })));
   };
 
   const deselectAll = () => {
