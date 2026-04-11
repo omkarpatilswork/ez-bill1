@@ -89,6 +89,7 @@ export default function EmailBills() {
   const [savingUpiIdx, setSavingUpiIdx] = useState<number | null>(null);
   const [isAutoScanning, setIsAutoScanning] = useState(false);
   const [showNativeScan] = useState(() => isNativeApp() && isAndroid());
+  const isNative = isNativeApp();
 
   useEffect(() => {
     checkConnection();
