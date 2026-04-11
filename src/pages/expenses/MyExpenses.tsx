@@ -203,6 +203,8 @@ export default function MyExpenses() {
     if (selectedIds.size === 0) return;
     setDeleting(true);
     const ids = Array.from(selectedIds);
+    // Also remove processed_emails so Gmail rescan can re-import these
+    await supabase.from('processed_emails').delete().in('expense_id', ids);
     const { error } = await supabase.from('expenses').delete().in('id', ids);
     setDeleting(false);
     setShowDeleteConfirm(false);
