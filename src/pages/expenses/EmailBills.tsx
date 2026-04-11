@@ -234,17 +234,16 @@ export default function EmailBills() {
 
   // Extract all new bills for preview
   const extractAllBills = async () => {
-    const newEmails = emails.filter(e => !e.already_imported);
-    if (newEmails.length === 0) {
-      toast({ title: 'No new bills', description: 'All found bills have already been imported.' });
+    if (emails.length === 0) {
+      toast({ title: 'No bills found', description: 'Scan your inbox first.' });
       return;
     }
 
     setIsExtracting(true);
-    setExtractProgress({ current: 0, total: newEmails.length });
+    setExtractProgress({ current: 0, total: emails.length });
     const extracted: ExtractedBill[] = [];
 
-    for (const email of newEmails) {
+    for (const email of emails) {
       for (const att of email.attachments) {
         try {
           setExtractProgress(p => ({ ...p, current: p.current + 1 }));
@@ -266,8 +265,8 @@ export default function EmailBills() {
             date: email.date,
             attachment: att,
             extracted: ext,
-            selected: true,
-            already_imported: false,
+            selected: !email.already_imported,
+            already_imported: !!email.already_imported,
           });
         } catch {
           // skip failed extractions
@@ -275,21 +274,7 @@ export default function EmailBills() {
       }
     }
 
-    // Also add already-imported markers
-    const importedBills: ExtractedBill[] = emails
-      .filter(e => e.already_imported)
-      .flatMap(e => e.attachments.map(att => ({
-        message_id: e.message_id,
-        subject: e.subject,
-        from: e.from,
-        date: e.date,
-        attachment: att,
-        extracted: {},
-        selected: false,
-        already_imported: true,
-      })));
-
-    setPreviewBills([...extracted, ...importedBills]);
+    setPreviewBills(extracted);
     setShowPreviewScreen(true);
     setIsExtracting(false);
 
