@@ -1,9 +1,14 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
-import { Search, Receipt, Utensils, Fuel, Car, ParkingCircle, ShoppingBag, Zap, MoreHorizontal, Repeat, Trash2, X, CheckSquare, Loader2, AlertCircle } from 'lucide-react';
+import {
+  Search, Receipt, Utensils, Fuel, Car, ParkingCircle, ShoppingBag, Zap,
+  MoreHorizontal, Repeat, Trash2, X, CheckSquare, Loader2, AlertCircle,
+  ArrowUpDown, Mail, Camera, Upload, PenLine, Hotel, Plane, Heart,
+  GraduationCap, Gamepad2, Briefcase, Pill
+} from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -13,6 +18,9 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import type { Expense } from '@/lib/types';
 import { smartCategoryFromMerchant, isSubscriptionMerchant } from '@/lib/smart-category';
 import { getCurrencySymbol } from '@/lib/countries';
@@ -24,57 +32,116 @@ interface DuplicateGroup {
   ids: string[];
 }
 
-const CATEGORIES = [
-  { label: 'All', value: 'all', icon: Receipt },
-  { label: 'Subscriptions', value: 'subscriptions', icon: Repeat },
-  { label: 'Food & Dining', value: 'food_dining', icon: Utensils },
-  { label: 'Petrol', value: 'petrol', icon: Fuel },
-  { label: 'Toll', value: 'toll', icon: Car },
-  { label: 'Parking', value: 'parking', icon: ParkingCircle },
-  { label: 'Shopping', value: 'shopping', icon: ShoppingBag },
-  { label: 'Utilities', value: 'utilities', icon: Zap },
-  { label: 'Other', value: 'other', icon: MoreHorizontal },
+// ── Broad category grouping ──
+// Maps fine-grained AI/smart categories into broad display groups
+const BROAD_CATEGORY_MAP: Record<string, string> = {
+  'food & dining': 'Food & Dining',
+  'food': 'Food & Dining',
+  'dining': 'Food & Dining',
+  'meals': 'Food & Dining',
+  'restaurant': 'Food & Dining',
+  'grocery': 'Grocery',
+  'supermarket': 'Grocery',
+  'petrol & fuel': 'Fuel',
+  'petrol': 'Fuel',
+  'fuel': 'Fuel',
+  'toll': 'Toll & Parking',
+  'parking': 'Toll & Parking',
+  'shopping': 'Shopping',
+  'retail': 'Shopping',
+  'utilities': 'Utilities',
+  'software': 'Subscriptions',
+  'subscription': 'Subscriptions',
+  'travel': 'Travel',
+  'flight': 'Travel',
+  'train': 'Travel',
+  'transportation': 'Transport',
+  'transport': 'Transport',
+  'cab': 'Transport',
+  'accommodation': 'Hotel & Stay',
+  'hotel': 'Hotel & Stay',
+  'resort': 'Hotel & Stay',
+  'stay': 'Hotel & Stay',
+  'airbnb': 'Hotel & Stay',
+  'lodge': 'Hotel & Stay',
+  'medical': 'Medical',
+  'health': 'Medical',
+  'pharmacy': 'Medical',
+  'entertainment': 'Entertainment',
+  'education': 'Education',
+  'training': 'Education',
+  'office supplies': 'Office',
+  'other': 'Other',
+};
+
+function toBroadCategory(cat: string): string {
+  const lower = cat.toLowerCase().trim();
+  if (BROAD_CATEGORY_MAP[lower]) return BROAD_CATEGORY_MAP[lower];
+  // partial match
+  for (const [key, broad] of Object.entries(BROAD_CATEGORY_MAP)) {
+    if (lower.includes(key) || key.includes(lower)) return broad;
+  }
+  return 'Other';
+}
+
+const BROAD_CATEGORY_ICONS: Record<string, any> = {
+  'Food & Dining': Utensils,
+  'Grocery': ShoppingBag,
+  'Fuel': Fuel,
+  'Toll & Parking': ParkingCircle,
+  'Shopping': ShoppingBag,
+  'Subscriptions': Repeat,
+  'Travel': Plane,
+  'Transport': Car,
+  'Hotel & Stay': Hotel,
+  'Medical': Pill,
+  'Entertainment': Gamepad2,
+  'Education': GraduationCap,
+  'Utilities': Zap,
+  'Office': Briefcase,
+  'Other': MoreHorizontal,
+};
+
+// ── Bill source detection ──
+type BillSource = 'email' | 'camera' | 'upload' | 'manual';
+
+function getBillSource(expense: Expense): BillSource {
+  const desc = (expense.description || '').toLowerCase();
+  if (desc.includes('from email') || desc.includes('[email]')) return 'email';
+  if (desc.includes('[camera]') || desc.includes('[scan]')) return 'camera';
+  if (desc.includes('[upload]') || desc.includes('[gallery]')) return 'upload';
+  // If it has a receipt reference or Invoice extracted, likely scanned/uploaded
+  // Check if there's an invoice number — probably came from scan
+  if (desc.includes('invoice:') && (desc.includes('item(s)') || desc.includes('::items::'))) return 'upload';
+  return 'manual';
+}
+
+const SOURCE_CONFIG: Record<BillSource, { label: string; icon: any; color: string }> = {
+  email: { label: 'Email', icon: Mail, color: 'text-blue-400' },
+  camera: { label: 'Camera', icon: Camera, color: 'text-amber-400' },
+  upload: { label: 'Scan', icon: Upload, color: 'text-emerald-400' },
+  manual: { label: 'Manual', icon: PenLine, color: 'text-muted-foreground' },
+};
+
+type SortKey = 'date_desc' | 'date_asc' | 'amount_desc' | 'amount_asc' | 'merchant_asc';
+
+const SORT_OPTIONS: { key: SortKey; label: string }[] = [
+  { key: 'date_desc', label: 'Newest first' },
+  { key: 'date_asc', label: 'Oldest first' },
+  { key: 'amount_desc', label: 'Amount: High → Low' },
+  { key: 'amount_asc', label: 'Amount: Low → High' },
+  { key: 'merchant_asc', label: 'Merchant: A → Z' },
 ];
 
 function getSmartCategory(expense: Expense): string {
-  // 1. Check saved category in description (Category: XYZ)
   const descMatch = (expense.description || '').match(/Category:\s*([^|]+)/);
   if (descMatch) {
     const saved = descMatch[1].trim();
     if (saved && saved !== 'Other') return saved;
   }
-  // 2. Smart detect from merchant
   const combined = `${expense.title} ${expense.merchant} ${expense.description} ${expense.cost_center}`;
   if (isSubscriptionMerchant(combined)) return 'Subscription';
   return smartCategoryFromMerchant(expense.merchant || '', expense.title);
-}
-
-function getCategoryIcon(category: string) {
-  const cat = category?.toLowerCase() || '';
-  if (cat.includes('subscription')) return Repeat;
-  if (cat.includes('food') || cat.includes('dining') || cat.includes('meal')) return Utensils;
-  if (cat.includes('petrol') || cat.includes('fuel') || cat.includes('gas')) return Fuel;
-  if (cat.includes('toll')) return Car;
-  if (cat.includes('parking')) return ParkingCircle;
-  if (cat.includes('shopping') || cat.includes('retail')) return ShoppingBag;
-  if (cat.includes('utilities') || cat.includes('electric') || cat.includes('water')) return Zap;
-  return Receipt;
-}
-
-function matchesCategory(expense: Expense, filter: string): boolean {
-  if (filter === 'all') return true;
-  const cat = getSmartCategory(expense).toLowerCase();
-  switch (filter) {
-    case 'subscriptions': return cat === 'subscription';
-    case 'food_dining': return cat.includes('food') || cat.includes('dining') || cat.includes('meal') || cat.includes('grocery');
-    case 'petrol': return cat.includes('petrol') || cat.includes('fuel');
-    case 'toll': return cat.includes('toll');
-    case 'parking': return cat.includes('parking');
-    case 'shopping': return cat.includes('shopping');
-    case 'utilities': return cat.includes('utilities') || cat.includes('software');
-    case 'other': return cat === 'other';
-    default: return true;
-  }
 }
 
 export default function MyExpenses() {
@@ -84,6 +151,8 @@ export default function MyExpenses() {
   const [searchParams] = useSearchParams();
   const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '');
   const [categoryFilter, setCategoryFilter] = useState('all');
+  const [sourceFilter, setSourceFilter] = useState<BillSource | 'all'>('all');
+  const [sortKey, setSortKey] = useState<SortKey>('date_desc');
   const { toast } = useToast();
 
   const [selectMode, setSelectMode] = useState(false);
@@ -123,12 +192,8 @@ export default function MyExpenses() {
 
     const groups = new Map<string, { merchant: string; amount: number; expense_date: string; ids: string[] }>();
     for (const row of data as any[]) {
-      // Extract invoice number from description
       const invoiceMatch = (row.description || '').match(/Invoice:\s*([^|]+)/);
       const invoice = invoiceMatch ? invoiceMatch[1].trim().toLowerCase() : '';
-
-      // Primary key: invoice number + date (if invoice exists)
-      // Fallback key: merchant + amount + date
       const key = invoice
         ? `inv:${invoice}|${row.expense_date}`
         : `mrch:${(row.merchant || '').toLowerCase().trim()}|${row.amount}|${row.expense_date}`;
@@ -163,12 +228,56 @@ export default function MyExpenses() {
     fetchExpenses();
   };
 
-  const filteredExpenses = expenses.filter(e => {
-    if (!matchesCategory(e, categoryFilter)) return false;
-    if (!searchQuery) return true;
-    const q = searchQuery.toLowerCase();
-    return e.title.toLowerCase().includes(q) || (e.merchant || '').toLowerCase().includes(q) || String(e.amount).includes(q) || (e.description || '').toLowerCase().includes(q);
-  });
+  // Compute which broad categories actually have expenses
+  const availableCategories = useMemo(() => {
+    const catSet = new Set<string>();
+    expenses.forEach(e => {
+      const raw = getSmartCategory(e);
+      catSet.add(toBroadCategory(raw));
+    });
+    return catSet;
+  }, [expenses]);
+
+  // Compute source counts
+  const sourceCounts = useMemo(() => {
+    const counts: Record<BillSource, number> = { email: 0, camera: 0, upload: 0, manual: 0 };
+    expenses.forEach(e => { counts[getBillSource(e)]++; });
+    return counts;
+  }, [expenses]);
+
+  const filteredExpenses = useMemo(() => {
+    let result = expenses.filter(e => {
+      // Category filter
+      if (categoryFilter !== 'all') {
+        const broad = toBroadCategory(getSmartCategory(e));
+        if (broad !== categoryFilter) return false;
+      }
+      // Source filter
+      if (sourceFilter !== 'all') {
+        if (getBillSource(e) !== sourceFilter) return false;
+      }
+      // Search
+      if (searchQuery) {
+        const q = searchQuery.toLowerCase();
+        return e.title.toLowerCase().includes(q) || (e.merchant || '').toLowerCase().includes(q) || String(e.amount).includes(q) || (e.description || '').toLowerCase().includes(q);
+      }
+      return true;
+    });
+
+    // Sort
+    result = [...result].sort((a, b) => {
+      switch (sortKey) {
+        case 'date_desc': return new Date(b.expense_date).getTime() - new Date(a.expense_date).getTime();
+        case 'date_asc': return new Date(a.expense_date).getTime() - new Date(b.expense_date).getTime();
+        case 'amount_desc': return Number(b.amount) - Number(a.amount);
+        case 'amount_asc': return Number(a.amount) - Number(b.amount);
+        case 'merchant_asc': return (a.merchant || a.title).localeCompare(b.merchant || b.title);
+        default: return 0;
+      }
+    });
+
+    return result;
+  }, [expenses, categoryFilter, sourceFilter, searchQuery, sortKey]);
 
   const totalFiltered = filteredExpenses.reduce((s, e) => s + Number(e.amount), 0);
 
@@ -210,6 +319,21 @@ export default function MyExpenses() {
     }
   };
 
+  // Build dynamic category pill list — only categories with expenses
+  const categoryPills = useMemo(() => {
+    const pills: { label: string; value: string; icon: any }[] = [
+      { label: 'All', value: 'all', icon: Receipt },
+    ];
+    // Deterministic order
+    const order = ['Food & Dining', 'Grocery', 'Fuel', 'Toll & Parking', 'Shopping', 'Subscriptions', 'Travel', 'Transport', 'Hotel & Stay', 'Medical', 'Entertainment', 'Education', 'Utilities', 'Office', 'Other'];
+    for (const cat of order) {
+      if (availableCategories.has(cat)) {
+        pills.push({ label: cat, value: cat, icon: BROAD_CATEGORY_ICONS[cat] || Receipt });
+      }
+    }
+    return pills;
+  }, [availableCategories]);
+
   return (
     <div className="space-y-4 pb-20">
       <div className="flex items-start justify-between">
@@ -219,15 +343,36 @@ export default function MyExpenses() {
             {filteredExpenses.length} bill{filteredExpenses.length !== 1 ? 's' : ''} · ₹{totalFiltered.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} total
           </p>
         </div>
-        {!selectMode ? (
-          <Button variant="ghost" size="sm" onClick={() => setSelectMode(true)} className="text-muted-foreground">
-            <CheckSquare className="h-4 w-4 mr-1.5" /> Select
-          </Button>
-        ) : (
-          <Button variant="ghost" size="sm" onClick={exitSelectMode} className="text-muted-foreground">
-            <X className="h-4 w-4 mr-1.5" /> Cancel
-          </Button>
-        )}
+        <div className="flex items-center gap-1">
+          {/* Sort dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm" className="text-muted-foreground h-8 w-8 p-0">
+                <ArrowUpDown className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="min-w-[180px]">
+              {SORT_OPTIONS.map(opt => (
+                <DropdownMenuItem
+                  key={opt.key}
+                  onClick={() => setSortKey(opt.key)}
+                  className={sortKey === opt.key ? 'bg-primary/10 text-primary font-medium' : ''}
+                >
+                  {opt.label}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+          {!selectMode ? (
+            <Button variant="ghost" size="sm" onClick={() => setSelectMode(true)} className="text-muted-foreground h-8 px-2">
+              <CheckSquare className="h-4 w-4" />
+            </Button>
+          ) : (
+            <Button variant="ghost" size="sm" onClick={exitSelectMode} className="text-muted-foreground h-8 px-2">
+              <X className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
       </div>
 
       {selectMode && (
@@ -258,8 +403,34 @@ export default function MyExpenses() {
         />
       </div>
 
+      {/* Source filter pills */}
+      <div className="flex gap-2 overflow-x-auto pb-0.5 scrollbar-hide -mx-1 px-1">
+        {(['all', 'email', 'camera', 'upload', 'manual'] as const).map(src => {
+          if (src !== 'all' && sourceCounts[src] === 0) return null;
+          const active = sourceFilter === src;
+          const config = src === 'all' ? { label: 'All Sources', icon: Receipt, color: '' } : SOURCE_CONFIG[src];
+          const Icon = config.icon;
+          return (
+            <button
+              key={src}
+              onClick={() => setSourceFilter(src)}
+              className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium whitespace-nowrap transition-all shrink-0 ${
+                active
+                  ? 'bg-primary/15 text-primary border border-primary/30'
+                  : 'bg-card/50 border border-border/30 text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <Icon className="h-3 w-3" />
+              {config.label}
+              {src !== 'all' && <span className="text-[10px] opacity-70">({sourceCounts[src]})</span>}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Category filter pills — only categories with bills */}
       <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide -mx-1 px-1">
-        {CATEGORIES.map(cat => {
+        {categoryPills.map(cat => {
           const active = categoryFilter === cat.value;
           return (
             <button
@@ -285,17 +456,21 @@ export default function MyExpenses() {
       ) : filteredExpenses.length === 0 ? (
         <div className="text-center py-10 text-muted-foreground">
           <Receipt className="mx-auto h-12 w-12 mb-3 opacity-40" />
-          <p className="font-medium mb-1">{searchQuery || categoryFilter !== 'all' ? 'No matching bills' : 'No bills yet'}</p>
-          <p className="text-sm">{searchQuery ? 'Try adjusting your search or category.' : 'Add your first bill to get started.'}</p>
+          <p className="font-medium mb-1">{searchQuery || categoryFilter !== 'all' || sourceFilter !== 'all' ? 'No matching bills' : 'No bills yet'}</p>
+          <p className="text-sm">{searchQuery ? 'Try adjusting your search or filters.' : 'Add your first bill to get started.'}</p>
         </div>
       ) : (
         <div className="space-y-2">
           {filteredExpenses.map(exp => {
-            const catLabel = getSmartCategory(exp);
-            const CategoryIcon = getCategoryIcon(catLabel);
-            const isSub = catLabel === 'Subscription';
+            const rawCat = getSmartCategory(exp);
+            const broadCat = toBroadCategory(rawCat);
+            const CategoryIcon = BROAD_CATEGORY_ICONS[broadCat] || Receipt;
+            const isSub = broadCat === 'Subscriptions';
             const isSelected = selectedIds.has(exp.id);
             const currSym = getCurrencySymbol(exp.currency || 'INR');
+            const source = getBillSource(exp);
+            const srcCfg = SOURCE_CONFIG[source];
+            const SrcIcon = srcCfg.icon;
 
             const cardContent = (
               <div className="flex items-center gap-3">
@@ -313,15 +488,18 @@ export default function MyExpenses() {
                   <p className="font-semibold text-sm text-foreground truncate">
                     {exp.merchant || exp.title}
                   </p>
-                  <p className="text-[11px] text-muted-foreground mt-0.5">
-                    {catLabel}
-                    {isSub && <span className="ml-1 text-purple-400">· Recurring</span>}
+                  <p className="text-[11px] text-muted-foreground mt-0.5 flex items-center gap-1 flex-wrap">
+                    <span>{broadCat}</span>
+                    {isSub && <span className="text-purple-400">· Recurring</span>}
+                    <span className="inline-flex items-center gap-0.5">
+                      · <SrcIcon className={`h-3 w-3 inline ${srcCfg.color}`} />
+                    </span>
                     {exp.description && /\d+\s*item/i.test(exp.description) && (
-                      <> · {exp.description.match(/(\d+\s*item[s]?)/i)?.[1]}</>
+                      <span>· {exp.description.match(/(\d+\s*item[s]?)/i)?.[1]}</span>
                     )}
                   </p>
                   <p className="text-[11px] text-muted-foreground">
-                    {exp.cost_center ? exp.cost_center : 'UPI'}
+                    {exp.cost_center || 'UPI'}
                   </p>
                 </div>
                 <div className="text-right shrink-0">

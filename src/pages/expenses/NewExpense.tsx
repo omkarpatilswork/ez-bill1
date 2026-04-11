@@ -466,6 +466,12 @@ export default function NewExpense() {
     const tx = numSafe(form.tax_amount); if (tx) parts.push(`Tax: ${tx}`);
     if (form.tax_details) parts.push(`TaxDetails: ${form.tax_details}`);
     const dc = numSafe(form.discount); if (dc) parts.push(`Discount: ${dc}`);
+    // Tag source if not already tagged and not editing
+    if (!editId) {
+      if (mode === 'scan') parts.push('[scan]');
+      else if (mode === 'upload') parts.push('[upload]');
+      else if (!mode) parts.push('[manual]');
+    }
     if (form.description) parts.push(form.description);
     let desc = parts.join(' | ');
     if (editLineItems.length > 0) {
