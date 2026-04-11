@@ -288,7 +288,7 @@ export default function EmailBills() {
   // Bulk save all selected bills
   const bulkSaveBills = async () => {
     if (!user) return;
-    const selected = previewBills.filter(b => b.selected && !b.already_imported);
+    const selected = previewBills.filter(b => b.selected);
     if (selected.length === 0) {
       toast({ title: 'None selected', description: 'Select at least one bill to import.' });
       return;
