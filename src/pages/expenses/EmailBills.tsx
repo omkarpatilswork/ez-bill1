@@ -442,7 +442,7 @@ export default function EmailBills() {
         expense_date: importForm.expense_date,
         category_id: importForm.category_id || null,
         description: importForm.description,
-        status: 'draft',
+        status: 'submitted',
       } as any).select().single();
 
       if (error) throw error;
@@ -460,7 +460,7 @@ export default function EmailBills() {
       setExtractedData(null);
       setAttachmentPreview(null);
 
-      toast({ title: 'Expense imported', description: 'The bill has been saved as a draft expense.' });
+      toast({ title: 'Expense saved', description: 'The bill has been saved successfully.' });
     } catch (err: any) {
       toast({ title: 'Import failed', description: err.message, variant: 'destructive' });
     } finally {
