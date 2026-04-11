@@ -63,7 +63,6 @@ serve(async (req) => {
       });
     }
 
-    // Get user's Gmail connection
     const { data: connection } = await supabase
       .from("gmail_connections")
       .select("*")
@@ -76,16 +75,14 @@ serve(async (req) => {
       });
     }
 
-    // Refresh token if expired
     let accessToken = connection.access_token;
     if (new Date(connection.token_expires_at) < new Date()) {
       accessToken = await refreshToken(supabase, user.id, connection, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET);
     }
 
-    const { max_results = 10 } = await req.json().catch(() => ({}));
+    const { max_results = 30, days = 30 } = await req.json().catch(() => ({}));
 
-    // Search Gmail for bill/invoice/receipt emails
-    const query = "(subject:(invoice OR receipt OR bill OR payment OR order OR confirmation OR statement OR purchase) OR from:(swiggy OR zomato OR amazon OR flipkart OR uber OR ola OR paytm OR phonepe OR gpay OR razorpay OR paypal OR netflix OR spotify)) newer_than:90d";
+    const query = `(subject:(invoice OR receipt OR bill OR payment OR order OR confirmation OR statement OR purchase) OR from:(swiggy OR zomato OR amazon OR flipkart OR uber OR ola OR paytm OR phonepe OR gpay OR razorpay OR paypal OR netflix OR spotify)) newer_than:${days}d`;
     const searchUrl = `https://gmail.googleapis.com/gmail/v1/users/me/messages?q=${encodeURIComponent(query)}&maxResults=${max_results}`;
 
     const searchRes = await fetch(searchUrl, {
@@ -94,7 +91,6 @@ serve(async (req) => {
 
     if (!searchRes.ok) {
       if (searchRes.status === 401) {
-        // Try refresh once
         accessToken = await refreshToken(supabase, user.id, connection, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET);
         const retryRes = await fetch(searchUrl, { headers: { Authorization: `Bearer ${accessToken}` } });
         if (!retryRes.ok) throw new Error("Gmail API error after refresh");
@@ -119,7 +115,7 @@ serve(async (req) => {
 async function processMessages(searchData: any, accessToken: string, userId: string, supabase: any) {
   const messages = searchData.messages || [];
   if (messages.length === 0) {
-    return new Response(JSON.stringify({ emails: [], message: "No bill emails found" }), {
+    return new Response(JSON.stringify({ emails: [], already_imported: [], message: "No bill emails found" }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
@@ -128,17 +124,16 @@ async function processMessages(searchData: any, accessToken: string, userId: str
   const messageIds = messages.map((m: any) => m.id);
   const { data: processed } = await supabase
     .from("processed_emails")
-    .select("gmail_message_id")
+    .select("gmail_message_id, subject, sender")
     .eq("user_id", userId)
     .in("gmail_message_id", messageIds);
 
-  const processedIds = new Set((processed || []).map((p: any) => p.gmail_message_id));
+  const processedMap = new Map((processed || []).map((p: any) => [p.gmail_message_id, p]));
 
-  // Fetch details for unprocessed messages
-  const emails: any[] = [];
+  const newEmails: any[] = [];
+  const alreadyImported: any[] = [];
+
   for (const msg of messages) {
-    if (processedIds.has(msg.id)) continue;
-
     try {
       const msgRes = await fetch(
         `https://gmail.googleapis.com/gmail/v1/users/me/messages/${msg.id}?format=full`,
@@ -154,7 +149,6 @@ async function processMessages(searchData: any, accessToken: string, userId: str
       const from = getHeader("From");
       const date = getHeader("Date");
 
-      // Find attachments (PDF or image)
       const attachments: any[] = [];
       const findAttachments = (parts: any[]) => {
         for (const part of parts) {
@@ -186,22 +180,26 @@ async function processMessages(searchData: any, accessToken: string, userId: str
         }
       }
 
-      // Only include emails that have attachments (PDF or image)
       if (attachments.length === 0) continue;
-      emails.push({
-        message_id: msg.id,
-        subject,
-        from,
-        date,
-        attachments,
-        has_body: true,
-      });
+
+      const emailObj = { message_id: msg.id, subject, from, date, attachments, has_body: true };
+
+      if (processedMap.has(msg.id)) {
+        alreadyImported.push(emailObj);
+      } else {
+        newEmails.push(emailObj);
+      }
     } catch (err) {
       console.error("Error processing message:", msg.id, err);
     }
   }
 
-  return new Response(JSON.stringify({ emails, total_found: messages.length, new_count: emails.length }), {
+  return new Response(JSON.stringify({
+    emails: newEmails,
+    already_imported: alreadyImported,
+    total_found: messages.length,
+    new_count: newEmails.length,
+  }), {
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
 }
