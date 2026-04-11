@@ -828,7 +828,7 @@ export default function NewExpense() {
                     )}
                     {(val(form.tax_amount) || isEditing) && (
                       <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">Tax {extractionData?.tax_details && extractionData.tax_details !== 'Not Found' ? `(${extractionData.tax_details})` : ''}</span>
+                        <span className="text-muted-foreground">Tax {form.tax_details ? `(${form.tax_details})` : ''}</span>
                         {isEditing ? (
                           <Input value={form.tax_amount} type="number" step="0.01"
                             className="w-28 text-right text-xs h-7 bg-secondary/30 border-border/30"
