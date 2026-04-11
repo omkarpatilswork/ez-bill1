@@ -137,6 +137,7 @@ export default function NewExpense() {
         tax_amount: '',
         subtotal: '',
         discount: '',
+        currency: e.currency || profile?.default_currency || 'INR',
       });
       setEditLineItems(lineItems);
       setExtractionData({ line_items: lineItems });
@@ -234,6 +235,7 @@ export default function NewExpense() {
       tax_amount: data.tax_amount != null ? String(data.tax_amount) : '',
       subtotal: data.subtotal != null ? String(data.subtotal) : '',
       discount: data.discount != null ? String(data.discount) : '',
+      currency: data.currency || profile?.default_currency || 'INR',
     });
     setEditLineItems(data.line_items || []);
   };
