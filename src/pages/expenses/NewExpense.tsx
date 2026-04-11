@@ -69,7 +69,7 @@ function cleanDescription(desc: string | null | undefined): string {
   const idx = desc.indexOf(LINE_ITEMS_MARKER);
   let clean = idx >= 0 ? desc.slice(0, idx) : desc;
   clean = clean.replace(/Category:\s*[^|]+\|?\s*/g, '').replace(/Invoice:\s*[^|]+\|?\s*/g, '').replace(/Payment:\s*[^|]+\|?\s*/g, '').replace(/\d+ item\(s\)\s*\|?\s*/g, '');
-  clean = clean.replace(/Tax:\s*[^|]+\|?\s*/g, '').replace(/Discount:\s*[^|]+\|?\s*/g, '').replace(/Subtotal:\s*[^|]+\|?\s*/g, '');
+  clean = clean.replace(/Tax:\s*[^|]+\|?\s*/g, '').replace(/TaxDetails:\s*[^|]+\|?\s*/g, '').replace(/Discount:\s*[^|]+\|?\s*/g, '').replace(/Subtotal:\s*[^|]+\|?\s*/g, '');
   clean = clean.replace(/From email:\s*[^|]+\|?\s*/g, '').replace(/\[Subscription\]\s*\|?\s*/g, '');
   return clean.trim();
 }
@@ -118,7 +118,7 @@ export default function NewExpense() {
   const [form, setForm] = useState({
     title: '', merchant: '', amount: '', expense_date: new Date().toISOString().slice(0, 10),
     category_id: '', category_name: '', cost_center: '', description: '',
-    payment_method: '', invoice_number: '', tax_amount: '', subtotal: '', discount: '',
+    payment_method: '', invoice_number: '', tax_amount: '', tax_details: '', subtotal: '', discount: '',
     currency: profile?.default_currency || 'INR',
   });
   const [editLineItems, setEditLineItems] = useState<LineItem[]>([]);
@@ -161,6 +161,7 @@ export default function NewExpense() {
         payment_method: paymentMethod,
         invoice_number: parseFieldFromDesc(e.description, 'Invoice'),
         tax_amount: parseFieldFromDesc(e.description, 'Tax') || '',
+        tax_details: parseFieldFromDesc(e.description, 'TaxDetails') || '',
         subtotal: parseFieldFromDesc(e.description, 'Subtotal') || '',
         discount: parseFieldFromDesc(e.description, 'Discount') || '',
         currency: e.currency || profile?.default_currency || 'INR',
@@ -374,6 +375,7 @@ export default function NewExpense() {
       payment_method: data.payment_method !== 'Not Found' ? (data.payment_method || '') : '',
       invoice_number: data.bill_invoice_number !== 'Not Found' ? (data.bill_invoice_number || '') : '',
       tax_amount: safeNum(data.tax_amount),
+      tax_details: data.tax_details && data.tax_details !== 'Not Found' ? data.tax_details : '',
       subtotal: safeNum(data.subtotal),
       discount: discountAmt ? String(discountAmt) : safeNum(data.discount),
       currency: finalCurrency,
@@ -462,6 +464,7 @@ export default function NewExpense() {
     const numSafe = (v: string) => { const n = Number(v); return !isNaN(n) && n > 0 ? String(n) : ''; };
     const st = numSafe(form.subtotal); if (st) parts.push(`Subtotal: ${st}`);
     const tx = numSafe(form.tax_amount); if (tx) parts.push(`Tax: ${tx}`);
+    if (form.tax_details) parts.push(`TaxDetails: ${form.tax_details}`);
     const dc = numSafe(form.discount); if (dc) parts.push(`Discount: ${dc}`);
     if (form.description) parts.push(form.description);
     let desc = parts.join(' | ');
@@ -825,7 +828,7 @@ export default function NewExpense() {
                     )}
                     {(val(form.tax_amount) || isEditing) && (
                       <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">Tax {extractionData?.tax_details && extractionData.tax_details !== 'Not Found' ? `(${extractionData.tax_details})` : ''}</span>
+                        <span className="text-muted-foreground">Tax {form.tax_details ? `(${form.tax_details})` : ''}</span>
                         {isEditing ? (
                           <Input value={form.tax_amount} type="number" step="0.01"
                             className="w-28 text-right text-xs h-7 bg-secondary/30 border-border/30"
