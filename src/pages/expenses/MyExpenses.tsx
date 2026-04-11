@@ -3,15 +3,24 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
-import { Search, Receipt, Utensils, Fuel, Car, ParkingCircle, ShoppingBag, Zap, MoreHorizontal, Repeat, Trash2, X, CheckSquare } from 'lucide-react';
+import { Search, Receipt, Utensils, Fuel, Car, ParkingCircle, ShoppingBag, Zap, MoreHorizontal, Repeat, Trash2, X, CheckSquare, Loader2, AlertCircle } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import type { Expense } from '@/lib/types';
+
+interface DuplicateGroup {
+  merchant: string;
+  amount: number;
+  expense_date: string;
+  ids: string[];
+}
 
 const SUBSCRIPTION_PATTERNS = /netflix|hotstar|spotify|prime video|youtube premium|apple music|zee5|sony liv|disney\+|amazon prime|chatgpt|notion|figma|canva|jio|airtel|vi|bsnl|tata play|dish tv|act fibernet|credit card|hdfc card|icici card|sbi card|axis card|kotak card|amex|citi card|insurance|lic|term plan|\[subscription\]/i;
 
