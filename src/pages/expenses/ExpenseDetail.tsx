@@ -40,6 +40,7 @@ function cleanDescription(desc: string | null | undefined): string {
   let clean = idx >= 0 ? desc.slice(0, idx) : desc;
   clean = clean.replace(/Category:\s*[^|]+\|?\s*/g, '').replace(/Invoice:\s*[^|]+\|?\s*/g, '').replace(/Payment:\s*[^|]+\|?\s*/g, '')
     .replace(/\d+ item\(s\)\s*\|?\s*/g, '').replace(/Tax:\s*[^|]+\|?\s*/g, '')
+    .replace(/TaxDetails:\s*[^|]+\|?\s*/g, '')
     .replace(/Discount:\s*[^|]+\|?\s*/g, '').replace(/Subtotal:\s*[^|]+\|?\s*/g, '')
     .replace(/From email:\s*[^|]+\|?\s*/g, '').replace(/\[Subscription\]\s*\|?\s*/g, '');
   return clean.replace(/\|\s*$/g, '').trim();
@@ -111,6 +112,7 @@ export default function ExpenseDetail() {
   const notes = cleanDescription(expense.description);
   const rawSubtotal = parseField(expense.description, 'Subtotal');
   const rawTax = parseField(expense.description, 'Tax');
+  const rawTaxDetails = parseField(expense.description, 'TaxDetails');
   const rawDiscount = parseField(expense.description, 'Discount');
   // Safe number formatting — avoid NaN
   const safeNum = (v: string) => { const n = Number(v); return !isNaN(n) && n > 0 ? n : 0; };
@@ -201,7 +203,7 @@ export default function ExpenseDetail() {
               )}
               {taxAmount > 0 && (
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Tax</span>
+                  <span className="text-muted-foreground">Tax {rawTaxDetails ? `(${rawTaxDetails})` : ''}</span>
                   <span className="text-foreground">{currencySymbol}{taxAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                 </div>
               )}
