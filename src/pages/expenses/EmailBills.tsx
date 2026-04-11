@@ -337,7 +337,7 @@ export default function EmailBills() {
             ? bill.extracted.date_time.slice(0, 10) : new Date().toISOString().slice(0, 10),
           category_id: matchCategory(bill.extracted.category),
           description: `From email: ${bill.subject}\nSender: ${bill.from}`,
-          status: 'draft',
+          status: 'submitted',
         } as any).select().single();
 
         if (error) continue;
@@ -361,7 +361,8 @@ export default function EmailBills() {
       prev.map(b => b.selected && !b.already_imported ? { ...b, already_imported: true, selected: false } : b)
     );
     setIsBulkImporting(false);
-    toast({ title: 'Import complete', description: `Saved ${saved} of ${selected.length} bills as drafts.` });
+    setShowConfirmDialog(false);
+    toast({ title: 'Import complete', description: `Saved ${saved} of ${selected.length} bill(s).` });
   };
 
   // Toggle selection
