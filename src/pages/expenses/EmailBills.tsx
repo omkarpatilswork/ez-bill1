@@ -89,6 +89,7 @@ export default function EmailBills() {
   const [savingUpiIdx, setSavingUpiIdx] = useState<number | null>(null);
   const [isAutoScanning, setIsAutoScanning] = useState(false);
   const [showNativeScan] = useState(() => isNativeApp() && isAndroid());
+  const isNative = isNativeApp();
 
   useEffect(() => {
     checkConnection();
@@ -345,18 +346,20 @@ export default function EmailBills() {
       <div>
         <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Import Bills</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Import bills from Gmail or UPI payment SMS messages.
+          Import bills from Gmail{isNative ? ' or UPI payment SMS messages' : ''}.
         </p>
       </div>
 
       <Tabs defaultValue={initialTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-2 mb-4">
+        <TabsList className={`grid w-full ${isNative ? 'grid-cols-2' : 'grid-cols-1'} mb-4`}>
           <TabsTrigger value="gmail" className="flex items-center gap-2">
             <Mail className="h-4 w-4" /> Gmail
           </TabsTrigger>
-          <TabsTrigger value="upi" className="flex items-center gap-2">
-            <Smartphone className="h-4 w-4" /> UPI SMS
-          </TabsTrigger>
+          {isNative && (
+            <TabsTrigger value="upi" className="flex items-center gap-2">
+              <Smartphone className="h-4 w-4" /> UPI SMS
+            </TabsTrigger>
+          )}
         </TabsList>
 
         {/* Gmail Tab */}
@@ -486,8 +489,8 @@ export default function EmailBills() {
           )}
         </TabsContent>
 
-        {/* UPI SMS Tab */}
-        <TabsContent value="upi" className="space-y-6">
+        {/* UPI SMS Tab — only available on native mobile */}
+        {isNative && <TabsContent value="upi" className="space-y-6">
           {/* Auto Scan Card — shown only on Android native app */}
           {showNativeScan && (
             <Card className="shadow-md border-0 bg-primary/5">
@@ -658,7 +661,7 @@ export default function EmailBills() {
               ))}
             </div>
           )}
-        </TabsContent>
+        </TabsContent>}
       </Tabs>
 
       {/* Import Dialog (Gmail) */}

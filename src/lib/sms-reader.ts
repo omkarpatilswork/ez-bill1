@@ -9,6 +9,10 @@ export function isAndroid(): boolean {
   return (window as any).Capacitor?.getPlatform?.() === "android";
 }
 
+export function isIOS(): boolean {
+  return (window as any).Capacitor?.getPlatform?.() === "ios";
+}
+
 // UPI-related keywords to filter SMS
 const UPI_KEYWORDS = [
   "upi", "debited", "credited", "paid", "received",
