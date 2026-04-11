@@ -2,7 +2,7 @@ import { useEffect, useState, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { StatusBadge } from '@/components/expenses/StatusBadge';
+
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
@@ -16,7 +16,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer,
 } from 'recharts';
-import type { Expense, ExpenseCategory, ExpenseStatus } from '@/lib/types';
+import type { Expense, ExpenseCategory } from '@/lib/types';
 
 export default function Dashboard() {
   const { user, profile } = useAuth();
@@ -231,9 +231,6 @@ export default function Dashboard() {
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-muted-foreground">{exp.merchant || '—'} · {new Date(exp.expense_date).toLocaleDateString()}</span>
-                  {['submitted', 'manager_approved', 'approved', 'rejected'].includes(exp.status) && (
-                    <StatusBadge status={exp.status as ExpenseStatus} />
-                  )}
                 </div>
               </Link>
             ))}
@@ -305,9 +302,6 @@ export default function Dashboard() {
                 </div>
                 <div className="text-right shrink-0 ml-3">
                   <p className="text-sm font-bold tabular-nums text-foreground">₹{Number(exp.amount).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-                  {['submitted', 'manager_approved', 'approved', 'rejected'].includes(exp.status) && (
-                    <StatusBadge status={exp.status as ExpenseStatus} />
-                  )}
                 </div>
               </Link>
             ))}
