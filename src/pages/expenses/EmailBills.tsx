@@ -46,12 +46,6 @@ interface UpiTransaction {
   description: string;
 }
 
-interface DuplicateGroup {
-  merchant: string;
-  amount: number;
-  expense_date: string;
-  ids: string[];
-}
 
 const MERCHANT_CATEGORY_MAP: Record<string, string> = {
   swiggy: 'Meals', zomato: 'Meals', dominos: 'Meals', "domino's": 'Meals', "mcdonald's": 'Meals',
