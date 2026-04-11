@@ -489,8 +489,8 @@ export default function EmailBills() {
           )}
         </TabsContent>
 
-        {/* UPI SMS Tab */}
-        <TabsContent value="upi" className="space-y-6">
+        {/* UPI SMS Tab — only available on native mobile */}
+        {isNative && <TabsContent value="upi" className="space-y-6">
           {/* Auto Scan Card — shown only on Android native app */}
           {showNativeScan && (
             <Card className="shadow-md border-0 bg-primary/5">
