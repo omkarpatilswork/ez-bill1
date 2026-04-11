@@ -273,6 +273,7 @@ export default function EmailBills() {
             // Build description with structured data (same format as NewExpense)
             const LINE_ITEMS_MARKER = '::ITEMS::';
             const descParts: string[] = [];
+            if (categoryLabel && categoryLabel !== 'Other') descParts.push(`Category: ${categoryLabel}`);
             if (invoiceNumber) descParts.push(`Invoice: ${invoiceNumber}`);
             if (paymentMethod) descParts.push(`Payment: ${paymentMethod}`);
             if (lineItems.length > 0) descParts.push(`${lineItems.length} item(s)`);
