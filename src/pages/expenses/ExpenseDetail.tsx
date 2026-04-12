@@ -42,8 +42,9 @@ function cleanDescription(desc: string | null | undefined): string {
     .replace(/\d+ item\(s\)\s*\|?\s*/g, '').replace(/Tax:\s*[^|]+\|?\s*/g, '')
     .replace(/TaxDetails:\s*[^|]+\|?\s*/g, '')
     .replace(/Discount:\s*[^|]+\|?\s*/g, '').replace(/Subtotal:\s*[^|]+\|?\s*/g, '')
-    .replace(/From email:\s*[^|]+\|?\s*/g, '').replace(/\[Subscription\]\s*\|?\s*/g, '');
-  return clean.replace(/\|\s*$/g, '').trim();
+    .replace(/From email:\s*[^|]+\|?\s*/g, '').replace(/\[Subscription\]\s*\|?\s*/g, '')
+    .replace(/\[upload\]\s*\|?\s*/g, '').replace(/\[scan\]\s*\|?\s*/g, '').replace(/\[manual\]\s*\|?\s*/g, '').replace(/\[email\]\s*\|?\s*/g, '');
+  return clean.replace(/\|\s*$/g, '').replace(/^\|\s*/g, '').trim();
 }
 
 function parseField(description: string | null | undefined, key: string): string {
