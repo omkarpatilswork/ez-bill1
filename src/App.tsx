@@ -49,6 +49,7 @@ const App = () => (
           <Route path="/bulk-upload" element={<ProtectedRoute><AppLayout><BulkUpload /></AppLayout></ProtectedRoute>} />
           <Route path="/ask-ai" element={<ProtectedRoute><AppLayout><AskAI /></AppLayout></ProtectedRoute>} />
           <Route path="/profile" element={<ProtectedRoute><AppLayout><Profile /></AppLayout></ProtectedRoute>} />
+          <Route path="/money-leaks" element={<ProtectedRoute><AppLayout><MoneyLeaks /></AppLayout></ProtectedRoute>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
