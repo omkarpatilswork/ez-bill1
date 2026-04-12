@@ -21,6 +21,7 @@ import Profile from "./pages/Profile";
 import Onboarding from "./pages/Onboarding";
 import TermsAndConditions from "./pages/TermsAndConditions";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
+import MoneyLeaks from "./pages/MoneyLeaks";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
