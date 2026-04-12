@@ -9,7 +9,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import {
   Receipt, PlusCircle, ArrowUpRight, TrendingUp, Search,
   Mail, Users as UsersIcon, Headphones, RefreshCw, User, Sparkles,
-  Smartphone, Zap, ShieldOff, X,
+  Smartphone, Zap, ShieldOff, X, Droplets,
 } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -43,6 +43,21 @@ export default function Dashboard() {
   const last30 = allExpenses.filter(e => new Date(e.expense_date) >= thirtyDaysAgo);
   const totalLast30 = last30.reduce((s, e) => s + Number(e.amount), 0);
   const total = allExpenses.reduce((s, e) => s + Number(e.amount), 0);
+
+  // Simple leak estimate for dashboard card
+  const leakEstimate = useMemo(() => {
+    let leak = 0;
+    const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const thisMonthExpenses = allExpenses.filter(e => new Date(e.expense_date) >= thisMonthStart);
+    thisMonthExpenses.forEach(e => {
+      const h = new Date(e.created_at).getHours();
+      if (h >= 22 || h <= 5) leak += Number(e.amount) * 0.2;
+    });
+    // frequent small orders
+    const foodish = thisMonthExpenses.filter(e => (e.merchant || '').toLowerCase().match(/swiggy|zomato|food|cafe|restaurant|coffee/));
+    if (foodish.length > 10) leak += foodish.reduce((s, e) => s + Number(e.amount), 0) * 0.3;
+    return Math.round(leak);
+  }, [allExpenses, now]);
 
   const monthlyData = useMemo(() => {
     const map: Record<string, number> = {};
