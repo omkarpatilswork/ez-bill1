@@ -41,7 +41,14 @@ async function refreshToken(supabase: any, userId: string, connection: any, clie
     }),
   });
   const data = await res.json();
-  if (!res.ok) throw new Error("Token refresh failed: " + (data.error_description || data.error));
+  if (!res.ok) {
+    // If token is revoked/expired, delete the stale connection so the user can reconnect
+    if (data.error === "invalid_grant") {
+      await supabase.from("gmail_connections").delete().eq("user_id", userId);
+      throw new Error("Gmail connection expired. Please reconnect your Gmail account.");
+    }
+    throw new Error("Token refresh failed: " + (data.error_description || data.error));
+  }
 
   const expiresAt = new Date(Date.now() + (data.expires_in || 3600) * 1000).toISOString();
   await supabase.from("gmail_connections").update({
