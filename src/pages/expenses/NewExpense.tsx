@@ -557,7 +557,7 @@ export default function NewExpense() {
                   <Upload className="h-5 w-5 mr-2" />
                   {mode === 'scan' ? 'Open Camera' : 'Choose File'}
                 </Button>
-                <input ref={scanInputRef} type="file" accept="image/*" capture="environment"
+                <input ref={scanInputRef} type="file" accept="image/*,.heic,.heif" capture="environment"
                   className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) handleFileSelected(f); e.target.value = ''; }} />
                 <input ref={uploadInputRef} type="file" accept="image/*,.pdf,.heic,.heif"
                   className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) handleFileSelected(f); e.target.value = ''; }} />

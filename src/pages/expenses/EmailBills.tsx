@@ -278,7 +278,8 @@ export default function EmailBills() {
             if (paymentMethod) descParts.push(`Payment: ${paymentMethod}`);
             if (lineItems.length > 0) descParts.push(`${lineItems.length} item(s)`);
             if (ext.subtotal != null && ext.subtotal > 0) descParts.push(`Subtotal: ${ext.subtotal}`);
-            if (ext.tax_amount != null && ext.tax_amount > 0) descParts.push(`Tax: ${ext.tax_amount}${val(ext.tax_details) ? ` (${ext.tax_details})` : ''}`);
+            if (ext.tax_amount != null && ext.tax_amount > 0) descParts.push(`Tax: ${ext.tax_amount}`);
+            if (val(ext.tax_details)) descParts.push(`TaxDetails: ${ext.tax_details}`);
             if (ext.discount != null && ext.discount > 0) descParts.push(`Discount: ${ext.discount}`);
             descParts.push(`From email: ${email.subject}`);
             if (isSubscription) descParts.push('[Subscription]');
@@ -287,11 +288,26 @@ export default function EmailBills() {
               description += `${LINE_ITEMS_MARKER}${JSON.stringify(lineItems)}::END_ITEMS::`;
             }
 
+            // Currency: normalize from extraction, default to INR
+            const normalizeCurrency = (raw?: string): string => {
+              if (!raw) return 'INR';
+              const u = raw.toUpperCase().trim();
+              if (['RS', 'RS.', 'INR', '₹', 'RUPEES', 'RUPEE'].includes(u)) return 'INR';
+              if (['DHS', 'AED', 'DHIRAM', 'DIRHAM', 'DIRHAMS'].includes(u)) return 'AED';
+              if (['$', 'USD', 'DOLLARS', 'DOLLAR'].includes(u)) return 'USD';
+              if (['£', 'GBP', 'POUNDS', 'POUND'].includes(u)) return 'GBP';
+              if (['€', 'EUR', 'EURO', 'EUROS'].includes(u)) return 'EUR';
+              if (/^[A-Z]{3}$/.test(u)) return u;
+              return 'INR';
+            };
+            const currency = normalizeCurrency(ext.currency);
+
             const { data: expense, error } = await supabase.from('expenses').insert({
               user_id: user.id,
               title,
               merchant: merchantName,
               amount,
+              currency,
               expense_date: expenseDate,
               category_id: categoryId,
               description,
