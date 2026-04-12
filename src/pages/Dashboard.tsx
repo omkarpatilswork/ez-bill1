@@ -217,6 +217,26 @@ export default function Dashboard() {
         )}
       </div>
 
+      {/* Money Leak Card */}
+      {leakEstimate > 0 && (
+        <button
+          onClick={() => navigate('/money-leaks')}
+          className="w-full glass-card rounded-2xl p-5 border border-destructive/20 text-left hover:bg-secondary/50 active:bg-secondary/80 transition-colors animate-slide-up"
+        >
+          <div className="flex items-center gap-3 mb-2">
+            <div className="h-10 w-10 rounded-xl bg-destructive/20 flex items-center justify-center">
+              <Droplets className="h-5 w-5 text-destructive" />
+            </div>
+            <div className="flex-1">
+              <p className="text-sm font-semibold text-foreground">💧 Money Leak Detected</p>
+              <p className="text-xs text-muted-foreground">You lost ₹{leakEstimate.toLocaleString('en-IN')} this month in avoidable spending</p>
+            </div>
+            <ArrowUpRight className="h-4 w-4 text-gold shrink-0" />
+          </div>
+          <p className="text-xs text-gold font-medium">See Why →</p>
+        </button>
+      )}
+
       {/* Recent Bills */}
       <div>
         <div className="flex items-center justify-between mb-3">
