@@ -9,7 +9,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import {
   Receipt, PlusCircle, ArrowUpRight, TrendingUp, Search,
   Mail, Users as UsersIcon, Headphones, RefreshCw, User, Sparkles,
-  Smartphone, Zap, ShieldOff, X,
+  Smartphone, Zap, ShieldOff, X, Droplets,
 } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -43,6 +43,21 @@ export default function Dashboard() {
   const last30 = allExpenses.filter(e => new Date(e.expense_date) >= thirtyDaysAgo);
   const totalLast30 = last30.reduce((s, e) => s + Number(e.amount), 0);
   const total = allExpenses.reduce((s, e) => s + Number(e.amount), 0);
+
+  // Simple leak estimate for dashboard card
+  const leakEstimate = useMemo(() => {
+    let leak = 0;
+    const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const thisMonthExpenses = allExpenses.filter(e => new Date(e.expense_date) >= thisMonthStart);
+    thisMonthExpenses.forEach(e => {
+      const h = new Date(e.created_at).getHours();
+      if (h >= 22 || h <= 5) leak += Number(e.amount) * 0.2;
+    });
+    // frequent small orders
+    const foodish = thisMonthExpenses.filter(e => (e.merchant || '').toLowerCase().match(/swiggy|zomato|food|cafe|restaurant|coffee/));
+    if (foodish.length > 10) leak += foodish.reduce((s, e) => s + Number(e.amount), 0) * 0.3;
+    return Math.round(leak);
+  }, [allExpenses, now]);
 
   const monthlyData = useMemo(() => {
     const map: Record<string, number> = {};
@@ -201,6 +216,26 @@ export default function Dashboard() {
           </ResponsiveContainer>
         )}
       </div>
+
+      {/* Money Leak Card */}
+      {leakEstimate > 0 && (
+        <button
+          onClick={() => navigate('/money-leaks')}
+          className="w-full glass-card rounded-2xl p-5 border border-destructive/20 text-left hover:bg-secondary/50 active:bg-secondary/80 transition-colors animate-slide-up"
+        >
+          <div className="flex items-center gap-3 mb-2">
+            <div className="h-10 w-10 rounded-xl bg-destructive/20 flex items-center justify-center">
+              <Droplets className="h-5 w-5 text-destructive" />
+            </div>
+            <div className="flex-1">
+              <p className="text-sm font-semibold text-foreground">💧 Money Leak Detected</p>
+              <p className="text-xs text-muted-foreground">You lost ₹{leakEstimate.toLocaleString('en-IN')} this month in avoidable spending</p>
+            </div>
+            <ArrowUpRight className="h-4 w-4 text-gold shrink-0" />
+          </div>
+          <p className="text-xs text-gold font-medium">See Why →</p>
+        </button>
+      )}
 
       {/* Recent Bills */}
       <div>
