@@ -19,6 +19,15 @@ const variantIconColors = {
   destructive: 'text-destructive',
 };
 
+const variantGlowColors: Record<string, string> = {
+  default: 'hsla(160, 8%, 55%, 0.15)',
+  primary: 'hsla(152, 45%, 35%, 0.2)',
+  success: 'hsla(152, 55%, 40%, 0.2)',
+  warning: 'hsla(43, 80%, 50%, 0.2)',
+  info: 'hsla(199, 70%, 45%, 0.2)',
+  destructive: 'hsla(0, 63%, 45%, 0.2)',
+};
+
 function CircularProgress({ value, size = 44, strokeWidth = 3, variant = 'default' }: { value: number; size?: number; strokeWidth?: number; variant?: string }) {
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
@@ -44,8 +53,11 @@ function CircularProgress({ value, size = 44, strokeWidth = 3, variant = 'defaul
 
 export function StatCard({ title, value, icon: Icon, description, variant = 'default', progress }: StatCardProps) {
   return (
-    <Card className="glass-card overflow-hidden border-border/20 hover:border-border/40 transition-all duration-200">
-      <CardContent className="flex items-center gap-3 p-4">
+    <div
+      className="glass-card-hover rounded-2xl overflow-hidden"
+      style={{ boxShadow: `inset 0 1px 0 0 hsla(0,0%,100%,0.05), 0 8px 32px -8px ${variantGlowColors[variant] || variantGlowColors.default}` }}
+    >
+      <div className="flex items-center gap-3 p-4">
         {progress !== undefined ? (
           <div className="relative shrink-0">
             <CircularProgress value={progress} size={44} strokeWidth={3} variant={variant} />
@@ -54,7 +66,7 @@ export function StatCard({ title, value, icon: Icon, description, variant = 'def
             </div>
           </div>
         ) : (
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-secondary">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl glass-button">
             <Icon className={`h-4 w-4 ${variantIconColors[variant]}`} />
           </div>
         )}
@@ -67,7 +79,7 @@ export function StatCard({ title, value, icon: Icon, description, variant = 'def
             <p className="text-[10px] sm:text-xs text-muted-foreground">{description}</p>
           )}
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
