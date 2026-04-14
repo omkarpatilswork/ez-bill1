@@ -76,6 +76,8 @@ const CATEGORY_ALIASES: Record<string, string[]> = {
   'other': ['other'],
 };
 
+const DEFAULT_BILL_CURRENCY = 'INR';
+
 function findCategoryByName(name: string, categories: ExpenseCategory[]): { id: string; label: string } | null {
   if (!name || name === 'Not Found') return null;
   const lower = name.toLowerCase();
@@ -288,19 +290,7 @@ export default function EmailBills() {
               description += `${LINE_ITEMS_MARKER}${JSON.stringify(lineItems)}::END_ITEMS::`;
             }
 
-            // Currency: normalize from extraction, default to INR
-            const normalizeCurrency = (raw?: string): string => {
-              if (!raw) return 'INR';
-              const u = raw.toUpperCase().trim();
-              if (['RS', 'RS.', 'INR', '₹', 'RUPEES', 'RUPEE'].includes(u)) return 'INR';
-              if (['DHS', 'AED', 'DHIRAM', 'DIRHAM', 'DIRHAMS'].includes(u)) return 'AED';
-              if (['$', 'USD', 'DOLLARS', 'DOLLAR'].includes(u)) return 'USD';
-              if (['£', 'GBP', 'POUNDS', 'POUND'].includes(u)) return 'GBP';
-              if (['€', 'EUR', 'EURO', 'EUROS'].includes(u)) return 'EUR';
-              if (/^[A-Z]{3}$/.test(u)) return u;
-              return 'INR';
-            };
-            const currency = normalizeCurrency(ext.currency);
+            const currency = DEFAULT_BILL_CURRENCY;
 
             const { data: expense, error } = await supabase.from('expenses').insert({
               user_id: user.id,
@@ -409,6 +399,7 @@ export default function EmailBills() {
         title: `UPI Payment - ${txn.merchant_name}`,
         merchant: txn.merchant_name,
         amount: txn.amount,
+        currency: DEFAULT_BILL_CURRENCY,
         expense_date: txn.date,
         description: `${txn.description}${txn.upi_id ? `\nUPI ID: ${txn.upi_id}` : ''}${txn.transaction_id ? `\nTxn ID: ${txn.transaction_id}` : ''}${txn.bank_name ? `\nBank: ${txn.bank_name}` : ''}`,
         status: 'draft',
