@@ -21,6 +21,39 @@ import {
 } from 'recharts';
 import type { Expense } from '@/lib/types';
 
+const BROAD_CATEGORY_MAP: Record<string, string> = {
+  'food & dining': 'Food & Dining', food: 'Food & Dining', dining: 'Food & Dining',
+  meals: 'Food & Dining', restaurant: 'Food & Dining', grocery: 'Grocery',
+  supermarket: 'Grocery', 'petrol & fuel': 'Fuel', petrol: 'Fuel', fuel: 'Fuel',
+  toll: 'Toll & Parking', parking: 'Toll & Parking', shopping: 'Shopping',
+  retail: 'Shopping', utilities: 'Utilities', software: 'Subscriptions',
+  subscription: 'Subscriptions', travel: 'Travel', flight: 'Travel', train: 'Travel',
+  transportation: 'Transport', transport: 'Transport', cab: 'Transport',
+  accommodation: 'Hotel & Stay', hotel: 'Hotel & Stay', stay: 'Hotel & Stay',
+  medical: 'Medical', health: 'Medical', pharmacy: 'Medical',
+  entertainment: 'Entertainment', education: 'Education', office: 'Office', other: 'Other',
+};
+const BROAD_CATEGORY_ICONS: Record<string, any> = {
+  'Food & Dining': Utensils, Grocery: ShoppingBag, Fuel: Fuel,
+  'Toll & Parking': ParkingCircle, Shopping: ShoppingBag, Subscriptions: Repeat,
+  Travel: Plane, Transport: Car, 'Hotel & Stay': Hotel, Medical: Pill,
+  Entertainment: Gamepad2, Education: GraduationCap, Utilities: Zap, Office: Briefcase, Other: MoreHorizontal,
+};
+function toBroadCategory(cat: string): string {
+  const lower = cat.toLowerCase().trim();
+  if (BROAD_CATEGORY_MAP[lower]) return BROAD_CATEGORY_MAP[lower];
+  for (const [key, broad] of Object.entries(BROAD_CATEGORY_MAP)) {
+    if (lower.includes(key)) return broad;
+  }
+  return 'Other';
+}
+function getSmartCategory(expense: Expense): string {
+  const descMatch = (expense.description || '').match(/Category:\s*([^|]+)/);
+  if (descMatch) { const saved = descMatch[1].trim(); if (saved && saved !== 'Other') return saved; }
+  const combined = `${expense.title} ${expense.merchant} ${expense.description} ${expense.cost_center}`;
+  return smartCategoryFromMerchant(combined) || 'Other';
+}
+
 export default function Dashboard() {
   const { user, profile } = useAuth();
   const navigate = useNavigate();
