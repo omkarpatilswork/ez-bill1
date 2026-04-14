@@ -52,6 +52,7 @@ const CATEGORIES = [
 ];
 
 const LINE_ITEMS_MARKER = '::ITEMS::';
+const DEFAULT_BILL_CURRENCY = 'INR';
 
 function parseStoredLineItems(desc: string | null | undefined): LineItem[] {
   if (!desc) return [];
@@ -95,7 +96,7 @@ async function convertHeicToJpeg(file: File): Promise<File> {
 }
 
 export default function NewExpense() {
-  const { user, profile } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [searchParams] = useSearchParams();
@@ -120,7 +121,7 @@ export default function NewExpense() {
     title: '', merchant: '', amount: '', expense_date: new Date().toISOString().slice(0, 10),
     category_id: '', category_name: '', cost_center: '', description: '',
     payment_method: '', invoice_number: '', tax_amount: '', tax_details: '', subtotal: '', discount: '',
-    currency: profile?.default_currency || 'INR',
+    currency: DEFAULT_BILL_CURRENCY,
   });
   const [editLineItems, setEditLineItems] = useState<LineItem[]>([]);
 
@@ -165,7 +166,7 @@ export default function NewExpense() {
         tax_details: parseFieldFromDesc(e.description, 'TaxDetails') || '',
         subtotal: parseFieldFromDesc(e.description, 'Subtotal') || '',
         discount: parseFieldFromDesc(e.description, 'Discount') || '',
-        currency: e.currency || profile?.default_currency || 'INR',
+        currency: e.currency || DEFAULT_BILL_CURRENCY,
       });
       setEditLineItems(lineItems);
       setExtractionData({ line_items: lineItems });
@@ -273,22 +274,6 @@ export default function NewExpense() {
     }
   };
 
-  const normalizeCurrency = (raw?: string): string => {
-    if (!raw) return profile?.default_currency || 'INR';
-    const u = raw.toUpperCase().trim();
-    // Map common misdetections
-    if (['RS', 'RS.', 'INR', '₹', 'RUPEES', 'RUPEE'].includes(u)) return 'INR';
-    if (['DHS', 'AED', 'DHIRAM', 'DIRHAM', 'DIRHAMS', 'د.إ'].includes(u)) return 'AED';
-    if (['$', 'USD', 'DOLLARS', 'DOLLAR'].includes(u)) return 'USD';
-    if (['£', 'GBP', 'POUNDS', 'POUND'].includes(u)) return 'GBP';
-    if (['€', 'EUR', 'EURO', 'EUROS'].includes(u)) return 'EUR';
-    if (['¥', 'JPY', 'YEN'].includes(u)) return 'JPY';
-    if (['S$', 'SGD'].includes(u)) return 'SGD';
-    // If it's a valid 3-letter code, keep it
-    if (/^[A-Z]{3}$/.test(u)) return u;
-    return profile?.default_currency || 'INR';
-  };
-
   const populateFormFromExtraction = (data: ExtractedData) => {
     // Alias map: AI/smart names → possible DB names
     const CATEGORY_ALIASES: Record<string, string[]> = {
@@ -339,12 +324,7 @@ export default function NewExpense() {
     const categoryId = result.id;
     const categoryName = result.label || aiCategory;
 
-    // Normalize currency — default to INR for Indian merchants
-    const detectedCurrency = normalizeCurrency(data.currency);
-    // If merchant is clearly Indian (Swiggy, Zomato, etc.) force INR
-    const merchantLower = (data.merchant_name || '').toLowerCase();
-    const isIndianMerchant = ['swiggy', 'zomato', 'flipkart', 'amazon.in', 'bigbasket', 'blinkit', 'zepto', 'jiomart', 'ola', 'rapido', 'myntra', 'ajio', 'pharmeasy', '1mg', 'dunzo', 'irctc'].some(m => merchantLower.includes(m));
-    const finalCurrency = isIndianMerchant ? 'INR' : detectedCurrency;
+    const finalCurrency = DEFAULT_BILL_CURRENCY;
 
     // Smart discount detection: if items total > amount, infer discount
     const itemsTotal = (data.line_items || []).reduce((s, i) => s + (Number(i.total_price) || 0), 0);
@@ -392,7 +372,7 @@ export default function NewExpense() {
       title: form.title || `Bill - ${form.merchant}`,
       merchant: form.merchant,
       amount: parseFloat(form.amount),
-      currency: form.currency,
+      currency: form.currency || DEFAULT_BILL_CURRENCY,
       expense_date: form.expense_date,
       category_id: form.category_id || null,
       cost_center: form.payment_method || form.cost_center,

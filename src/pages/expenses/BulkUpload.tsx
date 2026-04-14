@@ -29,6 +29,8 @@ const CATEGORY_ALIASES: Record<string, string[]> = {
   'other': ['other'],
 };
 
+const DEFAULT_BILL_CURRENCY = 'INR';
+
 function findCategoryByName(name: string, categories: ExpenseCategory[]): { id: string; label: string } | null {
   if (!name || name === 'Not Found') return null;
   const lower = name.toLowerCase();
@@ -64,18 +66,6 @@ function fileToBase64(file: File): Promise<string> {
   });
 }
 
-function normalizeCurrency(raw?: string, fallback = 'INR'): string {
-  if (!raw) return fallback;
-  const u = raw.toUpperCase().trim();
-  if (['RS', 'RS.', 'INR', '₹', 'RUPEES', 'RUPEE'].includes(u)) return 'INR';
-  if (['DHS', 'AED', 'DHIRAM', 'DIRHAM', 'DIRHAMS', 'د.إ'].includes(u)) return 'AED';
-  if (['$', 'USD', 'DOLLARS', 'DOLLAR'].includes(u)) return 'USD';
-  if (['£', 'GBP', 'POUNDS', 'POUND'].includes(u)) return 'GBP';
-  if (['€', 'EUR', 'EURO', 'EUROS'].includes(u)) return 'EUR';
-  if (/^[A-Z]{3}$/.test(u)) return u;
-  return fallback;
-}
-
 interface QueueItem {
   id: string;
   file: File;
@@ -86,7 +76,7 @@ interface QueueItem {
 }
 
 export default function BulkUpload() {
-  const { user, profile } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -132,7 +122,6 @@ export default function BulkUpload() {
   const processAll = async () => {
     if (!user) return;
     setIsProcessing(true);
-    const defaultCurrency = profile?.default_currency || 'INR';
     let saved = 0;
     let failed = 0;
 
@@ -168,9 +157,7 @@ export default function BulkUpload() {
         const categoryLabel = aiResult?.label || smartResult?.label || smartCat || 'Other';
 
         // Currency
-        const merchantLower = merchantName.toLowerCase();
-        const isIndian = ['swiggy', 'zomato', 'flipkart', 'amazon.in', 'bigbasket', 'blinkit', 'zepto'].some(m => merchantLower.includes(m));
-        const currency = isIndian ? 'INR' : normalizeCurrency(ext.currency, defaultCurrency);
+        const currency = DEFAULT_BILL_CURRENCY;
 
         // Title
         const title = invoiceNumber
