@@ -348,29 +348,50 @@ export default function Dashboard() {
             </Button>
           </div>
         ) : (
-          <div className="rounded-xl overflow-hidden" style={{ border: '1px solid hsla(160, 10%, 40%, 0.08)' }}>
-            {expenses.slice(0, 5).map((exp, idx) => (
-              <Link key={exp.id} to={`/expenses/${exp.id}`}
-                className="flex items-center gap-3 px-3.5 py-3 transition-colors hover:bg-muted/20 active:bg-muted/30"
-                style={{
-                  borderBottom: idx < Math.min(expenses.length, 5) - 1 ? '1px solid hsla(160, 10%, 40%, 0.08)' : 'none',
-                  background: idx % 2 === 0 ? 'hsla(160, 12%, 12%, 0.3)' : 'transparent',
-                }}
-              >
-                <div className="h-8 w-8 rounded-lg flex items-center justify-center shrink-0"
-                  style={{ background: 'hsla(160, 12%, 18%, 0.5)' }}>
-                  <Receipt className="h-3.5 w-3.5 text-muted-foreground" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-foreground truncate">{exp.title}</p>
-                  <p className="text-[10px] text-muted-foreground">{exp.merchant || '—'} · {new Date(exp.expense_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}</p>
-                </div>
-                <div className="text-right shrink-0">
-                  <p className="text-sm font-bold tabular-nums text-foreground">₹{Number(exp.amount).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-                  <p className="text-[9px] text-muted-foreground uppercase tracking-wide">{exp.status}</p>
-                </div>
-              </Link>
-            ))}
+          <div className="space-y-2">
+            {expenses.slice(0, 5).map((exp) => {
+              const rawCat = getSmartCategory(exp);
+              const broadCat = toBroadCategory(rawCat);
+              const CategoryIcon = BROAD_CATEGORY_ICONS[broadCat] || Receipt;
+              const isSub = broadCat === 'Subscriptions';
+              const currSym = getCurrencySymbol(exp.currency || 'INR');
+              return (
+                <Link
+                  key={exp.id}
+                  to={`/expenses/${exp.id}`}
+                  className="block rounded-xl bg-card border border-border/30 p-3.5 hover:bg-muted/20 active:bg-muted/40 transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className={`h-11 w-11 rounded-xl flex items-center justify-center shrink-0 ${isSub ? 'bg-purple-500/10' : 'bg-primary/10'}`}>
+                      <CategoryIcon className={`h-5 w-5 ${isSub ? 'text-purple-500' : 'text-primary'}`} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-sm text-foreground truncate">
+                        {exp.merchant || exp.title}
+                      </p>
+                      <p className="text-[11px] text-muted-foreground mt-0.5">
+                        <span>{broadCat}</span>
+                        {isSub && <span className="text-purple-400"> · Recurring</span>}
+                        {exp.description && /\d+\s*item/i.test(exp.description) && (
+                          <> · {exp.description.match(/(\d+\s*item[s]?)/i)?.[1]}</>
+                        )}
+                      </p>
+                      <p className="text-[11px] text-muted-foreground">
+                        {exp.cost_center || 'UPI'}
+                      </p>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <p className="font-bold text-sm text-foreground tabular-nums">
+                        {currSym}{Number(exp.amount).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </p>
+                      <p className="text-[11px] text-muted-foreground mt-0.5">
+                        {new Date(exp.expense_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+                      </p>
+                    </div>
+                  </div>
+                </Link>
+              );
+            })}
           </div>
         )}
       </div>
