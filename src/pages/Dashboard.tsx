@@ -10,12 +10,49 @@ import {
   Mail, Users as UsersIcon, Headphones, RefreshCw, User, Sparkles,
   Smartphone, Zap, ShieldCheck, X, Droplets, Heart, Scan, Bot,
   ChevronRight, Upload, Camera, MessageCircle,
+  Utensils, Fuel, ParkingCircle, ShoppingBag, Repeat, Plane, Car, Hotel,
+  Pill, Gamepad2, GraduationCap, Briefcase, MoreHorizontal,
 } from 'lucide-react';
+import { smartCategoryFromMerchant } from '@/lib/smart-category';
+import { getCurrencySymbol } from '@/lib/countries';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip,
   ResponsiveContainer, Cell,
 } from 'recharts';
 import type { Expense } from '@/lib/types';
+
+const BROAD_CATEGORY_MAP: Record<string, string> = {
+  'food & dining': 'Food & Dining', food: 'Food & Dining', dining: 'Food & Dining',
+  meals: 'Food & Dining', restaurant: 'Food & Dining', grocery: 'Grocery',
+  supermarket: 'Grocery', 'petrol & fuel': 'Fuel', petrol: 'Fuel', fuel: 'Fuel',
+  toll: 'Toll & Parking', parking: 'Toll & Parking', shopping: 'Shopping',
+  retail: 'Shopping', utilities: 'Utilities', software: 'Subscriptions',
+  subscription: 'Subscriptions', travel: 'Travel', flight: 'Travel', train: 'Travel',
+  transportation: 'Transport', transport: 'Transport', cab: 'Transport',
+  accommodation: 'Hotel & Stay', hotel: 'Hotel & Stay', stay: 'Hotel & Stay',
+  medical: 'Medical', health: 'Medical', pharmacy: 'Medical',
+  entertainment: 'Entertainment', education: 'Education', office: 'Office', other: 'Other',
+};
+const BROAD_CATEGORY_ICONS: Record<string, any> = {
+  'Food & Dining': Utensils, Grocery: ShoppingBag, Fuel: Fuel,
+  'Toll & Parking': ParkingCircle, Shopping: ShoppingBag, Subscriptions: Repeat,
+  Travel: Plane, Transport: Car, 'Hotel & Stay': Hotel, Medical: Pill,
+  Entertainment: Gamepad2, Education: GraduationCap, Utilities: Zap, Office: Briefcase, Other: MoreHorizontal,
+};
+function toBroadCategory(cat: string): string {
+  const lower = cat.toLowerCase().trim();
+  if (BROAD_CATEGORY_MAP[lower]) return BROAD_CATEGORY_MAP[lower];
+  for (const [key, broad] of Object.entries(BROAD_CATEGORY_MAP)) {
+    if (lower.includes(key)) return broad;
+  }
+  return 'Other';
+}
+function getSmartCategory(expense: Expense): string {
+  const descMatch = (expense.description || '').match(/Category:\s*([^|]+)/);
+  if (descMatch) { const saved = descMatch[1].trim(); if (saved && saved !== 'Other') return saved; }
+  const combined = `${expense.title} ${expense.merchant} ${expense.description} ${expense.cost_center}`;
+  return smartCategoryFromMerchant(combined) || 'Other';
+}
 
 export default function Dashboard() {
   const { user, profile } = useAuth();
@@ -311,29 +348,50 @@ export default function Dashboard() {
             </Button>
           </div>
         ) : (
-          <div className="rounded-xl overflow-hidden" style={{ border: '1px solid hsla(160, 10%, 40%, 0.08)' }}>
-            {expenses.slice(0, 5).map((exp, idx) => (
-              <Link key={exp.id} to={`/expenses/${exp.id}`}
-                className="flex items-center gap-3 px-3.5 py-3 transition-colors hover:bg-muted/20 active:bg-muted/30"
-                style={{
-                  borderBottom: idx < Math.min(expenses.length, 5) - 1 ? '1px solid hsla(160, 10%, 40%, 0.08)' : 'none',
-                  background: idx % 2 === 0 ? 'hsla(160, 12%, 12%, 0.3)' : 'transparent',
-                }}
-              >
-                <div className="h-8 w-8 rounded-lg flex items-center justify-center shrink-0"
-                  style={{ background: 'hsla(160, 12%, 18%, 0.5)' }}>
-                  <Receipt className="h-3.5 w-3.5 text-muted-foreground" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-foreground truncate">{exp.title}</p>
-                  <p className="text-[10px] text-muted-foreground">{exp.merchant || '—'} · {new Date(exp.expense_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}</p>
-                </div>
-                <div className="text-right shrink-0">
-                  <p className="text-sm font-bold tabular-nums text-foreground">₹{Number(exp.amount).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-                  <p className="text-[9px] text-muted-foreground uppercase tracking-wide">{exp.status}</p>
-                </div>
-              </Link>
-            ))}
+          <div className="space-y-2">
+            {expenses.slice(0, 5).map((exp) => {
+              const rawCat = getSmartCategory(exp);
+              const broadCat = toBroadCategory(rawCat);
+              const CategoryIcon = BROAD_CATEGORY_ICONS[broadCat] || Receipt;
+              const isSub = broadCat === 'Subscriptions';
+              const currSym = getCurrencySymbol(exp.currency || 'INR');
+              return (
+                <Link
+                  key={exp.id}
+                  to={`/expenses/${exp.id}`}
+                  className="block rounded-xl bg-card border border-border/30 p-3.5 hover:bg-muted/20 active:bg-muted/40 transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className={`h-11 w-11 rounded-xl flex items-center justify-center shrink-0 ${isSub ? 'bg-purple-500/10' : 'bg-primary/10'}`}>
+                      <CategoryIcon className={`h-5 w-5 ${isSub ? 'text-purple-500' : 'text-primary'}`} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-sm text-foreground truncate">
+                        {exp.merchant || exp.title}
+                      </p>
+                      <p className="text-[11px] text-muted-foreground mt-0.5">
+                        <span>{broadCat}</span>
+                        {isSub && <span className="text-purple-400"> · Recurring</span>}
+                        {exp.description && /\d+\s*item/i.test(exp.description) && (
+                          <> · {exp.description.match(/(\d+\s*item[s]?)/i)?.[1]}</>
+                        )}
+                      </p>
+                      <p className="text-[11px] text-muted-foreground">
+                        {exp.cost_center || 'UPI'}
+                      </p>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <p className="font-bold text-sm text-foreground tabular-nums">
+                        {currSym}{Number(exp.amount).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </p>
+                      <p className="text-[11px] text-muted-foreground mt-0.5">
+                        {new Date(exp.expense_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+                      </p>
+                    </div>
+                  </div>
+                </Link>
+              );
+            })}
           </div>
         )}
       </div>
