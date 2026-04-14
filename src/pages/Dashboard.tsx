@@ -10,7 +10,11 @@ import {
   Mail, Users as UsersIcon, Headphones, RefreshCw, User, Sparkles,
   Smartphone, Zap, ShieldCheck, X, Droplets, Heart, Scan, Bot,
   ChevronRight, Upload, Camera, MessageCircle,
+  Utensils, Fuel, ParkingCircle, ShoppingBag, Repeat, Plane, Car, Hotel,
+  Pill, Gamepad2, GraduationCap, Briefcase, MoreHorizontal,
 } from 'lucide-react';
+import { smartCategoryFromMerchant } from '@/lib/smart-category';
+import { getCurrencySymbol } from '@/lib/countries';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip,
   ResponsiveContainer, Cell,
