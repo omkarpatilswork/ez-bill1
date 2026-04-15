@@ -653,7 +653,7 @@ export default function NewExpense() {
                 </div>
 
                 {/* Merchant & Core Info */}
-                <Card className="border-0 bg-card/80 backdrop-blur">
+                <Card className="border-0 glass-card rounded-2xl">
                   <CardContent className="pt-4 pb-4 space-y-3">
                     <EBillField icon={Store} label="Merchant" value={form.merchant}
                       editing={isEditing} onChange={v => setForm(f => ({ ...f, merchant: v }))} />
