@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 import { smartCategoryFromMerchant, isSubscriptionMerchant } from '@/lib/smart-category';
@@ -67,12 +66,9 @@ function fileToBase64(file: File): Promise<string> {
 }
 
 interface QueueItem {
-  id: string;
-  file: File;
-  previewUrl: string;
+  id: string; file: File; previewUrl: string;
   status: 'pending' | 'processing' | 'done' | 'error';
-  error?: string;
-  result?: { merchant: string; amount: number; expenseId: string };
+  error?: string; result?: { merchant: string; amount: number; expenseId: string };
 }
 
 export default function BulkUpload() {
@@ -97,12 +93,7 @@ export default function BulkUpload() {
       const isImage = file.type.startsWith('image/');
       const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
       if (!isImage && !isPdf) continue;
-      newItems.push({
-        id: crypto.randomUUID(),
-        file,
-        previewUrl: isImage ? URL.createObjectURL(file) : '',
-        status: 'pending',
-      });
+      newItems.push({ id: crypto.randomUUID(), file, previewUrl: isImage ? URL.createObjectURL(file) : '', status: 'pending' });
     }
     if (newItems.length === 0) {
       toast({ title: 'No valid files', description: 'Only images and PDFs are supported.', variant: 'destructive' });
@@ -127,16 +118,12 @@ export default function BulkUpload() {
 
     for (const item of queue) {
       if (item.status === 'done') { saved++; continue; }
-
       setQueue(prev => prev.map(i => i.id === item.id ? { ...i, status: 'processing' } : i));
 
       try {
         const base64 = await fileToBase64(item.file);
         const fileType = item.file.type || (item.file.name.toLowerCase().endsWith('.pdf') ? 'application/pdf' : 'image/jpeg');
-
-        const { data: ext, error } = await supabase.functions.invoke('extract-receipt', {
-          body: { file_base64: base64, file_type: fileType },
-        });
+        const { data: ext, error } = await supabase.functions.invoke('extract-receipt', { body: { file_base64: base64, file_type: fileType } });
         if (error) throw new Error('Extraction failed');
         if (ext?.error) throw new Error(ext.error);
 
@@ -149,25 +136,15 @@ export default function BulkUpload() {
         const paymentMethod = val(ext.payment_method);
         const lineItems = ext.line_items || [];
 
-        // Category
         const aiResult = findCategoryByName(ext.category, categories);
         const smartCat = smartCategoryFromMerchant(merchantName, ext.category);
         const smartResult = smartCat !== 'Other' ? findCategoryByName(smartCat, categories) : null;
         const categoryId = aiResult?.id || smartResult?.id || null;
         const categoryLabel = aiResult?.label || smartResult?.label || smartCat || 'Other';
-
-        // Currency
         const currency = DEFAULT_BILL_CURRENCY;
+        const title = invoiceNumber ? `Invoice ${invoiceNumber}` : merchantName ? `Bill - ${merchantName}` : `Bill Upload`;
+        const expenseDate = ext.date_time && ext.date_time !== 'Not Found' ? ext.date_time.slice(0, 10) : new Date().toISOString().slice(0, 10);
 
-        // Title
-        const title = invoiceNumber
-          ? `Invoice ${invoiceNumber}`
-          : merchantName ? `Bill - ${merchantName}` : `Bill Upload`;
-
-        const expenseDate = ext.date_time && ext.date_time !== 'Not Found'
-          ? ext.date_time.slice(0, 10) : new Date().toISOString().slice(0, 10);
-
-        // Description (same format as NewExpense)
         const descParts: string[] = [];
         if (categoryLabel && categoryLabel !== 'Other') descParts.push(`Category: ${categoryLabel}`);
         if (invoiceNumber) descParts.push(`Invoice: ${invoiceNumber}`);
@@ -182,64 +159,33 @@ export default function BulkUpload() {
         if (ext.discount != null && Number(ext.discount) > 0) descParts.push(`Discount: ${ext.discount}`);
         descParts.push('[upload]');
         let description = descParts.join(' | ');
-        if (lineItems.length > 0) {
-          description += `${LINE_ITEMS_MARKER}${JSON.stringify(lineItems)}::END_ITEMS::`;
-        }
+        if (lineItems.length > 0) description += `${LINE_ITEMS_MARKER}${JSON.stringify(lineItems)}::END_ITEMS::`;
 
         const { data: expense, error: insertErr } = await supabase.from('expenses').insert({
-          user_id: user.id,
-          title,
-          merchant: merchantName,
-          amount,
-          currency,
-          expense_date: expenseDate,
-          category_id: categoryId,
-          description,
-          status: 'draft',
-          cost_center: paymentMethod,
+          user_id: user.id, title, merchant: merchantName, amount, currency, expense_date: expenseDate,
+          category_id: categoryId, description, status: 'draft', cost_center: paymentMethod,
         } as any).select().single();
-
         if (insertErr) throw insertErr;
         const expenseId = (expense as any).id;
 
-        // Upload receipt file
         const filePath = `${user.id}/${expenseId}/${item.file.name}`;
         const { error: uploadErr } = await supabase.storage.from('receipts').upload(filePath, item.file);
         if (!uploadErr) {
-          await supabase.from('expense_receipts').insert({
-            expense_id: expenseId,
-            file_path: filePath,
-            file_name: item.file.name,
-          } as any);
+          await supabase.from('expense_receipts').insert({ expense_id: expenseId, file_path: filePath, file_name: item.file.name } as any);
         }
+        await supabase.from('audit_logs').insert({ expense_id: expenseId, user_id: user.id, action: 'submitted', details: { amount, title, source: 'bulk_upload' } } as any);
 
-        // Audit log
-        await supabase.from('audit_logs').insert({
-          expense_id: expenseId, user_id: user.id,
-          action: 'submitted', details: { amount, title, source: 'bulk_upload' },
-        } as any);
-
-        setQueue(prev => prev.map(i =>
-          i.id === item.id ? { ...i, status: 'done', result: { merchant: merchantName || 'Bill', amount, expenseId } } : i
-        ));
+        setQueue(prev => prev.map(i => i.id === item.id ? { ...i, status: 'done', result: { merchant: merchantName || 'Bill', amount, expenseId } } : i));
         saved++;
       } catch (err: any) {
-        setQueue(prev => prev.map(i =>
-          i.id === item.id ? { ...i, status: 'error', error: err.message || 'Failed' } : i
-        ));
+        setQueue(prev => prev.map(i => i.id === item.id ? { ...i, status: 'error', error: err.message || 'Failed' } : i));
         failed++;
       }
     }
 
     setIsProcessing(false);
-    toast({
-      title: 'Bulk upload complete',
-      description: `${saved} saved, ${failed} failed. Head to All Bills to review.`,
-    });
-
-    if (saved > 0) {
-      setTimeout(() => navigate('/expenses?checkDupes=1'), 1500);
-    }
+    toast({ title: 'Bulk upload complete', description: `${saved} saved, ${failed} failed. Head to All Bills to review.` });
+    if (saved > 0) setTimeout(() => navigate('/expenses?checkDupes=1'), 1500);
   };
 
   const pendingCount = queue.filter(i => i.status === 'pending' || i.status === 'processing').length;
@@ -248,10 +194,9 @@ export default function BulkUpload() {
   const progress = totalCount > 0 ? Math.round(((totalCount - pendingCount) / totalCount) * 100) : 0;
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6 pb-24">
-      {/* Header */}
+    <div className="max-w-2xl mx-auto space-y-6 pb-24 animate-fade-in">
       <div className="flex items-center gap-3">
-        <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
+        <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="active:scale-95 transition-transform">
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <div>
@@ -260,12 +205,11 @@ export default function BulkUpload() {
         </div>
       </div>
 
-      {/* Drop zone */}
-      <Card
-        className="border-2 border-dashed border-primary/30 hover:border-primary/60 transition-colors cursor-pointer"
+      <div
+        className="glass-card rounded-2xl border border-dashed border-primary/30 hover:border-primary/60 transition-all cursor-pointer active:scale-[0.98]"
         onClick={() => fileInputRef.current?.click()}
       >
-        <CardContent className="flex flex-col items-center justify-center py-10 gap-3">
+        <div className="flex flex-col items-center justify-center py-10 gap-3 px-6">
           <div className="h-14 w-14 rounded-full bg-primary/15 flex items-center justify-center">
             <ImagePlus className="h-7 w-7 text-primary" />
           </div>
@@ -273,32 +217,23 @@ export default function BulkUpload() {
             <p className="font-medium text-foreground">Tap to select files</p>
             <p className="text-xs text-muted-foreground mt-1">Images (JPG, PNG, HEIC) or PDFs • Multiple allowed</p>
           </div>
-        </CardContent>
-      </Card>
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="image/*,.pdf,.heic,.heif"
-        multiple
-        className="hidden"
-        onChange={e => { if (e.target.files) addFiles(e.target.files); e.target.value = ''; }}
-      />
+        </div>
+      </div>
+      <input ref={fileInputRef} type="file" accept="image/*,.pdf,.heic,.heif" multiple className="hidden"
+        onChange={e => { if (e.target.files) addFiles(e.target.files); e.target.value = ''; }} />
 
-      {/* Queue */}
       {queue.length > 0 && (
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <p className="text-sm font-medium text-foreground">{totalCount} file(s) selected</p>
             {!isProcessing && (
-              <Button variant="ghost" size="sm" className="text-destructive" onClick={() => setQueue([])}>
-                Clear all
-              </Button>
+              <Button variant="ghost" size="sm" className="text-destructive" onClick={() => setQueue([])}>Clear all</Button>
             )}
           </div>
 
           {isProcessing && (
             <div className="space-y-1">
-              <Progress value={progress} className="h-2" />
+              <Progress value={progress} className="h-2 [&>div]:bg-primary" />
               <p className="text-xs text-muted-foreground text-center">
                 Processing {totalCount - pendingCount} / {totalCount} • {doneCount} saved
               </p>
@@ -307,34 +242,27 @@ export default function BulkUpload() {
 
           <div className="space-y-2 max-h-[50vh] overflow-y-auto">
             {queue.map(item => (
-              <Card key={item.id} className="border-border/30">
-                <CardContent className="flex items-center gap-3 py-3 px-4">
-                  {/* Thumbnail */}
-                  <div className="h-12 w-12 rounded-lg bg-secondary flex items-center justify-center shrink-0 overflow-hidden">
+              <div key={item.id} className="glass-card rounded-xl">
+                <div className="flex items-center gap-3 py-3 px-4">
+                  <div className="h-12 w-12 rounded-lg bg-secondary/50 flex items-center justify-center shrink-0 overflow-hidden">
                     {item.previewUrl ? (
                       <img src={item.previewUrl} alt="" className="h-full w-full object-cover rounded-lg" />
                     ) : (
                       <FileText className="h-5 w-5 text-muted-foreground" />
                     )}
                   </div>
-
-                  {/* Info */}
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-foreground truncate">{item.file.name}</p>
                     <p className="text-xs text-muted-foreground">
                       {(item.file.size / 1024).toFixed(0)} KB
                       {item.status === 'done' && item.result && (
-                        <span className="text-green-500 ml-2">
-                          ✓ {item.result.merchant} — ₹{item.result.amount}
-                        </span>
+                        <span className="text-success ml-2">✓ {item.result.merchant} — ₹{item.result.amount}</span>
                       )}
                       {item.status === 'error' && (
                         <span className="text-destructive ml-2">✗ {item.error}</span>
                       )}
                     </p>
                   </div>
-
-                  {/* Status / actions */}
                   <div className="shrink-0">
                     {item.status === 'pending' && !isProcessing && (
                       <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => removeItem(item.id)}>
@@ -342,32 +270,30 @@ export default function BulkUpload() {
                       </Button>
                     )}
                     {item.status === 'processing' && <Loader2 className="h-5 w-5 animate-spin text-primary" />}
-                    {item.status === 'done' && <CheckCircle2 className="h-5 w-5 text-green-500" />}
+                    {item.status === 'done' && <CheckCircle2 className="h-5 w-5 text-success" />}
                     {item.status === 'error' && <AlertCircle className="h-5 w-5 text-destructive" />}
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             ))}
           </div>
         </div>
       )}
 
-      {/* Action button */}
       {queue.length > 0 && !isProcessing && queue.some(i => i.status === 'pending') && (
-        <Button onClick={processAll} className="w-full h-12 text-base font-semibold" size="lg">
+        <Button onClick={processAll} className="w-full h-12 text-base font-semibold active:scale-[0.98] transition-transform" size="lg">
           <Upload className="h-5 w-5 mr-2" />
           Extract & Save {queue.filter(i => i.status === 'pending').length} Bill(s)
         </Button>
       )}
 
-      {/* Done summary */}
       {!isProcessing && queue.length > 0 && !queue.some(i => i.status === 'pending') && (
         <div className="text-center space-y-3">
-          <div className="flex items-center justify-center gap-2 text-green-500">
+          <div className="flex items-center justify-center gap-2 text-success">
             <CheckCircle2 className="h-6 w-6" />
             <span className="font-semibold">All done!</span>
           </div>
-          <Button onClick={() => navigate('/expenses')} className="w-full">
+          <Button onClick={() => navigate('/expenses')} className="w-full active:scale-[0.98] transition-transform">
             View All Bills
           </Button>
         </div>

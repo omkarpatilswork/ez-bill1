@@ -3,7 +3,6 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -14,12 +13,7 @@ import type { Expense } from '@/lib/types';
 import { getCurrencySymbol } from '@/lib/countries';
 import { smartCategoryFromMerchant } from '@/lib/smart-category';
 
-interface LineItem {
-  name: string;
-  quantity: number;
-  unit_price: number;
-  total_price: number;
-}
+interface LineItem { name: string; quantity: number; unit_price: number; total_price: number; }
 
 const LINE_ITEMS_MARKER = '::ITEMS::';
 
@@ -71,16 +65,11 @@ export default function ExpenseDetail() {
       supabase.from('expense_receipts').select('*').eq('expense_id', id).limit(1),
     ]).then(async ([expRes, receiptRes]) => {
       setExpense(expRes.data as unknown as Expense);
-
       const receipts = receiptRes.data as any[];
       if (receipts && receipts.length > 0) {
         setReceiptName(receipts[0].file_name || '');
-        const { data: signedData } = await supabase.storage
-          .from('receipts')
-          .createSignedUrl(receipts[0].file_path, 3600);
-        if (signedData?.signedUrl) {
-          setReceiptUrl(signedData.signedUrl);
-        }
+        const { data: signedData } = await supabase.storage.from('receipts').createSignedUrl(receipts[0].file_path, 3600);
+        if (signedData?.signedUrl) setReceiptUrl(signedData.signedUrl);
       }
       setLoading(false);
     });
@@ -115,12 +104,10 @@ export default function ExpenseDetail() {
   const rawTax = parseField(expense.description, 'Tax');
   const rawTaxDetails = parseField(expense.description, 'TaxDetails');
   const rawDiscount = parseField(expense.description, 'Discount');
-  // Safe number formatting — avoid NaN
   const safeNum = (v: string) => { const n = Number(v); return !isNaN(n) && n > 0 ? n : 0; };
   const subtotal = safeNum(rawSubtotal);
   const taxAmount = safeNum(rawTax);
   const discount = safeNum(rawDiscount);
-  // Smart discount: if items total > amount and no stored discount
   const itemsSum = lineItems.reduce((s, i) => s + (Number(i.total_price) || 0), 0);
   const inferredDiscount = !discount && itemsSum > 0 && Number(expense.amount) > 0 && (itemsSum + taxAmount) > Number(expense.amount) + 0.5
     ? Math.round(((itemsSum + taxAmount) - Number(expense.amount)) * 100) / 100 : discount;
@@ -129,7 +116,7 @@ export default function ExpenseDetail() {
   const categoryLabel = savedCategory || smartCategoryFromMerchant(expense.merchant || '', expense.title);
 
   return (
-    <div className="max-w-3xl mx-auto space-y-4 pb-24">
+    <div className="max-w-3xl mx-auto space-y-4 pb-24 animate-fade-in">
       <div className="flex items-center gap-2">
         <Button variant="ghost" size="sm" className="h-8 px-2" onClick={() => navigate('/expenses')}>
           <ArrowLeft className="h-4 w-4" />
@@ -138,97 +125,86 @@ export default function ExpenseDetail() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="w-full grid grid-cols-2 bg-secondary/50">
-          <TabsTrigger value="ebill" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+        <TabsList className="w-full grid grid-cols-2 glass-card border-0">
+          <TabsTrigger value="ebill" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-lg transition-all">
             <Receipt className="h-4 w-4 mr-1.5" /> E-Bill
           </TabsTrigger>
-          <TabsTrigger value="original" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+          <TabsTrigger value="original" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-lg transition-all">
             <Eye className="h-4 w-4 mr-1.5" /> Original Bill
           </TabsTrigger>
         </TabsList>
 
-        {/* ─── E-BILL TAB ─── */}
         <TabsContent value="ebill" className="mt-3 space-y-3">
-          <Card className="border-0 bg-card/80 backdrop-blur">
-            <CardContent className="pt-4 pb-4 space-y-3">
-              <EBillRow icon={Store} label="Merchant" value={expense.merchant || '—'} />
-              <EBillRow icon={Package} label="Category" value={categoryLabel} />
-              <EBillRow icon={Hash} label="Invoice Number" value={invoiceNum || '—'} />
-              <EBillRow icon={Calendar} label="Date" value={new Date(expense.expense_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })} />
-              <EBillRow icon={CreditCard} label="Payment Method" value={paymentMethod} />
-              <EBillRow icon={IndianRupee} label="Currency" value={`${currencySymbol} ${expense.currency || 'INR'}`} />
-            </CardContent>
-          </Card>
+          <div className="glass-card rounded-2xl p-5 space-y-3">
+            <EBillRow icon={Store} label="Merchant" value={expense.merchant || '—'} />
+            <EBillRow icon={Package} label="Category" value={categoryLabel} />
+            <EBillRow icon={Hash} label="Invoice Number" value={invoiceNum || '—'} />
+            <EBillRow icon={Calendar} label="Date" value={new Date(expense.expense_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })} />
+            <EBillRow icon={CreditCard} label="Payment Method" value={paymentMethod} />
+            <EBillRow icon={IndianRupee} label="Currency" value={`${currencySymbol} ${expense.currency || 'INR'}`} />
+          </div>
 
           {lineItems.length > 0 && (
-            <Card className="border-0 bg-card/80 backdrop-blur">
-              <CardContent className="pt-4 pb-4">
-                <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium mb-3">Items ({lineItems.length})</p>
-                <div className="space-y-2">
-                  {lineItems.map((item, idx) => (
-                    <div key={idx} className="flex items-center justify-between py-2 border-b border-border/30 last:border-0">
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-foreground truncate">{item.name}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {item.quantity} × {currencySymbol}{Number(item.unit_price).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                        </p>
-                      </div>
-                      <span className="text-sm font-semibold text-foreground tabular-nums ml-3">
-                        {currencySymbol}{Number(item.total_price).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                      </span>
+            <div className="glass-card rounded-2xl p-5">
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium mb-3">Items ({lineItems.length})</p>
+              <div className="space-y-2">
+                {lineItems.map((item, idx) => (
+                  <div key={idx} className="flex items-center justify-between py-2 border-b border-border/20 last:border-0">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-foreground truncate">{item.name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {item.quantity} × {currencySymbol}{Number(item.unit_price).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                      </p>
                     </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+                    <span className="text-sm font-semibold text-foreground tabular-nums ml-3">
+                      {currencySymbol}{Number(item.total_price).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
           )}
 
           {notes && (
-            <Card className="border-0 bg-card/80 backdrop-blur">
-              <CardContent className="pt-4 pb-4">
-                <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium mb-1">Notes</p>
-                <p className="text-sm text-foreground leading-relaxed">{notes}</p>
-              </CardContent>
-            </Card>
+            <div className="glass-card rounded-2xl p-5">
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium mb-1">Notes</p>
+              <p className="text-sm text-foreground leading-relaxed">{notes}</p>
+            </div>
           )}
 
-          {/* Amount Breakdown */}
-          <Card className="border-0 bg-card/80 backdrop-blur">
-            <CardContent className="pt-4 pb-4 space-y-2">
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium mb-2">Bill Summary</p>
-              {subtotal > 0 && (
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Subtotal</span>
-                  <span className="text-foreground">{currencySymbol}{subtotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
-                </div>
-              )}
-              {taxAmount > 0 && (
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Tax {rawTaxDetails ? `(${rawTaxDetails})` : ''}</span>
-                  <span className="text-foreground">{currencySymbol}{taxAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
-                </div>
-              )}
-              {inferredDiscount > 0 && (
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Discount</span>
-                  <span className="text-green-500">-{currencySymbol}{inferredDiscount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
-                </div>
-              )}
-              <div className={`flex justify-between items-center ${(subtotal > 0 || taxAmount > 0 || inferredDiscount > 0) ? 'pt-2 border-t border-border/30' : ''}`}>
-                <span className="font-semibold text-foreground">Total Amount</span>
-                <span className="text-lg font-bold text-gold tabular-nums">
-                  {currencySymbol}{Number(expense.amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                </span>
+          <div className="glass-card rounded-2xl p-5 space-y-2">
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium mb-2">Bill Summary</p>
+            {subtotal > 0 && (
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Subtotal</span>
+                <span className="text-foreground">{currencySymbol}{subtotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
               </div>
-            </CardContent>
-          </Card>
+            )}
+            {taxAmount > 0 && (
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Tax {rawTaxDetails ? `(${rawTaxDetails})` : ''}</span>
+                <span className="text-foreground">{currencySymbol}{taxAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+              </div>
+            )}
+            {inferredDiscount > 0 && (
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Discount</span>
+                <span className="text-success">-{currencySymbol}{inferredDiscount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+              </div>
+            )}
+            <div className={`flex justify-between items-center ${(subtotal > 0 || taxAmount > 0 || inferredDiscount > 0) ? 'pt-2 border-t border-border/20' : ''}`}>
+              <span className="font-semibold text-foreground">Total Amount</span>
+              <span className="text-lg font-bold text-gold tabular-nums">
+                {currencySymbol}{Number(expense.amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+              </span>
+            </div>
+          </div>
         </TabsContent>
 
-        {/* ─── ORIGINAL BILL TAB ─── */}
         <TabsContent value="original" className="mt-3">
-          <Card className="border-0 bg-card/80 backdrop-blur overflow-hidden">
-            <CardContent className="p-2">
-              <div className="rounded-lg overflow-hidden bg-muted/30 flex items-center justify-center min-h-[300px]">
+          <div className="glass-card rounded-2xl overflow-hidden">
+            <div className="p-2">
+              <div className="rounded-lg overflow-hidden bg-muted/20 flex items-center justify-center min-h-[300px]">
                 {receiptUrl ? (
                   receiptName.toLowerCase().endsWith('.pdf') ? (
                     <iframe src={receiptUrl} className="w-full h-[60vh] rounded" title="Bill PDF" />
@@ -248,28 +224,27 @@ export default function ExpenseDetail() {
                   <span className="text-xs text-muted-foreground truncate flex-1">{receiptName}</span>
                 </div>
               )}
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </TabsContent>
       </Tabs>
 
-      {/* Action Buttons */}
       <div className="grid grid-cols-3 gap-2 pt-2">
-        <Button variant="outline" className="min-h-[44px] text-xs"
+        <Button variant="outline" className="min-h-[44px] text-xs glass-button border-0 active:scale-95 transition-transform"
           onClick={() => navigate(`/expenses/new?edit=${expense.id}`)}>
           <Pencil className="h-3.5 w-3.5 mr-1" /> Edit
         </Button>
-        <Button variant="outline" className="min-h-[44px] text-xs"
+        <Button variant="outline" className="min-h-[44px] text-xs glass-button border-0 active:scale-95 transition-transform"
           onClick={() => navigate(`/expenses/${expense.id}/split`)}>
           <Users className="h-3.5 w-3.5 mr-1" /> Split
         </Button>
-        <Button variant="outline" className="min-h-[44px] text-xs"
+        <Button variant="outline" className="min-h-[44px] text-xs glass-button border-0 active:scale-95 transition-transform"
           onClick={() => navigate(`/expenses/${expense.id}/support`)}>
           <Headphones className="h-3.5 w-3.5 mr-1" /> Support
         </Button>
       </div>
 
-      <Button variant="destructive" className="w-full min-h-[48px] text-sm" onClick={handleDelete}>
+      <Button variant="destructive" className="w-full min-h-[48px] text-sm active:scale-[0.98] transition-transform" onClick={handleDelete}>
         <Trash2 className="h-4 w-4 mr-2" /> Delete Bill
       </Button>
     </div>
@@ -279,8 +254,8 @@ export default function ExpenseDetail() {
 function EBillRow({ icon: Icon, label, value }: { icon: any; label: string; value: string }) {
   return (
     <div className="flex items-center gap-3">
-      <div className="h-8 w-8 rounded-lg bg-secondary/50 flex items-center justify-center shrink-0">
-        <Icon className="h-4 w-4 text-muted-foreground" />
+      <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+        <Icon className="h-4 w-4 text-primary/70" />
       </div>
       <div className="flex-1 min-w-0">
         <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">{label}</p>
