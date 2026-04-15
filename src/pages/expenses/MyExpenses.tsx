@@ -31,52 +31,24 @@ interface DuplicateGroup {
   ids: string[];
 }
 
-// ── Broad category grouping ──
-// Maps fine-grained AI/smart categories into broad display groups
 const BROAD_CATEGORY_MAP: Record<string, string> = {
-  'food & dining': 'Food & Dining',
-  'food': 'Food & Dining',
-  'dining': 'Food & Dining',
-  'meals': 'Food & Dining',
-  'restaurant': 'Food & Dining',
-  'grocery': 'Grocery',
-  'supermarket': 'Grocery',
-  'petrol & fuel': 'Fuel',
-  'petrol': 'Fuel',
-  'fuel': 'Fuel',
-  'toll': 'Toll & Parking',
-  'parking': 'Toll & Parking',
-  'shopping': 'Shopping',
-  'retail': 'Shopping',
-  'utilities': 'Utilities',
-  'software': 'Subscriptions',
-  'subscription': 'Subscriptions',
-  'travel': 'Travel',
-  'flight': 'Travel',
-  'train': 'Travel',
-  'transportation': 'Transport',
-  'transport': 'Transport',
-  'cab': 'Transport',
-  'accommodation': 'Hotel & Stay',
-  'hotel': 'Hotel & Stay',
-  'resort': 'Hotel & Stay',
-  'stay': 'Hotel & Stay',
-  'airbnb': 'Hotel & Stay',
-  'lodge': 'Hotel & Stay',
-  'medical': 'Medical',
-  'health': 'Medical',
-  'pharmacy': 'Medical',
-  'entertainment': 'Entertainment',
-  'education': 'Education',
-  'training': 'Education',
-  'office supplies': 'Office',
-  'other': 'Other',
+  'food & dining': 'Food & Dining', 'food': 'Food & Dining', 'dining': 'Food & Dining',
+  'meals': 'Food & Dining', 'restaurant': 'Food & Dining', 'grocery': 'Grocery',
+  'supermarket': 'Grocery', 'petrol & fuel': 'Fuel', 'petrol': 'Fuel', 'fuel': 'Fuel',
+  'toll': 'Toll & Parking', 'parking': 'Toll & Parking', 'shopping': 'Shopping',
+  'retail': 'Shopping', 'utilities': 'Utilities', 'software': 'Subscriptions',
+  'subscription': 'Subscriptions', 'travel': 'Travel', 'flight': 'Travel', 'train': 'Travel',
+  'transportation': 'Transport', 'transport': 'Transport', 'cab': 'Transport',
+  'accommodation': 'Hotel & Stay', 'hotel': 'Hotel & Stay', 'resort': 'Hotel & Stay',
+  'stay': 'Hotel & Stay', 'airbnb': 'Hotel & Stay', 'lodge': 'Hotel & Stay',
+  'medical': 'Medical', 'health': 'Medical', 'pharmacy': 'Medical',
+  'entertainment': 'Entertainment', 'education': 'Education', 'training': 'Education',
+  'office supplies': 'Office', 'other': 'Other',
 };
 
 function toBroadCategory(cat: string): string {
   const lower = cat.toLowerCase().trim();
   if (BROAD_CATEGORY_MAP[lower]) return BROAD_CATEGORY_MAP[lower];
-  // partial match
   for (const [key, broad] of Object.entries(BROAD_CATEGORY_MAP)) {
     if (lower.includes(key) || key.includes(lower)) return broad;
   }
@@ -84,21 +56,11 @@ function toBroadCategory(cat: string): string {
 }
 
 const BROAD_CATEGORY_ICONS: Record<string, any> = {
-  'Food & Dining': Utensils,
-  'Grocery': ShoppingBag,
-  'Fuel': Fuel,
-  'Toll & Parking': ParkingCircle,
-  'Shopping': ShoppingBag,
-  'Subscriptions': Repeat,
-  'Travel': Plane,
-  'Transport': Car,
-  'Hotel & Stay': Hotel,
-  'Medical': Pill,
-  'Entertainment': Gamepad2,
-  'Education': GraduationCap,
-  'Utilities': Zap,
-  'Office': Briefcase,
-  'Other': MoreHorizontal,
+  'Food & Dining': Utensils, 'Grocery': ShoppingBag, 'Fuel': Fuel,
+  'Toll & Parking': ParkingCircle, 'Shopping': ShoppingBag, 'Subscriptions': Repeat,
+  'Travel': Plane, 'Transport': Car, 'Hotel & Stay': Hotel, 'Medical': Pill,
+  'Entertainment': Gamepad2, 'Education': GraduationCap, 'Utilities': Zap,
+  'Office': Briefcase, 'Other': MoreHorizontal,
 };
 
 type SortKey = 'date_desc' | 'date_asc' | 'amount_desc' | 'amount_asc' | 'merchant_asc';
@@ -205,7 +167,6 @@ export default function MyExpenses() {
     fetchExpenses();
   };
 
-  // Compute which broad categories actually have expenses
   const availableCategories = useMemo(() => {
     const catSet = new Set<string>();
     expenses.forEach(e => {
@@ -215,15 +176,12 @@ export default function MyExpenses() {
     return catSet;
   }, [expenses]);
 
-
   const filteredExpenses = useMemo(() => {
     let result = expenses.filter(e => {
-      // Category filter
       if (categoryFilter !== 'all') {
         const broad = toBroadCategory(getSmartCategory(e));
         if (broad !== categoryFilter) return false;
       }
-      // Search
       if (searchQuery) {
         const q = searchQuery.toLowerCase();
         return e.title.toLowerCase().includes(q) || (e.merchant || '').toLowerCase().includes(q) || String(e.amount).includes(q) || (e.description || '').toLowerCase().includes(q);
@@ -231,7 +189,6 @@ export default function MyExpenses() {
       return true;
     });
 
-    // Sort
     result = [...result].sort((a, b) => {
       switch (sortKey) {
         case 'date_desc': return new Date(b.expense_date).getTime() - new Date(a.expense_date).getTime();
@@ -286,12 +243,10 @@ export default function MyExpenses() {
     }
   };
 
-  // Build dynamic category pill list — only categories with expenses
   const categoryPills = useMemo(() => {
     const pills: { label: string; value: string; icon: any }[] = [
       { label: 'All', value: 'all', icon: Receipt },
     ];
-    // Deterministic order
     const order = ['Food & Dining', 'Grocery', 'Fuel', 'Toll & Parking', 'Shopping', 'Subscriptions', 'Travel', 'Transport', 'Hotel & Stay', 'Medical', 'Entertainment', 'Education', 'Utilities', 'Office', 'Other'];
     for (const cat of order) {
       if (availableCategories.has(cat)) {
@@ -302,7 +257,7 @@ export default function MyExpenses() {
   }, [availableCategories]);
 
   return (
-    <div className="space-y-4 pb-20">
+    <div className="space-y-4 pb-20 animate-fade-in">
       <div className="flex items-start justify-between">
         <div>
           <h1 className="text-2xl font-bold text-foreground">All Bills</h1>
@@ -311,14 +266,13 @@ export default function MyExpenses() {
           </p>
         </div>
         <div className="flex items-center gap-1">
-          {/* Sort dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="sm" className="text-muted-foreground h-8 w-8 p-0">
                 <ArrowUpDown className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="min-w-[180px]">
+            <DropdownMenuContent align="end" className="min-w-[180px] glass-card border-border/30">
               {SORT_OPTIONS.map(opt => (
                 <DropdownMenuItem
                   key={opt.key}
@@ -344,7 +298,7 @@ export default function MyExpenses() {
 
       {selectMode && (
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={selectAll} className="text-xs">
+          <Button variant="outline" size="sm" onClick={selectAll} className="text-xs glass-button border-0">
             {selectedIds.size === filteredExpenses.length ? 'Deselect All' : 'Select All'}
           </Button>
           <Button
@@ -366,12 +320,10 @@ export default function MyExpenses() {
           placeholder="Search bills, merchants, amounts..."
           value={searchQuery}
           onChange={e => setSearchQuery(e.target.value)}
-          className="pl-9 min-h-[44px] bg-card border-border/40 rounded-xl"
+          className="pl-9 min-h-[44px] glass-card border-0 rounded-xl focus-visible:ring-primary/30"
         />
       </div>
 
-
-      {/* Category filter pills — only categories with bills */}
       <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide -mx-1 px-1">
         {categoryPills.map(cat => {
           const active = categoryFilter === cat.value;
@@ -379,10 +331,10 @@ export default function MyExpenses() {
             <button
               key={cat.value}
               onClick={() => setCategoryFilter(cat.value)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all shrink-0 ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all shrink-0 active:scale-95 ${
                 active
                   ? 'bg-primary text-primary-foreground shadow-md shadow-primary/20'
-                  : 'bg-card border border-border/40 text-muted-foreground hover:text-foreground hover:border-border'
+                  : 'glass-button border-0 text-muted-foreground hover:text-foreground'
               }`}
             >
               <cat.icon className="h-3.5 w-3.5" />
@@ -397,7 +349,7 @@ export default function MyExpenses() {
           <div className="h-6 w-6 animate-spin rounded-full border-3 border-primary border-t-transparent" />
         </div>
       ) : filteredExpenses.length === 0 ? (
-        <div className="text-center py-10 text-muted-foreground">
+        <div className="text-center py-10 text-muted-foreground glass-card rounded-2xl">
           <Receipt className="mx-auto h-12 w-12 mb-3 opacity-40" />
           <p className="font-medium mb-1">{searchQuery || categoryFilter !== 'all' ? 'No matching bills' : 'No bills yet'}</p>
           <p className="text-sm">{searchQuery ? 'Try adjusting your search or filters.' : 'Add your first bill to get started.'}</p>
@@ -454,10 +406,8 @@ export default function MyExpenses() {
               <div
                 key={exp.id}
                 onClick={() => toggleSelect(exp.id)}
-                className={`block rounded-xl border p-3.5 transition-colors cursor-pointer ${
-                  isSelected
-                    ? 'bg-destructive/5 border-destructive/30'
-                    : 'bg-card border-border/30 hover:bg-muted/20 active:bg-muted/40'
+                className={`block glass-card-hover rounded-xl p-3.5 cursor-pointer transition-all active:scale-[0.98] ${
+                  isSelected ? 'border-destructive/30 bg-destructive/5' : ''
                 }`}
               >
                 {cardContent}
@@ -466,7 +416,7 @@ export default function MyExpenses() {
               <Link
                 key={exp.id}
                 to={`/expenses/${exp.id}`}
-                className="block rounded-xl bg-card border border-border/30 p-3.5 hover:bg-muted/20 active:bg-muted/40 transition-colors"
+                className="block glass-card-hover rounded-xl p-3.5 transition-all active:scale-[0.98]"
               >
                 {cardContent}
               </Link>
@@ -476,7 +426,7 @@ export default function MyExpenses() {
       )}
 
       <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
-        <AlertDialogContent className="max-w-[340px] rounded-2xl">
+        <AlertDialogContent className="max-w-[340px] rounded-2xl glass-card border-border/30">
           <AlertDialogHeader>
             <AlertDialogTitle>Delete {selectedIds.size} bill{selectedIds.size > 1 ? 's' : ''}?</AlertDialogTitle>
             <AlertDialogDescription>
@@ -497,10 +447,10 @@ export default function MyExpenses() {
       </AlertDialog>
 
       <Dialog open={showDuplicateDialog} onOpenChange={setShowDuplicateDialog}>
-        <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
+        <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto glass-card border-border/30">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <AlertCircle className="h-5 w-5 text-yellow-500" />
+              <AlertCircle className="h-5 w-5 text-gold" />
               Duplicate Bills Found
             </DialogTitle>
           </DialogHeader>
@@ -510,7 +460,7 @@ export default function MyExpenses() {
             </p>
             <div className="space-y-2 max-h-[40vh] overflow-y-auto">
               {duplicates.map((group, idx) => (
-                <div key={idx} className="rounded-lg border border-border bg-muted/30 p-3">
+                <div key={idx} className="glass-card rounded-xl p-3">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-medium text-foreground">{group.merchant || 'Unknown'}</p>
@@ -542,7 +492,7 @@ export default function MyExpenses() {
                 variant="outline"
                 onClick={() => setShowDuplicateDialog(false)}
                 disabled={isDeletingDuplicates}
-                className="min-h-[44px]"
+                className="min-h-[44px] glass-button border-0"
               >
                 Keep All
               </Button>
