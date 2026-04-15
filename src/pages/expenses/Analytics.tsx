@@ -336,7 +336,7 @@ export default function Analytics() {
 
       {/* Charts Row 1 */}
       <div className="grid gap-4 sm:gap-6 grid-cols-1 lg:grid-cols-5">
-        <Card className="lg:col-span-3 shadow-md border-0">
+        <Card className="lg:col-span-3 glass-card border-0 rounded-2xl">
           <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between pb-2">
             <div>
               <CardTitle className="text-base sm:text-lg">Monthly Spending Trend</CardTitle>
@@ -351,10 +351,10 @@ export default function Analytics() {
             ) : (
               <ResponsiveContainer width="100%" height={220}>
                 <BarChart data={monthlyTrend} barSize={14}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} className="opacity-20" />
-                  <XAxis dataKey="month" tick={{ fontSize: 10 }} axisLine={false} tickLine={false} />
-                  <YAxis tick={{ fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={v => `${sym}${v}`} />
-                  <Tooltip formatter={(val: number) => [fmt2(val), 'Spent']} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} />
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsla(160, 8%, 25%, 0.3)" />
+                  <XAxis dataKey="month" tick={{ fontSize: 10, fill: 'hsl(160, 8%, 55%)' }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fontSize: 10, fill: 'hsl(160, 8%, 55%)' }} axisLine={false} tickLine={false} tickFormatter={v => `${sym}${v}`} />
+                  <Tooltip formatter={(val: number) => [fmt2(val), 'Spent']} contentStyle={{ borderRadius: '12px', border: 'none', background: 'hsl(160, 10%, 12%)', color: 'hsl(60, 10%, 95%)' }} />
                   <Bar dataKey="total" fill="hsl(152, 57%, 42%)" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
@@ -362,7 +362,7 @@ export default function Analytics() {
           </CardContent>
         </Card>
 
-        <Card className="lg:col-span-2 shadow-md border-0">
+        <Card className="lg:col-span-2 glass-card border-0 rounded-2xl">
           <CardHeader className="pb-2">
             <CardTitle className="text-base sm:text-lg">Spending by Category</CardTitle>
             <CardDescription>Where your money goes</CardDescription>
@@ -377,7 +377,7 @@ export default function Analytics() {
                     <Pie data={categoryBreakdown} cx="50%" cy="50%" innerRadius={45} outerRadius={70} dataKey="value" paddingAngle={3} strokeWidth={0}>
                       {categoryBreakdown.map((_, i) => (<Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />))}
                     </Pie>
-                    <Tooltip formatter={(val: number) => fmt2(val)} />
+                    <Tooltip formatter={(val: number) => fmt2(val)} contentStyle={{ borderRadius: '12px', border: 'none', background: 'hsl(160, 10%, 12%)', color: 'hsl(60, 10%, 95%)' }} />
                   </PieChart>
                 </ResponsiveContainer>
                 <div className="grid grid-cols-2 gap-x-4 sm:gap-x-6 gap-y-1.5 mt-2 w-full">
@@ -397,7 +397,7 @@ export default function Analytics() {
 
       {/* Charts Row 2 */}
       <div className="grid gap-4 sm:gap-6 grid-cols-1 lg:grid-cols-2">
-        <Card className="shadow-md border-0">
+        <Card className="glass-card border-0 rounded-2xl">
           <CardHeader className="pb-2">
             <CardTitle className="text-base sm:text-lg">Cumulative Spending</CardTitle>
             <CardDescription>Running total over time</CardDescription>
@@ -414,10 +414,10 @@ export default function Analytics() {
                       <stop offset="95%" stopColor="hsl(152, 57%, 42%)" stopOpacity={0} />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} className="opacity-20" />
-                  <XAxis dataKey="month" tick={{ fontSize: 10 }} axisLine={false} tickLine={false} />
-                  <YAxis tick={{ fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={v => `${sym}${v}`} />
-                  <Tooltip formatter={(val: number) => [fmt2(val), 'Cumulative']} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} />
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsla(160, 8%, 25%, 0.3)" />
+                  <XAxis dataKey="month" tick={{ fontSize: 10, fill: 'hsl(160, 8%, 55%)' }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fontSize: 10, fill: 'hsl(160, 8%, 55%)' }} axisLine={false} tickLine={false} tickFormatter={v => `${sym}${v}`} />
+                  <Tooltip formatter={(val: number) => [fmt2(val), 'Cumulative']} contentStyle={{ borderRadius: '12px', border: 'none', background: 'hsl(160, 10%, 12%)', color: 'hsl(60, 10%, 95%)' }} />
                   <Area type="monotone" dataKey="cumulative" stroke="hsl(152, 57%, 42%)" fill="url(#gradCumulative)" strokeWidth={2} />
                 </AreaChart>
               </ResponsiveContainer>
@@ -425,8 +425,7 @@ export default function Analytics() {
           </CardContent>
         </Card>
 
-        {/* Top Merchants */}
-        <Card className="shadow-md border-0">
+        <Card className="glass-card border-0 rounded-2xl">
           <CardHeader className="pb-2">
             <CardTitle className="text-base sm:text-lg">Top Merchants</CardTitle>
             <CardDescription>Where you spend the most</CardDescription>
@@ -445,7 +444,7 @@ export default function Analytics() {
                         <span className="font-medium truncate">{m.name}</span>
                         <span className="text-muted-foreground text-xs">{fmt(m.amount)} · {m.count}x</span>
                       </div>
-                      <div className="h-2 w-full rounded-full bg-muted">
+                      <div className="h-2 w-full rounded-full bg-muted/50">
                         <div className="h-full rounded-full transition-all duration-500" style={{ width: `${pct}%`, backgroundColor: CHART_COLORS[i % CHART_COLORS.length] }} />
                       </div>
                     </div>

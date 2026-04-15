@@ -57,7 +57,7 @@ export default function Login() {
     <div className="flex min-h-screen bg-background">
       {/* Left side - Login form */}
       <div className="flex w-full lg:w-1/2 items-center justify-center px-4 sm:px-8">
-        <Card className="w-full max-w-md border-0 shadow-none bg-transparent">
+        <Card className="w-full max-w-md border-0 shadow-none bg-transparent glass-card rounded-2xl">
           <CardHeader className="text-center">
             <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-xl bg-primary">
               <Receipt className="h-6 w-6 text-primary-foreground" />

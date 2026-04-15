@@ -182,7 +182,7 @@ export default function AskAI() {
       </div>
 
       {/* Chat area */}
-      <ScrollArea className="flex-1 rounded-xl border border-border/60 bg-card shadow-sm px-5">
+      <ScrollArea className="flex-1 rounded-2xl glass-card border-0 px-5">
         <div className="py-5 space-y-5">
           {messages.length === 0 && !isLoading && (
             <div className="flex flex-col items-center justify-center py-16 text-center">
@@ -312,7 +312,7 @@ export default function AskAI() {
           onKeyDown={handleKeyDown}
           placeholder="Ask about your expenses..."
           rows={1}
-          className="flex-1 resize-none rounded-xl border border-border/60 bg-card shadow-sm px-4 py-3 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-shadow"
+          className="flex-1 resize-none rounded-xl glass-card border-0 px-4 py-3 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-shadow"
           disabled={isLoading}
         />
         <Button

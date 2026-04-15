@@ -36,7 +36,7 @@ export default function Signup() {
   if (success) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background px-4">
-        <Card className="w-full max-w-md border-border/30 bg-card">
+        <Card className="w-full max-w-md glass-card border-0 rounded-2xl">
           <CardHeader className="text-center">
             <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-xl bg-success">
               <Receipt className="h-6 w-6 text-success-foreground" />
@@ -54,7 +54,7 @@ export default function Signup() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <Card className="w-full max-w-md border-border/30 bg-card">
+      <Card className="w-full max-w-md glass-card border-0 rounded-2xl">
         <CardHeader className="text-center">
           <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-xl bg-primary">
             <Receipt className="h-6 w-6 text-primary-foreground" />
