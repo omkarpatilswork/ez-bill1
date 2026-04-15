@@ -489,9 +489,9 @@ export default function NewExpense() {
   // ─── UPLOAD/SCAN/EDIT PAGE ───
   if (mode === 'upload' || mode === 'scan' || editId) {
     return (
-      <div className="max-w-2xl mx-auto space-y-4 pb-24">
+      <div className="max-w-2xl mx-auto space-y-4 pb-24 animate-fade-in">
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="sm" className="h-8 px-2" onClick={() => navigate(-1)}>
+          <Button variant="ghost" size="sm" className="h-8 px-2 active:scale-[0.95]" onClick={() => navigate(-1)}>
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <h1 className="text-lg font-bold text-foreground">
@@ -501,7 +501,7 @@ export default function NewExpense() {
 
         {/* Upload Area */}
         {!editId && !receiptFile && !isExtracting && (
-          <Card className="border-0 bg-card/80 backdrop-blur">
+          <Card className="border-0 glass-card rounded-2xl">
             <CardContent className="pt-6 pb-6">
               <div className="flex flex-col items-center text-center space-y-4">
                 <div className="h-20 w-20 rounded-2xl bg-primary/10 flex items-center justify-center">
@@ -533,7 +533,7 @@ export default function NewExpense() {
                     <CreditCard className="h-3 w-3" /> Payment Method
                   </span>
                 </div>
-                <Button size="lg" className="w-full max-w-xs min-h-[48px] mt-2"
+                <Button size="lg" className="w-full max-w-xs min-h-[48px] mt-2 active:scale-[0.97]"
                   onClick={() => (mode === 'scan' ? scanInputRef : uploadInputRef).current?.click()}>
                   <Upload className="h-5 w-5 mr-2" />
                   {mode === 'scan' ? 'Open Camera' : 'Choose File'}
@@ -549,7 +549,7 @@ export default function NewExpense() {
 
         {/* Extracting State */}
         {isExtracting && (
-          <Card className="border-0 bg-card/80 backdrop-blur">
+          <Card className="border-0 glass-card rounded-2xl">
             <CardContent className="py-12 flex flex-col items-center gap-4">
               <div className="h-16 w-16 rounded-2xl bg-primary/10 flex items-center justify-center animate-pulse">
                 <Loader2 className="h-8 w-8 text-primary animate-spin" />
@@ -589,7 +589,7 @@ export default function NewExpense() {
         {((receiptFile && !isExtracting) || editId) && (
           <>
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="w-full grid grid-cols-2 bg-secondary/50">
+              <TabsList className="w-full grid grid-cols-2 glass-card rounded-xl p-1 h-auto">
                 <TabsTrigger value="ebill" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                   <Receipt className="h-4 w-4 mr-1.5" /> E-Bill
                 </TabsTrigger>
@@ -600,7 +600,7 @@ export default function NewExpense() {
 
               {/* ─── ORIGINAL BILL TAB ─── */}
               <TabsContent value="original" className="mt-3">
-                <Card className="border-0 bg-card/80 backdrop-blur overflow-hidden">
+                <Card className="border-0 glass-card rounded-2xl overflow-hidden">
                   <CardContent className="p-2">
                     <div className="rounded-lg overflow-hidden bg-muted/30 flex items-center justify-center min-h-[300px]">
                       {receiptPreviewUrl && (receiptFile?.type === 'application/pdf' || receiptPreviewUrl.includes('.pdf')) ? (
@@ -653,7 +653,7 @@ export default function NewExpense() {
                 </div>
 
                 {/* Merchant & Core Info */}
-                <Card className="border-0 bg-card/80 backdrop-blur">
+                <Card className="border-0 glass-card rounded-2xl">
                   <CardContent className="pt-4 pb-4 space-y-3">
                     <EBillField icon={Store} label="Merchant" value={form.merchant}
                       editing={isEditing} onChange={v => setForm(f => ({ ...f, merchant: v }))} />
@@ -712,7 +712,7 @@ export default function NewExpense() {
 
                 {/* Line Items */}
                 {editLineItems.length > 0 && (
-                  <Card className="border-0 bg-card/80 backdrop-blur">
+                  <Card className="border-0 glass-card rounded-2xl">
                     <CardContent className="pt-4 pb-3">
                       <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium mb-3">
                         Items ({editLineItems.length})
@@ -798,7 +798,7 @@ export default function NewExpense() {
                 )}
 
                 {/* Amount Summary */}
-                <Card className="border-0 bg-card/80 backdrop-blur">
+                <Card className="border-0 glass-card rounded-2xl">
                   <CardContent className="pt-4 pb-4 space-y-2">
                     <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium mb-2">Bill Summary</p>
                     {val(form.subtotal) && (
@@ -854,7 +854,7 @@ export default function NewExpense() {
 
                 {/* Description */}
                 {isEditing && (
-                  <Card className="border-0 bg-card/80 backdrop-blur">
+                  <Card className="border-0 glass-card rounded-2xl">
                     <CardContent className="pt-4 pb-4">
                       <label className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">Notes</label>
                       <Textarea value={form.description} placeholder="Add any notes..."
@@ -866,7 +866,7 @@ export default function NewExpense() {
 
                 {/* Action Buttons */}
                 <div className="space-y-2 pt-2">
-                  <Button className="w-full min-h-[48px] text-sm font-semibold" disabled={isSubmitting || !isValid}
+                  <Button className="w-full min-h-[48px] text-sm font-semibold active:scale-[0.97]" disabled={isSubmitting || !isValid}
                     onClick={handleSubmit}>
                     {isSubmitting ? (
                       <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Saving...</>
@@ -890,15 +890,15 @@ export default function NewExpense() {
 
   // ─── MANUAL ENTRY PAGE ───
   return (
-    <div className="max-w-2xl mx-auto space-y-4 pb-24">
+    <div className="max-w-2xl mx-auto space-y-4 pb-24 animate-fade-in">
       <div className="flex items-center gap-2">
-        <Button variant="ghost" size="sm" className="h-8 px-2" onClick={() => navigate(-1)}>
+        <Button variant="ghost" size="sm" className="h-8 px-2 active:scale-[0.95]" onClick={() => navigate(-1)}>
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <h1 className="text-lg font-bold text-foreground">{editId ? 'Edit Bill' : 'Add Bill Manually'}</h1>
       </div>
 
-      <Card className="border-0 bg-card/80 backdrop-blur">
+      <Card className="border-0 glass-card rounded-2xl">
         <CardContent className="pt-5 space-y-4">
           <div className="grid gap-3 grid-cols-1">
             <div className="space-y-1">
@@ -1002,7 +1002,7 @@ export default function NewExpense() {
           )}
 
           <div className="space-y-2 pt-2 border-t border-border/30">
-            <Button className="w-full min-h-[48px]" disabled={isSubmitting || !isValid} onClick={handleSubmit}>
+            <Button className="w-full min-h-[48px] active:scale-[0.97]" disabled={isSubmitting || !isValid} onClick={handleSubmit}>
               {isSubmitting ? (
                 <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Saving...</>
               ) : (

@@ -5,9 +5,7 @@ import { smartCategoryFromMerchant, isSubscriptionMerchant } from '@/lib/smart-c
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -116,8 +114,6 @@ export default function EmailBills() {
   const [importProgress, setImportProgress] = useState({ phase: '', current: 0, total: 0 });
   const [importResult, setImportResult] = useState<{ saved: number; skipped: number; total: number } | null>(null);
 
-  // Duplicate detection removed — handled in All Bills page
-
   const [smsText, setSmsText] = useState('');
   const [isParsing, setIsParsing] = useState(false);
   const [upiTransactions, setUpiTransactions] = useState<UpiTransaction[]>([]);
@@ -203,7 +199,6 @@ export default function EmailBills() {
     if (!user) return;
     setIsScanning(true);
     setImportResult(null);
-    // duplicates handled in All Bills page
 
     try {
       setImportProgress({ phase: 'Scanning inbox...', current: 0, total: 0 });
@@ -272,7 +267,6 @@ export default function EmailBills() {
 
             const isSubscription = isSubscriptionMerchant(`${merchantName} ${email.subject}`);
 
-            // Build description with structured data (same format as NewExpense)
             const LINE_ITEMS_MARKER = '::ITEMS::';
             const descParts: string[] = [];
             if (categoryLabel && categoryLabel !== 'Other') descParts.push(`Category: ${categoryLabel}`);
@@ -308,7 +302,6 @@ export default function EmailBills() {
             if (error) { skipped++; continue; }
             const expenseId = (expense as any)?.id;
 
-            // Upload attachment to storage and create receipt record
             try {
               const binaryStr = atob(attData.data);
               const bytes = new Uint8Array(binaryStr.length);
@@ -349,7 +342,6 @@ export default function EmailBills() {
       });
 
       if (saved > 0) {
-        // Navigate to All Bills with duplicate check
         navigate('/expenses?checkDupes=1');
       }
     } catch (err: any) {
@@ -359,8 +351,6 @@ export default function EmailBills() {
       setImportProgress({ phase: '', current: 0, total: 0 });
     }
   };
-
-  // Duplicate detection and deletion moved to MyExpenses (All Bills page)
 
   const parseUpiSms = async () => {
     if (!smsText.trim()) {
@@ -424,7 +414,7 @@ export default function EmailBills() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="max-w-4xl mx-auto space-y-6 animate-fade-in pb-24">
       <div>
         <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Import Bills</h1>
         <p className="text-sm text-muted-foreground mt-1">
@@ -433,126 +423,122 @@ export default function EmailBills() {
       </div>
 
       <Tabs defaultValue={initialTab} className="w-full">
-        <TabsList className={`grid w-full ${isNative ? 'grid-cols-2' : 'grid-cols-1'} mb-4`}>
-          <TabsTrigger value="gmail" className="flex items-center gap-2">
+        <TabsList className={`grid w-full ${isNative ? 'grid-cols-2' : 'grid-cols-1'} mb-4 glass-card rounded-xl p-1 h-auto`}>
+          <TabsTrigger value="gmail" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-lg py-2.5 transition-all">
             <Mail className="h-4 w-4" /> Gmail
           </TabsTrigger>
           {isNative && (
-            <TabsTrigger value="upi" className="flex items-center gap-2">
+            <TabsTrigger value="upi" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-lg py-2.5 transition-all">
               <Smartphone className="h-4 w-4" /> UPI SMS
             </TabsTrigger>
           )}
         </TabsList>
 
-        <TabsContent value="gmail" className="space-y-6">
-          <Card className="shadow-md border-0">
-            <CardContent className="pt-6">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-                <div className="flex items-center gap-3 flex-1">
-                  <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ${isConnected ? 'bg-green-100 text-green-600' : 'bg-muted text-muted-foreground'}`}>
-                    <Mail className="h-6 w-6" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-foreground">
-                      {isConnected ? 'Gmail Connected' : 'Connect Gmail'}
-                    </h3>
-                    <p className="text-sm text-muted-foreground">
-                      {isConnected ? connectedEmail : 'Link your Gmail to scan for bills and receipts'}
-                    </p>
-                  </div>
+        <TabsContent value="gmail" className="space-y-4">
+          {/* Gmail Connection Card */}
+          <div className="glass-card rounded-2xl p-5">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+              <div className="flex items-center gap-3 flex-1">
+                <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ${isConnected ? 'bg-success/15 text-success' : 'bg-muted text-muted-foreground'}`}>
+                  <Mail className="h-6 w-6" />
                 </div>
-                <div className="flex gap-2 w-full sm:w-auto">
-                  {isConnected ? (
-                    <Button variant="outline" onClick={disconnectGmail} className="min-h-[44px]">
-                      <Unlink className="h-4 w-4 mr-1" /> Disconnect
-                    </Button>
-                  ) : (
-                    <Button onClick={connectGmail} className="min-h-[44px] w-full sm:w-auto">
-                      <Link2 className="h-4 w-4 mr-2" /> Connect Gmail
-                    </Button>
-                  )}
+                <div>
+                  <h3 className="font-semibold text-foreground">
+                    {isConnected ? 'Gmail Connected' : 'Connect Gmail'}
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    {isConnected ? connectedEmail : 'Link your Gmail to scan for bills and receipts'}
+                  </p>
                 </div>
               </div>
-            </CardContent>
-          </Card>
+              <div className="flex gap-2 w-full sm:w-auto">
+                {isConnected ? (
+                  <Button variant="outline" onClick={disconnectGmail} className="min-h-[44px] glass-button border-0 active:scale-[0.97]">
+                    <Unlink className="h-4 w-4 mr-1" /> Disconnect
+                  </Button>
+                ) : (
+                  <Button onClick={connectGmail} className="min-h-[44px] w-full sm:w-auto active:scale-[0.97]">
+                    <Link2 className="h-4 w-4 mr-2" /> Connect Gmail
+                  </Button>
+                )}
+              </div>
+            </div>
+          </div>
 
+          {/* Scan Controls */}
           {isConnected && (
-            <Card className="shadow-md border-0">
-              <CardContent className="pt-6 space-y-4">
-                <div className="flex flex-col sm:flex-row gap-3">
-                  <div className="flex items-center gap-2 flex-1">
-                    <Filter className="h-4 w-4 text-muted-foreground shrink-0" />
-                    <Select value={String(dateRange)} onValueChange={v => setDateRange(Number(v))}>
-                      <SelectTrigger className="min-h-[44px]">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {DATE_RANGE_OPTIONS.map(opt => (
-                          <SelectItem key={opt.value} value={String(opt.value)}>{opt.label}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+            <div className="glass-card rounded-2xl p-5 space-y-4">
+              <div className="flex flex-col sm:flex-row gap-3">
+                <div className="flex items-center gap-2 flex-1">
+                  <Filter className="h-4 w-4 text-muted-foreground shrink-0" />
+                  <Select value={String(dateRange)} onValueChange={v => setDateRange(Number(v))}>
+                    <SelectTrigger className="min-h-[44px] bg-secondary/30 border-border/30">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {DATE_RANGE_OPTIONS.map(opt => (
+                        <SelectItem key={opt.value} value={String(opt.value)}>{opt.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Button onClick={autoImportBills} disabled={isScanning} className="min-h-[44px] active:scale-[0.97]">
+                  {isScanning ? (
+                    <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> {importProgress.phase || 'Working...'} {importProgress.total > 0 ? `(${importProgress.current}/${importProgress.total})` : ''}</>
+                  ) : (
+                    <><ScanLine className="h-4 w-4 mr-2" /> Scan & Import All</>
+                  )}
+                </Button>
+              </div>
+
+              {isScanning && importProgress.total > 0 && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-xs text-muted-foreground">
+                    <span>{importProgress.phase}</span>
+                    <span>{importProgress.current}/{importProgress.total}</span>
                   </div>
-                  <Button onClick={autoImportBills} disabled={isScanning} className="min-h-[44px]">
-                    {isScanning ? (
-                      <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> {importProgress.phase || 'Working...'} {importProgress.total > 0 ? `(${importProgress.current}/${importProgress.total})` : ''}</>
-                    ) : (
-                      <><ScanLine className="h-4 w-4 mr-2" /> Scan & Import All</>
+                  <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-primary rounded-full transition-all duration-300"
+                      style={{ width: `${(importProgress.current / importProgress.total) * 100}%` }}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Import Result */}
+          {importResult && !isScanning && (
+            <div className="glass-card rounded-2xl p-5 border border-success/20">
+              <div className="flex items-start gap-3">
+                <CheckCircle2 className="h-6 w-6 text-success shrink-0 mt-0.5" />
+                <div className="space-y-1">
+                  <h3 className="font-semibold text-foreground">Import Complete</h3>
+                  <p className="text-sm text-muted-foreground">
+                    <span className="font-medium text-foreground">{importResult.saved}</span> bill(s) imported successfully.
+                    {importResult.skipped > 0 && (
+                      <> <span className="font-medium text-muted-foreground">{importResult.skipped}</span> skipped (no amount or extraction failed).</>
                     )}
+                  </p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="mt-2 glass-button border-0 active:scale-[0.97]"
+                    onClick={() => navigate('/expenses')}
+                  >
+                    View All Bills →
                   </Button>
                 </div>
-
-                {isScanning && importProgress.total > 0 && (
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between text-xs text-muted-foreground">
-                      <span>{importProgress.phase}</span>
-                      <span>{importProgress.current}/{importProgress.total}</span>
-                    </div>
-                    <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-primary rounded-full transition-all duration-300"
-                        style={{ width: `${(importProgress.current / importProgress.total) * 100}%` }}
-                      />
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           )}
 
-          {importResult && !isScanning && (
-            <Card className="shadow-md border-0 bg-green-500/5">
-              <CardContent className="pt-6">
-                <div className="flex items-start gap-3">
-                  <CheckCircle2 className="h-6 w-6 text-green-500 shrink-0 mt-0.5" />
-                  <div className="space-y-1">
-                    <h3 className="font-semibold text-foreground">Import Complete</h3>
-                    <p className="text-sm text-muted-foreground">
-                      <span className="font-medium text-foreground">{importResult.saved}</span> bill(s) imported successfully.
-                      {importResult.skipped > 0 && (
-                        <> <span className="font-medium text-muted-foreground">{importResult.skipped}</span> skipped (no amount or extraction failed).</>
-                      )}
-                    </p>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="mt-2"
-                      onClick={() => navigate('/expenses')}
-                    >
-                      View All Bills →
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
+          {/* How It Works (not connected) */}
           {!isConnected && (
-            <Card className="shadow-md border-0 bg-primary/5">
-              <CardHeader>
-                <CardTitle className="text-base">How It Works</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
+            <div className="glass-card rounded-2xl p-5 border border-primary/10">
+              <p className="text-sm font-semibold text-foreground mb-4">How It Works</p>
+              <div className="space-y-3">
                 {[
                   { step: '1', title: 'Connect', desc: 'Securely link your Gmail account with read-only access' },
                   { step: '2', title: 'Scan & Import', desc: 'AI scans your inbox, extracts bill details, and auto-imports everything' },
@@ -568,102 +554,100 @@ export default function EmailBills() {
                     </div>
                   </div>
                 ))}
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           )}
 
+          {/* Ready to import state */}
           {isConnected && !isScanning && !importResult && (
-            <Card className="shadow-md border-0">
-              <CardContent className="py-12 text-center">
-                <Mail className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+            <div className="glass-card rounded-2xl p-5">
+              <div className="py-8 text-center">
+                <div className="h-14 w-14 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-3">
+                  <Mail className="h-7 w-7 text-primary" />
+                </div>
                 <h3 className="font-semibold text-foreground mb-1">Ready to import</h3>
-                <p className="text-sm text-muted-foreground mb-4">
+                <p className="text-sm text-muted-foreground max-w-sm mx-auto">
                   Select a date range and click "Scan & Import All" to auto-import bills from your Gmail.
                 </p>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           )}
         </TabsContent>
 
-        {isNative && <TabsContent value="upi" className="space-y-6">
+        {isNative && <TabsContent value="upi" className="space-y-4">
+          {/* Auto Scan */}
           {showNativeScan && (
-            <Card className="shadow-md border-0 bg-primary/5">
-              <CardHeader>
-                <CardTitle className="text-base flex items-center gap-2">
-                  <ScanLine className="h-5 w-5 text-primary" />
-                  Auto Scan UPI SMS
-                </CardTitle>
-                <CardDescription>
-                  Automatically read UPI payment messages from your phone and extract bill details.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Button
-                  onClick={async () => {
-                    setIsAutoScanning(true);
-                    setUpiTransactions([]);
-                    const result = await scanUpiSmsFromDevice();
-                    if (result.error) {
-                      toast({ title: 'Scan failed', description: result.error, variant: 'destructive' });
-                    } else if (result.transactions.length === 0) {
-                      toast({ title: 'No UPI transactions', description: `Scanned ${result.smsCount} UPI messages but found no transactions.` });
-                    } else {
-                      setUpiTransactions(result.transactions);
-                      toast({ title: 'Scan complete', description: `Found ${result.transactions.length} transaction(s) from ${result.smsCount} SMS.` });
-                    }
-                    setIsAutoScanning(false);
-                  }}
-                  disabled={isAutoScanning}
-                  className="w-full min-h-[44px]"
-                >
-                  {isAutoScanning ? (
-                    <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Scanning SMS...</>
-                  ) : (
-                    <><ScanLine className="h-4 w-4 mr-2" /> Scan UPI SMS from Phone</>
-                  )}
-                </Button>
-              </CardContent>
-            </Card>
-          )}
-
-          <Card className="shadow-md border-0">
-            <CardHeader>
-              <CardTitle className="text-base flex items-center gap-2">
-                <Smartphone className="h-5 w-5 text-primary" />
-                {showNativeScan ? 'Or Paste Manually' : 'Paste UPI SMS'}
-              </CardTitle>
-              <CardDescription>
-                Copy UPI payment confirmation SMS from your phone and paste below. You can paste multiple messages at once.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <Textarea
-                placeholder={`Example:\nRs.500.00 debited from A/c XX1234 to SWIGGY on 01-04-25. UPI Ref: 510123456789.\n\nYou can paste multiple SMS messages here...`}
-                value={smsText}
-                onChange={e => setSmsText(e.target.value)}
-                rows={6}
-                className="resize-none text-sm"
-              />
+            <div className="glass-card rounded-2xl p-5 border border-primary/10">
+              <div className="flex items-center gap-2 mb-3">
+                <ScanLine className="h-5 w-5 text-primary" />
+                <h3 className="text-sm font-semibold text-foreground">Auto Scan UPI SMS</h3>
+              </div>
+              <p className="text-xs text-muted-foreground mb-4">
+                Automatically read UPI payment messages from your phone and extract bill details.
+              </p>
               <Button
-                onClick={parseUpiSms}
-                disabled={isParsing || !smsText.trim()}
-                className="w-full min-h-[44px]"
+                onClick={async () => {
+                  setIsAutoScanning(true);
+                  setUpiTransactions([]);
+                  const result = await scanUpiSmsFromDevice();
+                  if (result.error) {
+                    toast({ title: 'Scan failed', description: result.error, variant: 'destructive' });
+                  } else if (result.transactions.length === 0) {
+                    toast({ title: 'No UPI transactions', description: `Scanned ${result.smsCount} UPI messages but found no transactions.` });
+                  } else {
+                    setUpiTransactions(result.transactions);
+                    toast({ title: 'Scan complete', description: `Found ${result.transactions.length} transaction(s) from ${result.smsCount} SMS.` });
+                  }
+                  setIsAutoScanning(false);
+                }}
+                disabled={isAutoScanning}
+                className="w-full min-h-[44px] active:scale-[0.97]"
               >
-                {isParsing ? (
-                  <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Parsing SMS...</>
+                {isAutoScanning ? (
+                  <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Scanning SMS...</>
                 ) : (
-                  <><Send className="h-4 w-4 mr-2" /> Parse UPI SMS</>
+                  <><ScanLine className="h-4 w-4 mr-2" /> Scan UPI SMS from Phone</>
                 )}
               </Button>
-            </CardContent>
-          </Card>
+            </div>
+          )}
 
+          {/* Paste UPI SMS */}
+          <div className="glass-card rounded-2xl p-5 space-y-4">
+            <div className="flex items-center gap-2 mb-1">
+              <Smartphone className="h-5 w-5 text-primary" />
+              <h3 className="text-sm font-semibold text-foreground">
+                {showNativeScan ? 'Or Paste Manually' : 'Paste UPI SMS'}
+              </h3>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Copy UPI payment confirmation SMS from your phone and paste below. You can paste multiple messages at once.
+            </p>
+            <Textarea
+              placeholder={`Example:\nRs.500.00 debited from A/c XX1234 to SWIGGY on 01-04-25. UPI Ref: 510123456789.\n\nYou can paste multiple SMS messages here...`}
+              value={smsText}
+              onChange={e => setSmsText(e.target.value)}
+              rows={6}
+              className="resize-none text-sm bg-secondary/30 border-border/30"
+            />
+            <Button
+              onClick={parseUpiSms}
+              disabled={isParsing || !smsText.trim()}
+              className="w-full min-h-[44px] active:scale-[0.97]"
+            >
+              {isParsing ? (
+                <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Parsing SMS...</>
+              ) : (
+                <><Send className="h-4 w-4 mr-2" /> Parse UPI SMS</>
+              )}
+            </Button>
+          </div>
+
+          {/* UPI How It Works */}
           {upiTransactions.length === 0 && !isParsing && (
-            <Card className="shadow-md border-0 bg-primary/5">
-              <CardHeader>
-                <CardTitle className="text-base">How It Works</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
+            <div className="glass-card rounded-2xl p-5 border border-primary/10">
+              <p className="text-sm font-semibold text-foreground mb-4">How It Works</p>
+              <div className="space-y-3">
                 {[
                   { step: '1', title: 'Copy SMS', desc: 'Open your SMS app and copy UPI payment confirmation messages' },
                   { step: '2', title: 'Paste Here', desc: 'Paste one or more SMS messages in the text box above' },
@@ -680,81 +664,79 @@ export default function EmailBills() {
                     </div>
                   </div>
                 ))}
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           )}
 
+          {/* Parsed UPI Transactions */}
           {upiTransactions.length > 0 && (
             <div className="space-y-3">
-              <h2 className="text-lg font-semibold text-foreground">
+              <h2 className="text-base font-semibold text-foreground">
                 Parsed Transactions ({upiTransactions.length})
               </h2>
               {upiTransactions.map((txn, idx) => (
-                <Card key={idx} className="shadow-sm border-0">
-                  <CardContent className="pt-4 pb-4">
-                    <div className="flex flex-col gap-3">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="flex items-start gap-3 flex-1 min-w-0">
-                          <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${
-                            txn.payment_status === 'success' ? 'bg-green-500/10 text-green-500' :
-                            txn.payment_status === 'failed' ? 'bg-red-500/10 text-red-500' :
-                            'bg-yellow-500/10 text-yellow-500'
-                          }`}>
-                            <IndianRupee className="h-5 w-5" />
-                          </div>
-                          <div className="min-w-0">
-                            <p className="font-semibold text-sm text-foreground truncate">{txn.merchant_name}</p>
-                            <p className="text-xs text-muted-foreground">{txn.description}</p>
-                          </div>
+                <div key={idx} className="glass-card rounded-2xl p-4">
+                  <div className="flex flex-col gap-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-start gap-3 flex-1 min-w-0">
+                        <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${
+                          txn.payment_status === 'success' ? 'bg-success/15 text-success' :
+                          txn.payment_status === 'failed' ? 'bg-destructive/15 text-destructive' :
+                          'bg-warning/15 text-warning'
+                        }`}>
+                          <IndianRupee className="h-5 w-5" />
                         </div>
-                        <div className="text-right shrink-0">
-                          <p className="font-bold text-base tabular-nums text-foreground">
-                            ₹{txn.amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                          </p>
-                          <Badge variant={txn.payment_status === 'success' ? 'default' : 'destructive'} className="text-[10px] mt-1">
-                            {txn.payment_status}
-                          </Badge>
+                        <div className="min-w-0">
+                          <p className="font-semibold text-sm text-foreground truncate">{txn.merchant_name}</p>
+                          <p className="text-xs text-muted-foreground">{txn.description}</p>
                         </div>
                       </div>
-
-                      <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground pl-[52px]">
-                        <span className="flex items-center gap-1">
-                          <Clock className="h-3 w-3" /> {txn.date}
-                        </span>
-                        {txn.upi_id && (
-                          <span className="flex items-center gap-1">
-                            <CreditCard className="h-3 w-3" /> {txn.upi_id}
-                          </span>
-                        )}
-                        {txn.bank_name && <span>{txn.bank_name}</span>}
-                        {txn.transaction_id && <span>Ref: {txn.transaction_id}</span>}
+                      <div className="text-right shrink-0">
+                        <p className="font-bold text-base tabular-nums text-foreground">
+                          ₹{txn.amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                        </p>
+                        <Badge variant={txn.payment_status === 'success' ? 'default' : 'destructive'} className="text-[10px] mt-1">
+                          {txn.payment_status}
+                        </Badge>
                       </div>
-
-                      {txn.payment_status === 'success' && (
-                        <div className="pl-[52px]">
-                          <Button
-                            size="sm"
-                            className="min-h-[40px]"
-                            disabled={savingUpiIdx === idx}
-                            onClick={() => saveUpiAsExpense(txn, idx)}
-                          >
-                            {savingUpiIdx === idx ? (
-                              <><Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> Saving...</>
-                            ) : (
-                              <><Download className="h-3.5 w-3.5 mr-1.5" /> Save as Expense</>
-                            )}
-                          </Button>
-                        </div>
-                      )}
                     </div>
-                  </CardContent>
-                </Card>
+
+                    <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground pl-[52px]">
+                      <span className="flex items-center gap-1">
+                        <Clock className="h-3 w-3" /> {txn.date}
+                      </span>
+                      {txn.upi_id && (
+                        <span className="flex items-center gap-1">
+                          <CreditCard className="h-3 w-3" /> {txn.upi_id}
+                        </span>
+                      )}
+                      {txn.bank_name && <span>{txn.bank_name}</span>}
+                      {txn.transaction_id && <span>Ref: {txn.transaction_id}</span>}
+                    </div>
+
+                    {txn.payment_status === 'success' && (
+                      <div className="pl-[52px]">
+                        <Button
+                          size="sm"
+                          className="min-h-[40px] active:scale-[0.97]"
+                          disabled={savingUpiIdx === idx}
+                          onClick={() => saveUpiAsExpense(txn, idx)}
+                        >
+                          {savingUpiIdx === idx ? (
+                            <><Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> Saving...</>
+                          ) : (
+                            <><Download className="h-3.5 w-3.5 mr-1.5" /> Save as Expense</>
+                          )}
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                </div>
               ))}
             </div>
           )}
         </TabsContent>}
       </Tabs>
-
     </div>
   );
 }
