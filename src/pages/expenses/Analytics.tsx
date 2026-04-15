@@ -204,7 +204,7 @@ export default function Analytics() {
   }
 
   return (
-    <div className="space-y-4 sm:space-y-6 pb-20">
+    <div className="space-y-4 sm:space-y-6 pb-20 animate-fade-in">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
@@ -213,7 +213,7 @@ export default function Analytics() {
         </div>
         <div className="flex gap-2">
           <Select value={displayCurrency} onValueChange={setDisplayCurrency}>
-            <SelectTrigger className="w-[100px] border-0 shadow-md bg-card min-h-[44px]">
+            <SelectTrigger className="w-[100px] border-0 glass-card min-h-[44px]">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -223,7 +223,7 @@ export default function Analytics() {
             </SelectContent>
           </Select>
           <Select value={timeRange} onValueChange={setTimeRange}>
-            <SelectTrigger className="w-[130px] border-0 shadow-md bg-card min-h-[44px]">
+            <SelectTrigger className="w-[130px] border-0 glass-card min-h-[44px]">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -247,7 +247,7 @@ export default function Analytics() {
 
       {/* Currency Breakdown */}
       {currencyBreakdown.length > 1 && (
-        <Card className="shadow-md border-0">
+        <Card className="glass-card border-0 rounded-2xl">
           <CardHeader className="pb-2">
             <CardTitle className="text-base sm:text-lg flex items-center gap-2">
               <Coins className="h-5 w-5 text-primary" /> Multi-Currency Breakdown
@@ -291,7 +291,7 @@ export default function Analytics() {
       {(taxDiscountStats.totalTax > 0 || taxDiscountStats.totalDiscount > 0) && (
         <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
           {taxDiscountStats.totalTax > 0 && (
-            <Card className="shadow-md border-0">
+            <Card className="glass-card border-0 rounded-2xl">
               <CardHeader className="pb-2">
                 <CardTitle className="text-base sm:text-lg flex items-center gap-2">
                   <Percent className="h-5 w-5 text-primary" /> Tax Summary
@@ -316,7 +316,7 @@ export default function Analytics() {
             </Card>
           )}
           {taxDiscountStats.totalDiscount > 0 && (
-            <Card className="shadow-md border-0">
+            <Card className="glass-card border-0 rounded-2xl">
               <CardHeader className="pb-2">
                 <CardTitle className="text-base sm:text-lg flex items-center gap-2">
                   <Tag className="h-5 w-5 text-emerald-500" /> Discount Summary
