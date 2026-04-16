@@ -79,8 +79,9 @@ Rules:
 
     const isPdf = mimeType === "application/pdf";
 
-    // Use Gemini for both images and PDFs — it supports inline PDF via image_url data URI
-    const model = "google/gemini-2.5-flash";
+    // Use GPT-5-mini for PDFs (Gemini fails with "document has no pages" on PDFs via OpenAI-compatible API)
+    // Use Gemini for images which it handles well
+    const model = isPdf ? "openai/gpt-5-mini" : "google/gemini-2.5-flash";
 
     const userContent: any[] = [
       {
@@ -95,7 +96,9 @@ Rules:
       },
     ];
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    console.log("Using model:", model, "for mime type:", mimeType);
+
+    let response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${LOVABLE_API_KEY}`,
@@ -109,6 +112,26 @@ Rules:
         ],
       }),
     });
+
+    // Fallback: if primary model fails for PDF, try the other model
+    if (!response.ok && response.status === 400) {
+      const fallbackModel = isPdf ? "google/gemini-2.5-pro" : "openai/gpt-5-mini";
+      console.log("Primary model failed, falling back to:", fallbackModel);
+      response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${LOVABLE_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: fallbackModel,
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: userContent },
+          ],
+        }),
+      });
+    }
 
     if (!response.ok) {
       if (response.status === 429) {
