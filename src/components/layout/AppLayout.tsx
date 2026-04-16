@@ -2,15 +2,20 @@ import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from './AppSidebar';
 import { BottomNav } from './BottomNav';
 import PageTransition from './PageTransition';
+import { useTheme } from '@/hooks/useTheme';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
+  const { theme } = useTheme();
+  const headerStyle = theme === 'light'
+    ? { background: 'hsla(0, 0%, 100%, 0.7)', backdropFilter: 'blur(32px) saturate(1.6)', borderBottom: '1px solid hsla(160, 10%, 80%, 0.3)', boxShadow: '0 1px 3px hsla(0,0%,0%,0.04)' }
+    : { background: 'hsla(160, 12%, 10%, 0.5)', backdropFilter: 'blur(32px) saturate(1.6)', borderBottom: '1px solid hsla(160, 10%, 40%, 0.1)', boxShadow: 'inset 0 -1px 0 0 hsla(0,0%,0%,0.1)' };
+
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-background">
         <AppSidebar />
         <div className="flex-1 flex flex-col min-w-0">
-          {/* Desktop header */}
-          <header className="h-12 sm:h-14 hidden md:flex items-center px-4" style={{ background: 'hsla(160, 12%, 10%, 0.5)', backdropFilter: 'blur(32px) saturate(1.6)', borderBottom: '1px solid hsla(160, 10%, 40%, 0.1)', boxShadow: 'inset 0 -1px 0 0 hsla(0,0%,0%,0.1)' }}>
+          <header className="h-12 sm:h-14 hidden md:flex items-center px-4" style={headerStyle}>
             <SidebarTrigger className="mr-4 text-muted-foreground hover:text-foreground" />
             <div className="flex items-center gap-2">
               <span className="text-lg font-bold text-gold-gradient">EZ Bill</span>
