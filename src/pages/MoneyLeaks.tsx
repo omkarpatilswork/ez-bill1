@@ -253,7 +253,6 @@ export default function MoneyLeaks() {
     const catExpenses = expenses.filter(e => {
       if (new Date(e.expense_date) < monthStart) return false;
       const text = `${(e as any).expense_categories?.name || ''} ${e.merchant || ''} ${e.cost_center || ''}`.toLowerCase();
-      const { toLeakCategory } = require('@/lib/leak-engine');
       return toLeakCategory(text) === activeCategory;
     });
     const dailyMap: Record<string, number> = {};
