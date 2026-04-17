@@ -129,6 +129,7 @@ Rules:
       if (!res.ok) {
         const t = await res.text();
         console.error("Suggestions error:", res.status, t);
+        // Always return 200 with fallback suggestions so the client never errors
         return new Response(JSON.stringify({ suggestions: [
           "What's my total spending?",
           "Which category costs the most?",
