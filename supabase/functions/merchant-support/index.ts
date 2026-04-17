@@ -46,13 +46,74 @@ interface SupportData {
   };
 }
 
+function buildFallbackSupportData({
+  merchantName,
+  merchantAddress,
+  category,
+  fallbackSource,
+}: {
+  merchantName: string;
+  merchantAddress?: string | null;
+  category?: string | null;
+  fallbackSource: string;
+}): SupportData {
+  return {
+    merchant: {
+      name: merchantName,
+      normalized_name: merchantName,
+      logo_url: null,
+      category: category || "other",
+    },
+    contact: {
+      phone: null,
+      phone_confidence: "low",
+      email: null,
+      email_confidence: "low",
+      working_hours: null,
+    },
+    website: {
+      official_url: null,
+      support_url: null,
+      help_center_url: null,
+      track_order_url: null,
+    },
+    location: {
+      address: merchantAddress || null,
+      address_confidence: merchantAddress ? "high" : "low",
+      google_maps_url: `https://www.google.com/maps/search/${encodeURIComponent(merchantName)}`,
+    },
+    returns_warranty: {
+      return_eligible: null,
+      return_window_days: null,
+      exchange_policy: null,
+      warranty_duration: null,
+      warranty_conditions: null,
+      policy_url: null,
+      tags: [],
+    },
+    confidence_scores: {
+      overall: "low",
+      sources: ["bill data", fallbackSource],
+    },
+  };
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
+  let merchantName = "";
+  let merchantAddress: string | null = null;
+  let merchantCategory: string | null = null;
+
   try {
-    const { merchant_name, merchant_address, purchase_date, items, category } = await req.json();
+    const requestData = await req.json();
+    const { merchant_name, merchant_address, purchase_date, items, category } = requestData;
+
+    merchantName = merchant_name ?? "";
+    merchantAddress = merchant_address ?? null;
+    merchantCategory = category ?? null;
 
     if (!merchant_name || merchant_name.trim() === "") {
       return new Response(
@@ -63,7 +124,15 @@ serve(async (req) => {
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
-      throw new Error("LOVABLE_API_KEY is not configured");
+      console.error("merchant-support error: LOVABLE_API_KEY is not configured");
+      return new Response(JSON.stringify(buildFallbackSupportData({
+        merchantName: merchant_name,
+        merchantAddress: merchant_address,
+        category,
+        fallbackSource: "system fallback: ai unavailable",
+      })), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     const itemsList = items && items.length > 0
@@ -163,20 +232,21 @@ For warranty/returns, use these category defaults ONLY if exact policy unknown (
     });
 
     if (!response.ok) {
-      if (response.status === 429) {
-        return new Response(JSON.stringify({ error: "Rate limited, please try again later." }), {
-          status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      if (response.status === 402) {
-        return new Response(JSON.stringify({ error: "Credits exhausted. Please add funds." }), {
-          status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
       const errText = await response.text();
       console.error("AI gateway error:", response.status, errText);
-      return new Response(JSON.stringify({ error: "AI enrichment failed", detail: errText }), {
-        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      const fallbackSource = response.status === 402
+        ? "system fallback: credits exhausted"
+        : response.status === 429
+          ? "system fallback: rate limited"
+          : "system fallback: ai enrichment unavailable";
+
+      return new Response(JSON.stringify(buildFallbackSupportData({
+        merchantName: merchant_name,
+        merchantAddress: merchant_address,
+        category,
+        fallbackSource,
+      })), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
@@ -191,38 +261,12 @@ For warranty/returns, use these category defaults ONLY if exact policy unknown (
       supportData = JSON.parse(jsonMatch[0]);
     } catch {
       console.error("Failed to parse AI response:", content);
-      // Return minimal fallback
-      supportData = {
-        merchant: {
-          name: merchant_name,
-          normalized_name: merchant_name,
-          logo_url: null,
-          category: category || "other",
-        },
-        contact: {
-          phone: null, phone_confidence: "low",
-          email: null, email_confidence: "low",
-          working_hours: null,
-        },
-        website: {
-          official_url: null, support_url: null,
-          help_center_url: null, track_order_url: null,
-        },
-        location: {
-          address: merchant_address || null,
-          address_confidence: merchant_address ? "high" : "low",
-          google_maps_url: `https://www.google.com/maps/search/${encodeURIComponent(merchant_name)}`,
-        },
-        returns_warranty: {
-          return_eligible: null, return_window_days: null,
-          exchange_policy: null, warranty_duration: null,
-          warranty_conditions: null, policy_url: null, tags: [],
-        },
-        confidence_scores: {
-          overall: "low",
-          sources: ["ai estimation"],
-        },
-      };
+      supportData = buildFallbackSupportData({
+        merchantName: merchant_name,
+        merchantAddress: merchant_address,
+        category,
+        fallbackSource: "system fallback: invalid ai response",
+      });
     }
 
     // Ensure google maps URL always exists
@@ -238,6 +282,18 @@ For warranty/returns, use these category defaults ONLY if exact policy unknown (
     });
   } catch (e) {
     console.error("merchant-support error:", e);
+
+    if (merchantName.trim()) {
+      return new Response(JSON.stringify(buildFallbackSupportData({
+        merchantName,
+        merchantAddress,
+        category: merchantCategory,
+        fallbackSource: "system fallback: unexpected error",
+      })), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     return new Response(
       JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
