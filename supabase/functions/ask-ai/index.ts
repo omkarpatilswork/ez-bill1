@@ -175,23 +175,28 @@ Rules:
     });
 
     if (!response.ok) {
-      if (response.status === 429) {
-        return new Response(JSON.stringify({ error: "Rate limit exceeded. Please try again later." }), {
-          status: 429,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      if (response.status === 402) {
-        return new Response(JSON.stringify({ error: "AI credits exhausted. Please add funds." }), {
-          status: 402,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      const t = await response.text();
+      const t = await response.text().catch(() => "");
       console.error("AI gateway error:", response.status, t);
-      return new Response(JSON.stringify({ error: "AI service error" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+
+      let fallbackMessage = "⚠️ The AI assistant is temporarily unavailable. Please try again in a moment.";
+      if (response.status === 402) {
+        fallbackMessage = "⚠️ AI credits have been exhausted for this workspace. Please add funds in **Settings → Workspace → Usage** to continue using Ask AI.";
+      } else if (response.status === 429) {
+        fallbackMessage = "⚠️ Too many requests right now. Please wait a few seconds and try again.";
+      }
+
+      // Return a synthetic SSE stream so the client renders a friendly message instead of crashing
+      const encoder = new TextEncoder();
+      const stream = new ReadableStream({
+        start(controller) {
+          const chunk = { choices: [{ delta: { content: fallbackMessage } }] };
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify(chunk)}\n\n`));
+          controller.enqueue(encoder.encode(`data: [DONE]\n\n`));
+          controller.close();
+        },
+      });
+      return new Response(stream, {
+        headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
       });
     }
 
