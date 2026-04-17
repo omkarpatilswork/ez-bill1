@@ -180,7 +180,27 @@ export default function MerchantSupport() {
         });
 
         if (fnError) throw fnError;
-        setSupportData(data);
+        if (!data) throw new Error('No support data returned.');
+
+        const nextSupportData = data as SupportData;
+        setSupportData(nextSupportData);
+
+        const fallbackSource = nextSupportData.confidence_scores?.sources?.find((source) =>
+          source.startsWith('system fallback:'),
+        );
+
+        if (fallbackSource) {
+          const description = fallbackSource.includes('credits exhausted')
+            ? 'AI enrichment is unavailable right now, so basic bill details are shown instead.'
+            : fallbackSource.includes('rate limited')
+              ? 'Live enrichment is busy right now, so basic bill details are shown instead.'
+              : 'Some support info is temporarily unavailable, so we loaded the safest available details.';
+
+          toast({
+            title: 'Limited support info',
+            description,
+          });
+        }
       } catch (e) {
         console.error('Enrichment error:', e);
         // Provide minimal fallback
