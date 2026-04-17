@@ -356,14 +356,23 @@ export type Database = {
       }
       profiles: {
         Row: {
+          age_group: string | null
+          city_tier: string | null
           country: string | null
           created_at: string
           default_currency: string
           department: string
           display_name: string
+          financial_goal: string | null
           full_name: string
           id: string
+          income_range: string | null
+          job_type: string | null
+          living_situation: string | null
           manager_id: string | null
+          money_profile_completed: boolean
+          monthly_emi: number | null
+          monthly_rent: number | null
           onboarding_completed: boolean
           phone: string | null
           phone_verified: boolean
@@ -371,14 +380,23 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          age_group?: string | null
+          city_tier?: string | null
           country?: string | null
           created_at?: string
           default_currency?: string
           department?: string
           display_name?: string
+          financial_goal?: string | null
           full_name?: string
           id: string
+          income_range?: string | null
+          job_type?: string | null
+          living_situation?: string | null
           manager_id?: string | null
+          money_profile_completed?: boolean
+          monthly_emi?: number | null
+          monthly_rent?: number | null
           onboarding_completed?: boolean
           phone?: string | null
           phone_verified?: boolean
@@ -386,14 +404,23 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          age_group?: string | null
+          city_tier?: string | null
           country?: string | null
           created_at?: string
           default_currency?: string
           department?: string
           display_name?: string
+          financial_goal?: string | null
           full_name?: string
           id?: string
+          income_range?: string | null
+          job_type?: string | null
+          living_situation?: string | null
           manager_id?: string | null
+          money_profile_completed?: boolean
+          monthly_emi?: number | null
+          monthly_rent?: number | null
           onboarding_completed?: boolean
           phone?: string | null
           phone_verified?: boolean

@@ -1,0 +1,11 @@
+
+ALTER TABLE public.profiles
+  ADD COLUMN IF NOT EXISTS income_range TEXT,
+  ADD COLUMN IF NOT EXISTS age_group TEXT,
+  ADD COLUMN IF NOT EXISTS city_tier TEXT,
+  ADD COLUMN IF NOT EXISTS living_situation TEXT,
+  ADD COLUMN IF NOT EXISTS job_type TEXT,
+  ADD COLUMN IF NOT EXISTS financial_goal TEXT,
+  ADD COLUMN IF NOT EXISTS monthly_rent NUMERIC,
+  ADD COLUMN IF NOT EXISTS monthly_emi NUMERIC,
+  ADD COLUMN IF NOT EXISTS money_profile_completed BOOLEAN NOT NULL DEFAULT false;
