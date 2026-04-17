@@ -18,8 +18,8 @@ import {
 import ReactMarkdown from 'react-markdown';
 import type { Expense } from '@/lib/types';
 import {
-  computeLeaks, computeIdealBudget, safeDailySpend,
-  type MoneyProfile, type LeakResult, type CategoryLeak,
+  computeLeaks, computeIdealBudget, safeDailySpend, toLeakCategory,
+  type MoneyProfile, type LeakResult,
 } from '@/lib/leak-engine';
 import MoneyProfileQuiz from '@/components/money-leaks/MoneyProfileQuiz';
 
