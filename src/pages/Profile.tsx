@@ -394,3 +394,33 @@ function MoneyField({ label, value, onChange, options }: {
     </div>
   );
 }
+
+function PersonaChip({ emoji, text, tone }: { emoji: string; text: string; tone?: 'primary' }) {
+  if (!text || text === '—') return null;
+  return (
+    <span className={`inline-flex items-center gap-1 text-[11px] font-medium px-2 py-1 rounded-full border ${
+      tone === 'primary'
+        ? 'bg-primary/15 border-primary/30 text-primary'
+        : 'bg-muted/40 border-border/60 text-foreground/80'
+    }`}>
+      <span>{emoji}</span>
+      <span className="truncate max-w-[120px]">{text}</span>
+    </span>
+  );
+}
+
+function StatTile({ emoji, label, value, accent }: { emoji: string; label: string; value: string; accent?: boolean }) {
+  return (
+    <div className={`rounded-xl p-3 border ${
+      accent
+        ? 'bg-accent/10 border-accent/30'
+        : 'bg-card/60 border-border/50'
+    }`}>
+      <div className="flex items-center gap-1.5 mb-1">
+        <span className="text-sm">{emoji}</span>
+        <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">{label}</p>
+      </div>
+      <p className={`text-sm font-semibold truncate ${accent ? 'text-accent' : 'text-foreground'}`}>{value}</p>
+    </div>
+  );
+}
