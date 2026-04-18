@@ -9,7 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import {
   Droplets, ArrowLeft, Utensils, ShoppingBag, Plane, Tv, CreditCard,
   Sparkles, Send, Share2, Target, Lightbulb, ArrowDownRight, ArrowUpRight,
-  Loader2, Settings, Wallet, AlertTriangle, Zap, TrendingDown, Bell,
+  Loader2, Settings, Wallet, AlertTriangle, Zap, TrendingDown, Bell, Repeat, ChevronRight,
 } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -21,6 +21,7 @@ import {
   computeLeaks, computeIdealBudget, safeDailySpend, toLeakCategory,
   type MoneyProfile, type LeakResult,
 } from '@/lib/leak-engine';
+import { detectSubscriptions } from '@/lib/subscription-engine';
 import MoneyProfileQuiz from '@/components/money-leaks/MoneyProfileQuiz';
 
 const CAT_ICONS: Record<string, any> = {
