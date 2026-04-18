@@ -134,21 +134,16 @@ Rules:
     }
 
     if (!response.ok) {
-      if (response.status === 429) {
-        return new Response(JSON.stringify({ error: "Rate limited, please try again later." }), {
-          status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      if (response.status === 402) {
-        return new Response(JSON.stringify({ error: "Credits exhausted. Please add funds." }), {
-          status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      const errText = await response.text();
+      const errText = await response.text().catch(() => "");
       console.error("AI gateway error:", response.status, errText);
-      return new Response(JSON.stringify({ error: "AI extraction failed", detail: errText }), {
-        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      let message = "AI extraction failed. Please fill in the details manually.";
+      if (response.status === 429) message = "AI is busy right now. Please try again in a moment or fill in details manually.";
+      if (response.status === 402) message = "AI credits exhausted for this workspace. Please add funds in Settings → Workspace → Usage, or fill in details manually.";
+      // Return 200 with a fallback flag so the client shows a toast instead of crashing with a runtime error overlay.
+      return new Response(
+        JSON.stringify({ error: message, fallback: true, upstream_status: response.status }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     const result = await response.json();
