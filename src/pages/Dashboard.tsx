@@ -306,6 +306,28 @@ export default function Dashboard() {
         <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
       </button>
 
+      {/* ━━━ 2b. SUBSCRIPTIONS CARD ━━━ */}
+      <button
+        onClick={() => navigate('/subscriptions')}
+        className="w-full rounded-xl p-3.5 text-left transition-all active:scale-[0.98] flex items-center gap-3"
+        style={{
+          background: 'hsla(280, 50%, 25%, 0.12)',
+          border: '1px solid hsla(280, 60%, 55%, 0.15)',
+        }}
+      >
+        <div className="h-9 w-9 rounded-lg flex items-center justify-center shrink-0"
+          style={{ background: 'hsla(280, 60%, 55%, 0.15)' }}>
+          <Repeat className="h-4 w-4" style={{ color: 'hsl(280, 70%, 70%)' }} />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-semibold text-foreground">Subscriptions</p>
+          <p className="text-xs text-muted-foreground mt-0.5 truncate">
+            Find recurring charges &amp; cancel what you don't use
+          </p>
+        </div>
+        <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
+      </button>
+
       {/* ━━━ 3. QUICK ACTIONS ━━━ */}
       <div>
         <h2 className="text-sm font-semibold text-foreground mb-2.5">Quick Actions</h2>
