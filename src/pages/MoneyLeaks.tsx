@@ -9,7 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import {
   Droplets, ArrowLeft, Utensils, ShoppingBag, Plane, Tv, CreditCard,
   Sparkles, Send, Share2, Target, Lightbulb, ArrowDownRight, ArrowUpRight,
-  Loader2, Settings, Wallet, AlertTriangle, Zap, TrendingDown, Bell,
+  Loader2, Settings, Wallet, AlertTriangle, Zap, TrendingDown, Bell, Repeat, ChevronRight,
 } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -21,6 +21,7 @@ import {
   computeLeaks, computeIdealBudget, safeDailySpend, toLeakCategory,
   type MoneyProfile, type LeakResult,
 } from '@/lib/leak-engine';
+import { detectSubscriptions } from '@/lib/subscription-engine';
 import MoneyProfileQuiz from '@/components/money-leaks/MoneyProfileQuiz';
 
 const CAT_ICONS: Record<string, any> = {
@@ -100,6 +101,13 @@ export default function MoneyLeaks() {
   }, [profile, expenses]);
 
   const ideal = useMemo(() => profile ? computeIdealBudget(profile) : null, [profile]);
+
+  const subSummary = useMemo(() => {
+    return detectSubscriptions(expenses.map(e => ({
+      id: e.id, amount: Number(e.amount), expense_date: e.expense_date,
+      merchant: e.merchant, title: e.title,
+    })));
+  }, [expenses]);
 
   const lastTotal = useMemo(() => {
     if (!profile) return 0;
@@ -462,6 +470,30 @@ export default function MoneyLeaks() {
             ))}
           </div>
         </div>
+      )}
+
+      {/* SUBSCRIPTION LEAK */}
+      {subSummary.subscriptions.length > 0 && (
+        <button onClick={() => navigate('/subscriptions')}
+          className="w-full glass-card rounded-2xl p-4 text-left hover:bg-secondary/40 active:bg-secondary/60 transition-colors">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+              <Repeat className="h-5 w-5 text-primary" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center justify-between mb-0.5">
+                <span className="text-sm font-semibold text-foreground">Subscription Leak</span>
+                <span className="text-sm font-bold text-destructive tabular-nums">
+                  ₹{subSummary.leakMonthly.toLocaleString('en-IN')}/mo
+                </span>
+              </div>
+              <p className="text-[11px] text-muted-foreground">
+                {subSummary.subscriptions.length} subs · {subSummary.subscriptions.filter(s => s.status !== 'active').length} unused / duplicate
+              </p>
+            </div>
+            <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
+          </div>
+        </button>
       )}
 
       {/* 4. SURVIVAL MODE */}
