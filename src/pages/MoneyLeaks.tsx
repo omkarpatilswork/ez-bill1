@@ -102,6 +102,13 @@ export default function MoneyLeaks() {
 
   const ideal = useMemo(() => profile ? computeIdealBudget(profile) : null, [profile]);
 
+  const subSummary = useMemo(() => {
+    return detectSubscriptions(expenses.map(e => ({
+      id: e.id, amount: Number(e.amount), expense_date: e.expense_date,
+      merchant: e.merchant, title: e.title,
+    })));
+  }, [expenses]);
+
   const lastTotal = useMemo(() => {
     if (!profile) return 0;
     const now = new Date();
