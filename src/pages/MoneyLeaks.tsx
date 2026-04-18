@@ -41,7 +41,6 @@ export default function MoneyLeaks() {
   const [profile, setProfile] = useState<MoneyProfile | null>(null);
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [loading, setLoading] = useState(true);
-  const [editingProfile, setEditingProfile] = useState(false);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
 
   /* Survival mode */
@@ -149,7 +148,6 @@ export default function MoneyLeaks() {
       return;
     }
     setProfile(data);
-    setEditingProfile(false);
     toast({ title: 'Money profile saved 🎯', description: 'Your personalized leak insights are ready.' });
   };
 
@@ -227,12 +225,12 @@ export default function MoneyLeaks() {
     );
   }
 
-  /* Show quiz if no profile yet OR user is editing */
-  if (!profile?.money_profile_completed || editingProfile) {
+  /* Show quiz only on first time (profile not yet completed) */
+  if (!profile?.money_profile_completed) {
     return (
       <div className="space-y-5 max-w-2xl mx-auto pb-24">
         <div className="flex items-center gap-3">
-          <button onClick={() => editingProfile ? setEditingProfile(false) : navigate('/')}
+          <button onClick={() => navigate('/')}
             className="h-9 w-9 rounded-full bg-secondary flex items-center justify-center text-muted-foreground hover:text-foreground">
             <ArrowLeft className="h-4 w-4" />
           </button>
@@ -356,7 +354,7 @@ export default function MoneyLeaks() {
           </div>
         </div>
         <div className="flex items-center gap-1">
-          <Button size="sm" variant="ghost" onClick={() => setEditingProfile(true)} className="text-muted-foreground">
+          <Button size="sm" variant="ghost" onClick={() => navigate('/profile')} className="text-muted-foreground" title="Edit money profile in Account">
             <Settings className="h-4 w-4" />
           </Button>
           <Button size="sm" variant="ghost" onClick={shareSummary} className="text-muted-foreground">
@@ -410,6 +408,19 @@ export default function MoneyLeaks() {
           </Button>
         )}
       </div>
+
+      {/* Profile entry point */}
+      <button
+        onClick={() => navigate('/profile')}
+        className="w-full glass-card rounded-xl px-4 py-2.5 flex items-center justify-between text-left hover:bg-secondary/40 transition-colors"
+      >
+        <span className="text-xs text-muted-foreground truncate mr-2">
+          Personalized for: <span className="text-foreground font-medium">{profile?.financial_goal || '—'}</span> · {profile?.city_tier?.replace('_', ' ') || '—'} · {profile?.living_situation || '—'}
+        </span>
+        <span className="flex items-center gap-1 text-xs text-primary font-medium shrink-0">
+          Edit <ChevronRight className="h-3 w-3" />
+        </span>
+      </button>
 
       {/* 2. TOP LEAK CATEGORIES */}
       <div>
