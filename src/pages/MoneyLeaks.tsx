@@ -41,7 +41,6 @@ export default function MoneyLeaks() {
   const [profile, setProfile] = useState<MoneyProfile | null>(null);
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [loading, setLoading] = useState(true);
-  const [editingProfile, setEditingProfile] = useState(false);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
 
   /* Survival mode */
