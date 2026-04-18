@@ -237,28 +237,35 @@ export default function Profile() {
       )}
 
       {/* Money Profile */}
-      <div className="glass-card rounded-2xl p-5 space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Droplets className="h-4 w-4 text-primary" />
-            <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Money Profile</h3>
+      <div className="rounded-2xl overflow-hidden border border-primary/20 bg-gradient-to-br from-primary/10 via-card to-card">
+        {/* Header band */}
+        <div className="px-5 pt-5 pb-4 flex items-start justify-between gap-3">
+          <div className="flex items-start gap-3">
+            <div className="h-10 w-10 rounded-xl bg-primary/20 flex items-center justify-center ring-1 ring-primary/30">
+              <Droplets className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <h3 className="text-sm font-semibold text-foreground">Money Profile</h3>
+              <p className="text-[11px] text-muted-foreground mt-0.5">Powers your personalized leak insights</p>
+            </div>
           </div>
           {!editingMoney && moneyCompleted && (
-            <Button variant="ghost" size="sm" className="h-7 px-2 text-xs text-primary" onClick={() => setEditingMoney(true)}>
+            <Button variant="ghost" size="sm" className="h-8 px-2.5 text-xs text-primary hover:bg-primary/10 active:scale-95" onClick={() => setEditingMoney(true)}>
               <Pencil className="h-3 w-3 mr-1" /> Edit
             </Button>
           )}
         </div>
 
+        <div className="px-5 pb-5">
         {!moneyCompleted && !editingMoney ? (
-          <div className="text-center py-2 space-y-3">
+          <div className="text-center py-4 space-y-3 border-t border-border/40 pt-5">
             <p className="text-sm text-muted-foreground">Set up your money profile to unlock personalized leak insights.</p>
             <Button size="sm" onClick={() => navigate('/money-leaks')} className="active:scale-95">
               <Sparkles className="h-3.5 w-3.5 mr-1.5" /> Set up now
             </Button>
           </div>
         ) : editingMoney ? (
-          <div className="space-y-4 animate-fade-in">
+          <div className="space-y-4 animate-fade-in border-t border-border/40 pt-4">
             <MoneyField label="Monthly Income" value={income} onChange={setIncome} options={INCOME_OPTIONS} />
             <MoneyField label="Age Group" value={age} onChange={setAge} options={AGE_OPTIONS} />
             <MoneyField label="City Tier" value={city} onChange={setCity} options={CITY_OPTIONS} />
@@ -283,17 +290,54 @@ export default function Profile() {
             </div>
           </div>
         ) : (
-          <div className="space-y-0.5">
-            <DetailRow icon={<span className="text-base">💸</span>} label="Monthly Income" value={labelOf(INCOME_OPTIONS, income)} />
-            <DetailRow icon={<span className="text-base">🎂</span>} label="Age Group" value={labelOf(AGE_OPTIONS, age)} />
-            <DetailRow icon={<span className="text-base">🏙️</span>} label="City Tier" value={labelOf(CITY_OPTIONS, city)} />
-            <DetailRow icon={<span className="text-base">🏠</span>} label="Living Situation" value={labelOf(LIVING_OPTIONS, living)} />
-            <DetailRow icon={<span className="text-base">💼</span>} label="Job Type" value={labelOf(JOB_OPTIONS, job)} />
-            <DetailRow icon={<span className="text-base">🎯</span>} label="Financial Goal" value={labelOf(GOAL_OPTIONS, goal)} />
-            {rent && <DetailRow icon={<span className="text-base">🏡</span>} label="Monthly Rent" value={`₹${Number(rent).toLocaleString('en-IN')}`} />}
-            {emi && <DetailRow icon={<span className="text-base">💳</span>} label="Monthly EMI" value={`₹${Number(emi).toLocaleString('en-IN')}`} />}
+          <div className="space-y-4">
+            {/* Persona summary chip */}
+            <div className="flex flex-wrap gap-1.5">
+              <PersonaChip emoji="🎯" text={labelOf(GOAL_OPTIONS, goal)} tone="primary" />
+              <PersonaChip emoji="🏙️" text={labelOf(CITY_OPTIONS, city).split(' (')[0]} />
+              <PersonaChip emoji="💼" text={labelOf(JOB_OPTIONS, job)} />
+              <PersonaChip emoji="🏠" text={labelOf(LIVING_OPTIONS, living)} />
+            </div>
+
+            {/* Featured stat tiles */}
+            <div className="grid grid-cols-2 gap-2.5">
+              <StatTile
+                emoji="💸"
+                label="Monthly Income"
+                value={labelOf(INCOME_OPTIONS, income)}
+                accent
+              />
+              <StatTile
+                emoji="🎂"
+                label="Age Group"
+                value={labelOf(AGE_OPTIONS, age)}
+              />
+              {rent && (
+                <StatTile
+                  emoji="🏡"
+                  label="Rent"
+                  value={`₹${Number(rent).toLocaleString('en-IN')}`}
+                />
+              )}
+              {emi && (
+                <StatTile
+                  emoji="💳"
+                  label="EMI"
+                  value={`₹${Number(emi).toLocaleString('en-IN')}`}
+                />
+              )}
+            </div>
+
+            {/* Footer hint */}
+            <button
+              onClick={() => setEditingMoney(true)}
+              className="w-full text-[11px] text-muted-foreground hover:text-primary transition-colors pt-1 flex items-center justify-center gap-1"
+            >
+              <Pencil className="h-3 w-3" /> Tap edit to update any field
+            </button>
           </div>
         )}
+        </div>
       </div>
 
       {/* Appearance */}
