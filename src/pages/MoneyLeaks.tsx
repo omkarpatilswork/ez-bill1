@@ -409,6 +409,19 @@ export default function MoneyLeaks() {
         )}
       </div>
 
+      {/* Profile entry point */}
+      <button
+        onClick={() => navigate('/profile')}
+        className="w-full glass-card rounded-xl px-4 py-2.5 flex items-center justify-between text-left hover:bg-secondary/40 transition-colors"
+      >
+        <span className="text-xs text-muted-foreground truncate mr-2">
+          Personalized for: <span className="text-foreground font-medium">{profile?.financial_goal || '—'}</span> · {profile?.city_tier?.replace('_', ' ') || '—'} · {profile?.living_situation || '—'}
+        </span>
+        <span className="flex items-center gap-1 text-xs text-primary font-medium shrink-0">
+          Edit <ChevronRight className="h-3 w-3" />
+        </span>
+      </button>
+
       {/* 2. TOP LEAK CATEGORIES */}
       <div>
         <h2 className="text-base font-semibold text-foreground mb-3 flex items-center gap-2">
