@@ -23,6 +23,7 @@ import Onboarding from "./pages/Onboarding";
 import TermsAndConditions from "./pages/TermsAndConditions";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import MoneyLeaks from "./pages/MoneyLeaks";
+import Subscriptions from "./pages/Subscriptions";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -52,6 +53,7 @@ const App = () => (
           <Route path="/ask-ai" element={<ProtectedRoute><AppLayout><AskAI /></AppLayout></ProtectedRoute>} />
           <Route path="/profile" element={<ProtectedRoute><AppLayout><Profile /></AppLayout></ProtectedRoute>} />
           <Route path="/money-leaks" element={<ProtectedRoute><AppLayout><MoneyLeaks /></AppLayout></ProtectedRoute>} />
+          <Route path="/subscriptions" element={<ProtectedRoute><AppLayout><Subscriptions /></AppLayout></ProtectedRoute>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
