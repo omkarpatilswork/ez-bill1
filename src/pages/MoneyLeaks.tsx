@@ -472,6 +472,30 @@ export default function MoneyLeaks() {
         </div>
       )}
 
+      {/* SUBSCRIPTION LEAK */}
+      {subSummary.subscriptions.length > 0 && (
+        <button onClick={() => navigate('/subscriptions')}
+          className="w-full glass-card rounded-2xl p-4 text-left hover:bg-secondary/40 active:bg-secondary/60 transition-colors">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+              <Repeat className="h-5 w-5 text-primary" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center justify-between mb-0.5">
+                <span className="text-sm font-semibold text-foreground">Subscription Leak</span>
+                <span className="text-sm font-bold text-destructive tabular-nums">
+                  ₹{subSummary.leakMonthly.toLocaleString('en-IN')}/mo
+                </span>
+              </div>
+              <p className="text-[11px] text-muted-foreground">
+                {subSummary.subscriptions.length} subs · {subSummary.subscriptions.filter(s => s.status !== 'active').length} unused / duplicate
+              </p>
+            </div>
+            <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
+          </div>
+        </button>
+      )}
+
       {/* 4. SURVIVAL MODE */}
       <div>
         <h2 className="text-base font-semibold text-foreground mb-3 flex items-center gap-2">
