@@ -53,10 +53,11 @@ export function computeShares(
       itemSubtotal: 0, taxShare: 0, discountShare: 0,
       amount: Math.round(share * 100) / 100,
     }));
-    // adjust last to sum to total
     const sum = rounded.reduce((s, r) => s + r.amount, 0);
     const diff = Math.round((totals.total - sum) * 100) / 100;
-    if (rounded.length > 0) rounded[rounded.length - 1].amount = Math.round((rounded[rounded.length - 1].amount + diff) * 100) / 100;
+    if (rounded.length > 0 && Math.abs(diff) >= 0.01 && Math.abs(diff) <= 1) {
+      rounded[0].amount = Math.round((rounded[0].amount + diff) * 100) / 100;
+    }
     return rounded;
   }
 
@@ -97,11 +98,20 @@ export function computeShares(
     };
   });
 
-  // Rounding adjustment: ensure sum == total
+  // Rounding adjustment: only nudge by cents (≤ ₹1) to make sum == total.
+  // Larger gaps mean the bill total doesn't match line items + tax - discount
+  // (e.g. service charge, tip, or missing items) — do NOT force-match by
+  // dumping the diff onto the last person, that creates negative shares.
   const sum = shares.reduce((s, r) => s + r.amount, 0);
   const diff = Math.round((totals.total - sum) * 100) / 100;
-  if (shares.length > 0 && Math.abs(diff) >= 0.01) {
-    shares[shares.length - 1].amount = Math.round((shares[shares.length - 1].amount + diff) * 100) / 100;
+  if (shares.length > 0 && Math.abs(diff) >= 0.01 && Math.abs(diff) <= 1) {
+    // Apply the rounding nudge to the participant with the largest share
+    // (keeps everyone non-negative).
+    let maxIdx = 0;
+    for (let i = 1; i < shares.length; i++) {
+      if (shares[i].amount > shares[maxIdx].amount) maxIdx = i;
+    }
+    shares[maxIdx].amount = Math.round((shares[maxIdx].amount + diff) * 100) / 100;
   }
   return shares;
 }
