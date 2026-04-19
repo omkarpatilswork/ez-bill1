@@ -97,6 +97,7 @@ export type Database = {
           id: string
           is_self: boolean
           items: Json | null
+          status: string
           user_id: string
         }
         Insert: {
@@ -108,6 +109,7 @@ export type Database = {
           id?: string
           is_self?: boolean
           items?: Json | null
+          status?: string
           user_id: string
         }
         Update: {
@@ -119,6 +121,7 @@ export type Database = {
           id?: string
           is_self?: boolean
           items?: Json | null
+          status?: string
           user_id?: string
         }
         Relationships: [
@@ -436,6 +439,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      split_payments: {
+        Row: {
+          amount: number
+          created_at: string
+          direction: string
+          friend_id: string | null
+          friend_name: string
+          id: string
+          note: string | null
+          paid_at: string
+          user_id: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          direction?: string
+          friend_id?: string | null
+          friend_name: string
+          id?: string
+          note?: string | null
+          paid_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          direction?: string
+          friend_id?: string | null
+          friend_name?: string
+          id?: string
+          note?: string | null
+          paid_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       user_roles: {
         Row: {

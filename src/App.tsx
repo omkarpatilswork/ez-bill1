@@ -24,6 +24,8 @@ import TermsAndConditions from "./pages/TermsAndConditions";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import MoneyLeaks from "./pages/MoneyLeaks";
 import Subscriptions from "./pages/Subscriptions";
+import Splits from "./pages/Splits";
+import SplitFriendDetail from "./pages/SplitFriendDetail";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -54,6 +56,8 @@ const App = () => (
           <Route path="/profile" element={<ProtectedRoute><AppLayout><Profile /></AppLayout></ProtectedRoute>} />
           <Route path="/money-leaks" element={<ProtectedRoute><AppLayout><MoneyLeaks /></AppLayout></ProtectedRoute>} />
           <Route path="/subscriptions" element={<ProtectedRoute><AppLayout><Subscriptions /></AppLayout></ProtectedRoute>} />
+          <Route path="/splits" element={<ProtectedRoute><AppLayout><Splits /></AppLayout></ProtectedRoute>} />
+          <Route path="/splits/friend/:friendKey" element={<ProtectedRoute><AppLayout><SplitFriendDetail /></AppLayout></ProtectedRoute>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

@@ -136,8 +136,8 @@ export default function Dashboard() {
   const maxCatAmount = Math.max(...categoryData.map(d => d.amount), 1);
 
   const quickActions = [
-    { label: 'Upload Bill', icon: Upload, path: '/expenses/bulk-upload', color: 'text-primary' },
-    { label: 'Scan Bill', icon: Camera, path: '/expenses/new', color: 'text-gold' },
+    { label: 'Split', icon: UsersIcon, path: '/splits', color: 'text-primary' },
+    { label: 'Subscriptions', icon: Repeat, path: '/subscriptions', color: 'text-gold' },
     { label: 'Sync Gmail', icon: Mail, path: '/email-bills', color: 'text-info' },
     { label: 'WhatsApp', icon: MessageCircle, path: '/email-bills?tab=upi', color: 'text-primary' },
   ];
