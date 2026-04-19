@@ -53,10 +53,11 @@ export function computeShares(
       itemSubtotal: 0, taxShare: 0, discountShare: 0,
       amount: Math.round(share * 100) / 100,
     }));
-    // adjust last to sum to total
     const sum = rounded.reduce((s, r) => s + r.amount, 0);
     const diff = Math.round((totals.total - sum) * 100) / 100;
-    if (rounded.length > 0) rounded[rounded.length - 1].amount = Math.round((rounded[rounded.length - 1].amount + diff) * 100) / 100;
+    if (rounded.length > 0 && Math.abs(diff) >= 0.01 && Math.abs(diff) <= 1) {
+      rounded[0].amount = Math.round((rounded[0].amount + diff) * 100) / 100;
+    }
     return rounded;
   }
 
