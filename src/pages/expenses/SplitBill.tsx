@@ -5,7 +5,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, UserPlus, Check, AlertCircle, Users, Equal, ListChecks } from 'lucide-react';
+import { ArrowLeft, UserPlus, Check, Users, Equal, ListChecks, X, ChevronDown, Settings2 } from 'lucide-react';
 import { computeShares, validateCustomSplit, type SplitLineItem, type SplitParticipant, type SplitTotals } from '@/lib/split-engine';
 
 interface Friend { id: string; name: string; phone?: string; email?: string; }
@@ -27,8 +27,6 @@ function parseField(d: string | null | undefined, k: string): string {
   return m ? m[1].trim() : '';
 }
 
-type Step = 'friends' | 'assign' | 'confirm';
-
 export default function SplitBill() {
   const { id } = useParams<{ id: string }>();
   const { user, profile } = useAuth();
@@ -39,11 +37,13 @@ export default function SplitBill() {
   const [items, setItems] = useState<SplitLineItem[]>([]);
   const [friends, setFriends] = useState<Friend[]>([]);
   const [participants, setParticipants] = useState<SplitParticipant[]>([]);
-  const [step, setStep] = useState<Step>('friends');
   const [mode, setMode] = useState<'equal' | 'custom'>('equal');
   const [taxMode, setTaxMode] = useState<'proportional' | 'equal'>('proportional');
   const [showAddFriend, setShowAddFriend] = useState(false);
   const [newFriend, setNewFriend] = useState({ name: '', phone: '', email: '' });
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [showFriendPicker, setShowFriendPicker] = useState(false);
+  const [tryConfirm, setTryConfirm] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -56,6 +56,9 @@ export default function SplitBill() {
     return { subtotal, tax, discount, total };
   }, [expense]);
 
+  // Whether tax/discount distribution is meaningful
+  const hasTaxOrDiscount = totals.tax > 0.005 || totals.discount > 0.005;
+
   useEffect(() => {
     if (!id || !user) return;
     (async () => {
@@ -66,11 +69,11 @@ export default function SplitBill() {
       ]);
       const exp = expRes.data as any;
       setExpense(exp);
-      setItems(parseStoredLineItems(exp?.description));
+      const parsedItems = parseStoredLineItems(exp?.description);
+      setItems(parsedItems);
       setFriends((friendsRes.data as any[]) || []);
       const existing = (splitsRes.data as any[]) || [];
 
-      // Always include self
       const selfP: SplitParticipant = {
         id: 'self', name: profile?.full_name?.split(' ')[0] || 'You', isSelf: true, items: [],
       };
@@ -84,10 +87,11 @@ export default function SplitBill() {
         }));
         setParticipants(all);
         const allEqual = existing.every((s: any) => Math.abs(Number(s.amount) - Number(existing[0].amount)) < 0.01);
-        setMode(allEqual ? 'equal' : 'custom');
-        setStep('confirm');
+        setMode(allEqual && parsedItems.length === 0 ? 'equal' : (parsedItems.length > 0 ? 'custom' : 'equal'));
       } else {
         setParticipants([selfP]);
+        // Default to custom when line items exist
+        setMode(parsedItems.length > 0 ? 'custom' : 'equal');
       }
       setLoading(false);
     })();
@@ -98,6 +102,11 @@ export default function SplitBill() {
       if (prev.find(p => p.id === f.id)) return prev.filter(p => p.id !== f.id);
       return [...prev, { id: f.id, name: f.name, isSelf: false, items: [] }];
     });
+  };
+
+  const removeParticipant = (pid: string) => {
+    if (pid === 'self') return; // Can't remove self
+    setParticipants(prev => prev.filter(p => p.id !== pid));
   };
 
   const handleCreateFriend = async () => {
@@ -125,6 +134,13 @@ export default function SplitBill() {
     }));
   };
 
+  const assignAll = (itemIdx: number) => {
+    setParticipants(prev => prev.map(p => ({
+      ...p,
+      items: p.items.includes(itemIdx) ? p.items : [...p.items, itemIdx],
+    })));
+  };
+
   const shares = useMemo(
     () => computeShares(participants, items, totals, mode, taxMode),
     [participants, items, totals, mode, taxMode]
@@ -134,14 +150,14 @@ export default function SplitBill() {
     [mode, participants, items]
   );
   const assigned = shares.reduce((s, x) => s + x.amount, 0);
-  const remaining = Math.round((totals.total - assigned) * 100) / 100;
 
   const handleConfirm = async () => {
     if (!user || !id) return;
-    if (participants.length === 0) {
-      toast({ title: 'Add at least one person', variant: 'destructive' }); return;
+    if (participants.length < 2) {
+      toast({ title: 'Add at least one friend', variant: 'destructive' }); return;
     }
     if (mode === 'custom' && !validation.valid) {
+      setTryConfirm(true);
       toast({ title: 'Cannot save', description: validation.error, variant: 'destructive' }); return;
     }
     setSaving(true);
@@ -175,21 +191,11 @@ export default function SplitBill() {
     </div>
   );
 
-  // Step nav
-  const StepDot = ({ active, done, label, n }: { active: boolean; done: boolean; label: string; n: number }) => (
-    <div className="flex flex-col items-center flex-1">
-      <div className={`h-7 w-7 rounded-full flex items-center justify-center text-[11px] font-bold transition-all ${
-        done ? 'bg-success text-success-foreground' :
-        active ? 'bg-primary text-primary-foreground' : 'bg-secondary/40 text-muted-foreground'
-      }`}>
-        {done ? <Check className="h-3.5 w-3.5" /> : n}
-      </div>
-      <span className={`text-[10px] mt-1 ${active ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>{label}</span>
-    </div>
-  );
+  const availableFriends = friends.filter(f => !participants.find(p => p.id === f.id));
 
   return (
-    <div className="max-w-2xl mx-auto space-y-4 pb-32 animate-fade-in">
+    <div className="max-w-2xl mx-auto space-y-3 pb-44 animate-fade-in">
+      {/* Header */}
       <div className="flex items-center gap-2">
         <Button variant="ghost" size="sm" className="h-8 px-2" onClick={() => navigate(-1)}>
           <ArrowLeft className="h-4 w-4" />
@@ -198,234 +204,200 @@ export default function SplitBill() {
           <h1 className="text-base font-bold text-foreground truncate">{expense?.merchant || expense?.title || 'Split Bill'}</h1>
           <p className="text-[11px] text-muted-foreground">
             ₹{totals.total.toLocaleString('en-IN', { minimumFractionDigits: 2 })} total
+            {items.length > 0 && ` · ${items.length} items`}
           </p>
         </div>
       </div>
 
-      {/* Stepper */}
-      <div className="flex items-center gap-2 px-2">
-        <StepDot n={1} label="People" active={step === 'friends'} done={step !== 'friends'} />
-        <div className="h-px flex-1 bg-border/40" />
-        <StepDot n={2} label="Assign" active={step === 'assign'} done={step === 'confirm'} />
-        <div className="h-px flex-1 bg-border/40" />
-        <StepDot n={3} label="Confirm" active={step === 'confirm'} done={false} />
+      {/* Mode toggle - top */}
+      <div className="glass-card rounded-2xl p-1 grid grid-cols-2 gap-1">
+        <button onClick={() => setMode('equal')}
+          className={`py-2.5 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${
+            mode === 'equal' ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground'
+          }`}>
+          <Equal className="h-3.5 w-3.5" /> Equal Split
+        </button>
+        <button onClick={() => setMode('custom')} disabled={items.length === 0}
+          className={`py-2.5 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all disabled:opacity-40 ${
+            mode === 'custom' ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground'
+          }`}>
+          <ListChecks className="h-3.5 w-3.5" /> Custom Split
+        </button>
       </div>
 
-      {/* STEP 1: FRIENDS */}
-      {step === 'friends' && (
-        <div className="space-y-3">
-          <div className="glass-card rounded-2xl p-4 space-y-2">
-            <p className="text-xs font-semibold text-foreground flex items-center gap-1.5"><Users className="h-3.5 w-3.5" /> Selected ({participants.length})</p>
-            <div className="flex flex-wrap gap-2">
-              {participants.map(p => (
-                <div key={p.id} className={`px-3 py-1.5 rounded-full text-xs font-medium ${
-                  p.isSelf ? 'bg-primary text-primary-foreground' : 'bg-accent text-accent-foreground'
-                }`}>
-                  {p.isSelf ? `${p.name} (you)` : p.name}
-                </div>
-              ))}
-            </div>
-          </div>
+      {/* PEOPLE - always visible at top */}
+      <div className="glass-card rounded-2xl p-4 space-y-3">
+        <div className="flex items-center justify-between">
+          <p className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+            <Users className="h-3.5 w-3.5" /> People ({participants.length})
+          </p>
+          <button onClick={() => setShowFriendPicker(v => !v)}
+            className="text-[11px] text-primary font-semibold flex items-center gap-1 active:scale-95">
+            <UserPlus className="h-3.5 w-3.5" /> Add
+          </button>
+        </div>
 
-          <div>
-            <p className="text-xs font-semibold text-foreground mb-2">Tap to add friends</p>
-            <div className="flex flex-wrap gap-2">
-              {friends.map(f => {
-                const sel = !!participants.find(p => p.id === f.id);
-                return (
+        <div className="flex flex-wrap gap-1.5">
+          {participants.map(p => (
+            <div key={p.id} className={`group flex items-center gap-1 pl-3 pr-1 py-1 rounded-full text-xs font-medium ${
+              p.isSelf ? 'bg-primary text-primary-foreground' : 'bg-accent text-accent-foreground'
+            }`}>
+              <span>{p.isSelf ? `${p.name} (you)` : p.name}</span>
+              {!p.isSelf && (
+                <button onClick={() => removeParticipant(p.id)}
+                  className="h-5 w-5 rounded-full flex items-center justify-center hover:bg-background/30 active:scale-90">
+                  <X className="h-3 w-3" />
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+
+        {showFriendPicker && (
+          <div className="space-y-2 pt-2 border-t border-border/30">
+            {availableFriends.length > 0 && (
+              <div className="flex flex-wrap gap-1.5">
+                {availableFriends.map(f => (
                   <button key={f.id} onClick={() => toggleFriend(f)}
-                    className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all active:scale-95 ${
-                      sel ? 'bg-primary text-primary-foreground' : 'glass-button border-0 text-muted-foreground hover:text-foreground'
-                    }`}>
-                    {sel && <Check className="h-3 w-3 inline mr-1" />}{f.name}
+                    className="px-3 py-1.5 rounded-full text-xs font-medium glass-button border-0 text-muted-foreground hover:text-foreground active:scale-95">
+                    + {f.name}
                   </button>
-                );
-              })}
+                ))}
+              </div>
+            )}
+            {!showAddFriend ? (
               <button onClick={() => setShowAddFriend(true)}
-                className="px-3 py-1.5 rounded-full border border-dashed border-border/50 text-xs text-muted-foreground hover:text-foreground active:scale-95">
-                <UserPlus className="h-3 w-3 inline mr-1" /> New
+                className="w-full px-3 py-2 rounded-xl border border-dashed border-border/50 text-xs text-muted-foreground hover:text-foreground active:scale-[0.98] flex items-center justify-center gap-1.5">
+                <UserPlus className="h-3.5 w-3.5" /> Create new friend
               </button>
-            </div>
+            ) : (
+              <div className="space-y-2 p-3 rounded-xl bg-secondary/20">
+                <Input placeholder="Name *" value={newFriend.name}
+                  onChange={e => setNewFriend(p => ({ ...p, name: e.target.value }))}
+                  className="h-9 bg-secondary/40 border-border/30 text-xs" />
+                <div className="grid grid-cols-2 gap-2">
+                  <Input placeholder="Phone" value={newFriend.phone}
+                    onChange={e => setNewFriend(p => ({ ...p, phone: e.target.value }))}
+                    className="h-9 bg-secondary/40 border-border/30 text-xs" />
+                  <Input placeholder="Email" type="email" value={newFriend.email}
+                    onChange={e => setNewFriend(p => ({ ...p, email: e.target.value }))}
+                    className="h-9 bg-secondary/40 border-border/30 text-xs" />
+                </div>
+                <div className="flex gap-2">
+                  <Button size="sm" className="h-8 text-xs" onClick={handleCreateFriend} disabled={!newFriend.name.trim()}>Add</Button>
+                  <Button size="sm" variant="ghost" className="h-8 text-xs" onClick={() => { setShowAddFriend(false); setNewFriend({ name: '', phone: '', email: '' }); }}>Cancel</Button>
+                </div>
+              </div>
+            )}
           </div>
+        )}
+      </div>
 
-          {showAddFriend && (
-            <div className="glass-card rounded-2xl p-4 space-y-2">
-              <Input placeholder="Name *" value={newFriend.name}
-                onChange={e => setNewFriend(p => ({ ...p, name: e.target.value }))}
-                className="h-10 bg-secondary/30 border-border/30" />
+      {/* CUSTOM: line items */}
+      {mode === 'custom' && items.length > 0 && (
+        <div className="space-y-2">
+          {items.map((item, iIdx) => {
+            const noOne = !participants.some(p => p.items.includes(iIdx));
+            const showError = tryConfirm && noOne;
+            return (
+              <div key={iIdx} className={`glass-card rounded-xl p-3 transition-all ${showError ? 'ring-1 ring-destructive/60' : ''}`}>
+                <div className="flex items-start justify-between mb-2 gap-2">
+                  <p className="text-sm font-medium text-foreground flex-1 min-w-0 truncate">{item.name}</p>
+                  <span className="text-sm font-bold text-foreground tabular-nums">₹{Number(item.total_price).toLocaleString('en-IN')}</span>
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {participants.map(p => {
+                    const sel = p.items.includes(iIdx);
+                    return (
+                      <button key={p.id} onClick={() => toggleItem(p.id, iIdx)}
+                        className={`px-2.5 py-1 rounded-full text-[11px] font-medium transition-all active:scale-95 ${
+                          sel ? 'bg-primary text-primary-foreground' : 'bg-secondary/40 text-muted-foreground hover:bg-secondary/60'
+                        }`}>
+                        {sel && <Check className="h-2.5 w-2.5 inline mr-0.5" />}
+                        {p.isSelf ? 'You' : p.name.split(' ')[0]}
+                      </button>
+                    );
+                  })}
+                  {participants.length > 1 && (
+                    <button onClick={() => assignAll(iIdx)}
+                      className="px-2.5 py-1 rounded-full text-[11px] font-medium border border-dashed border-border/50 text-muted-foreground hover:text-foreground active:scale-95">
+                      All
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Advanced: tax/discount mode (only if applicable) */}
+      {mode === 'custom' && hasTaxOrDiscount && (
+        <div className="glass-card rounded-2xl overflow-hidden">
+          <button onClick={() => setShowAdvanced(v => !v)}
+            className="w-full px-4 py-3 flex items-center justify-between text-xs font-medium text-muted-foreground active:bg-secondary/20">
+            <span className="flex items-center gap-1.5">
+              <Settings2 className="h-3.5 w-3.5" /> Advanced · Tax & discount split
+            </span>
+            <ChevronDown className={`h-3.5 w-3.5 transition-transform ${showAdvanced ? 'rotate-180' : ''}`} />
+          </button>
+          {showAdvanced && (
+            <div className="px-4 pb-4 space-y-2">
+              <p className="text-[10px] text-muted-foreground">
+                How to share the ₹{(totals.tax - totals.discount).toFixed(2)} of tax/discount.
+              </p>
               <div className="grid grid-cols-2 gap-2">
-                <Input placeholder="Phone" value={newFriend.phone}
-                  onChange={e => setNewFriend(p => ({ ...p, phone: e.target.value }))}
-                  className="h-10 bg-secondary/30 border-border/30" />
-                <Input placeholder="Email" type="email" value={newFriend.email}
-                  onChange={e => setNewFriend(p => ({ ...p, email: e.target.value }))}
-                  className="h-10 bg-secondary/30 border-border/30" />
-              </div>
-              <div className="flex gap-2">
-                <Button size="sm" onClick={handleCreateFriend} disabled={!newFriend.name.trim()}>Add</Button>
-                <Button size="sm" variant="ghost" onClick={() => setShowAddFriend(false)}>Cancel</Button>
+                {(['proportional', 'equal'] as const).map(m => (
+                  <button key={m} onClick={() => setTaxMode(m)}
+                    className={`py-2 rounded-lg text-[11px] font-medium capitalize ${
+                      taxMode === m ? 'bg-primary text-primary-foreground' : 'bg-secondary/40 text-muted-foreground'
+                    }`}>{m}</button>
+                ))}
               </div>
             </div>
           )}
         </div>
       )}
 
-      {/* STEP 2: ASSIGN */}
-      {step === 'assign' && (
-        <div className="space-y-3">
-          {/* Mode toggle */}
-          <div className="grid grid-cols-2 gap-2">
-            <button onClick={() => setMode('equal')}
-              className={`p-3 rounded-2xl text-left transition-all active:scale-[0.98] ${
-                mode === 'equal' ? 'bg-primary/15 border border-primary/40' : 'glass-card border-0'
-              }`}>
-              <Equal className={`h-4 w-4 mb-1 ${mode === 'equal' ? 'text-primary' : 'text-muted-foreground'}`} />
-              <p className="text-xs font-semibold text-foreground">Equal Split</p>
-              <p className="text-[10px] text-muted-foreground">Divide total equally</p>
-            </button>
-            <button onClick={() => setMode('custom')} disabled={items.length === 0}
-              className={`p-3 rounded-2xl text-left transition-all active:scale-[0.98] disabled:opacity-50 ${
-                mode === 'custom' ? 'bg-primary/15 border border-primary/40' : 'glass-card border-0'
-              }`}>
-              <ListChecks className={`h-4 w-4 mb-1 ${mode === 'custom' ? 'text-primary' : 'text-muted-foreground'}`} />
-              <p className="text-xs font-semibold text-foreground">Custom Split</p>
-              <p className="text-[10px] text-muted-foreground">{items.length === 0 ? 'No line items' : 'Pick items per person'}</p>
-            </button>
-          </div>
-
+      {/* Live shares */}
+      <div className="glass-card rounded-2xl p-4">
+        <div className="flex items-center justify-between mb-2">
+          <p className="text-xs font-semibold text-foreground">Each person pays</p>
           {mode === 'custom' && items.length > 0 && (
-            <>
-              {/* Header validation */}
-              <div className="glass-card rounded-2xl p-4">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-muted-foreground">Assigned</span>
-                  <span className={`font-bold tabular-nums ${Math.abs(remaining) < 0.5 ? 'text-success' : 'text-gold'}`}>
-                    ₹{assigned.toLocaleString('en-IN', { minimumFractionDigits: 2 })} / ₹{totals.total.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                  </span>
-                </div>
-                {(totals.tax > 0 || totals.discount > 0) && (
-                  <div className="mt-3 flex items-center justify-between text-[11px]">
-                    <span className="text-muted-foreground">Tax & discount split</span>
-                    <div className="flex gap-1">
-                      {(['proportional', 'equal'] as const).map(m => (
-                        <button key={m} onClick={() => setTaxMode(m)}
-                          className={`px-2 py-1 rounded-md text-[10px] font-medium ${
-                            taxMode === m ? 'bg-primary text-primary-foreground' : 'bg-secondary/40 text-muted-foreground'
-                          }`}>{m}</button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Line items with chip per participant */}
-              <div className="space-y-2">
-                {items.map((item, iIdx) => {
-                  const noOne = !participants.some(p => p.items.includes(iIdx));
-                  return (
-                    <div key={iIdx} className={`glass-card rounded-xl p-3 ${noOne ? 'ring-1 ring-destructive/40' : ''}`}>
-                      <div className="flex items-start justify-between mb-2">
-                        <p className="text-sm font-medium text-foreground flex-1 min-w-0 truncate pr-2">{item.name}</p>
-                        <span className="text-sm font-bold text-foreground tabular-nums">₹{Number(item.total_price).toLocaleString('en-IN')}</span>
-                      </div>
-                      <div className="flex flex-wrap gap-1.5">
-                        {participants.map(p => {
-                          const sel = p.items.includes(iIdx);
-                          return (
-                            <button key={p.id} onClick={() => toggleItem(p.id, iIdx)}
-                              className={`px-2.5 py-1 rounded-full text-[11px] font-medium transition-all active:scale-95 ${
-                                sel ? 'bg-primary text-primary-foreground' : 'bg-secondary/40 text-muted-foreground hover:bg-secondary/60'
-                              }`}>
-                              {sel && <Check className="h-2.5 w-2.5 inline mr-0.5" />}
-                              {p.isSelf ? 'You' : p.name.split(' ')[0]}
-                            </button>
-                          );
-                        })}
-                      </div>
-                      {noOne && (
-                        <p className="text-[10px] text-destructive mt-1.5 flex items-center gap-1">
-                          <AlertCircle className="h-3 w-3" /> Assign at least one person
-                        </p>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </>
+            <span className={`text-[10px] font-semibold tabular-nums ${validation.valid ? 'text-success' : 'text-muted-foreground'}`}>
+              ₹{assigned.toFixed(2)} / ₹{totals.total.toFixed(2)}
+            </span>
           )}
-
-          {/* Live shares */}
-          <div className="glass-card rounded-2xl p-4 space-y-1.5">
-            <p className="text-xs font-semibold text-foreground mb-1">Live shares</p>
-            {shares.map((s, i) => (
-              <div key={s.id + i} className="flex items-center justify-between text-sm">
-                <span className="text-foreground">{s.isSelf ? 'You' : s.name}</span>
-                <span className="font-bold text-gold tabular-nums">
-                  ₹{s.amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                </span>
-              </div>
-            ))}
-          </div>
         </div>
-      )}
-
-      {/* STEP 3: CONFIRM */}
-      {step === 'confirm' && (
-        <div className="space-y-3">
-          <div className="glass-card rounded-2xl p-5">
-            <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium mb-3">Final breakdown</p>
-            {shares.map((s, i) => (
-              <div key={s.id + i} className="flex items-center justify-between py-2 border-b border-border/20 last:border-0">
-                <div className="flex items-center gap-3">
-                  <div className={`h-8 w-8 rounded-full flex items-center justify-center text-[10px] font-bold ${
-                    s.isSelf ? 'bg-primary text-primary-foreground' : 'bg-accent text-accent-foreground'
-                  }`}>
-                    {s.isSelf ? 'YOU' : s.name.slice(0, 2).toUpperCase()}
-                  </div>
-                  <span className="text-sm font-medium text-foreground">{s.isSelf ? 'You' : s.name}</span>
+        <div className="space-y-1.5">
+          {shares.map((s, i) => (
+            <div key={s.id + i} className="flex items-center justify-between text-sm py-1">
+              <div className="flex items-center gap-2">
+                <div className={`h-7 w-7 rounded-full flex items-center justify-center text-[10px] font-bold ${
+                  s.isSelf ? 'bg-primary text-primary-foreground' : 'bg-accent text-accent-foreground'
+                }`}>
+                  {s.isSelf ? 'YOU' : s.name.slice(0, 2).toUpperCase()}
                 </div>
-                <span className="text-base font-bold text-gold tabular-nums">
-                  ₹{s.amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                </span>
+                <span className="text-foreground">{s.isSelf ? 'You' : s.name}</span>
               </div>
-            ))}
-            <div className="flex items-center justify-between pt-3 mt-2 border-t border-border/30">
-              <span className="text-sm font-semibold text-foreground">Total</span>
-              <span className="text-base font-bold text-foreground tabular-nums">
-                ₹{totals.total.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+              <span className="font-bold text-gold tabular-nums">
+                ₹{s.amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
               </span>
             </div>
-          </div>
+          ))}
         </div>
-      )}
+      </div>
 
-      {/* Footer nav */}
+      {/* Footer - confirm */}
       <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/85 backdrop-blur-xl border-t border-border/30 z-40">
-        <div className="max-w-2xl mx-auto flex gap-2">
-          {step !== 'friends' && (
-            <Button variant="outline" className="flex-1 glass-button border-0"
-              onClick={() => setStep(step === 'confirm' ? 'assign' : 'friends')}>
-              Back
-            </Button>
-          )}
-          {step === 'friends' && (
-            <Button className="flex-1" disabled={participants.length < 2}
-              onClick={() => setStep('assign')}>
-              Continue
-            </Button>
-          )}
-          {step === 'assign' && (
-            <Button className="flex-1"
-              disabled={mode === 'custom' && !validation.valid}
-              onClick={() => setStep('confirm')}>
-              {mode === 'custom' && !validation.valid ? validation.error : 'Review'}
-            </Button>
-          )}
-          {step === 'confirm' && (
-            <Button className="flex-1" onClick={handleConfirm} disabled={saving}>
-              <Check className="h-4 w-4 mr-2" /> {saving ? 'Saving…' : 'Confirm Split'}
-            </Button>
-          )}
+        <div className="max-w-2xl mx-auto">
+          <Button className="w-full h-11" onClick={handleConfirm}
+            disabled={saving || participants.length < 2}>
+            <Check className="h-4 w-4 mr-2" />
+            {saving ? 'Saving…' :
+              participants.length < 2 ? 'Add at least one friend' :
+              'Confirm Split'}
+          </Button>
         </div>
       </div>
     </div>
