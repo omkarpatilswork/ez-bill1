@@ -354,8 +354,9 @@ export default function MoneyLeaks() {
           </div>
         </div>
         <div className="flex items-center gap-1">
-          <Button size="sm" variant="ghost" onClick={() => navigate('/profile')} className="text-muted-foreground" title="Edit money profile in Account">
+          <Button size="sm" variant="ghost" onClick={() => navigate('/profile')} className="text-muted-foreground gap-1.5" title="Edit your money profile in Account">
             <Settings className="h-4 w-4" />
+            <span className="hidden sm:inline text-xs">Edit profile</span>
           </Button>
           <Button size="sm" variant="ghost" onClick={shareSummary} className="text-muted-foreground">
             <Share2 className="h-4 w-4" />
