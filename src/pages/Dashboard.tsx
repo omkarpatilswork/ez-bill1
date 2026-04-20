@@ -138,7 +138,7 @@ export default function Dashboard() {
   const quickActions = [
     { label: 'Split', icon: UsersIcon, path: '/splits', color: 'text-primary' },
     { label: 'Subscriptions', icon: Repeat, path: '/subscriptions', color: 'text-gold' },
-    { label: 'Sync Gmail', icon: Mail, path: '/email-bills', color: 'text-info' },
+    { label: 'Support', icon: Headphones, path: '/support', color: 'text-info' },
     { label: 'WhatsApp', icon: MessageCircle, path: '/email-bills?tab=upi', color: 'text-primary' },
   ];
 
