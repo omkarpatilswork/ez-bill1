@@ -132,7 +132,9 @@ export default function MoneyLeaks() {
   /* Save profile */
   const saveProfile = async (data: MoneyProfile) => {
     if (!user) return;
-    const { error } = await supabase.from('profiles').update({
+    // Use upsert so it works even if a profile row doesn't yet exist for this user
+    const { error } = await supabase.from('profiles').upsert({
+      id: user.id,
       income_range: data.income_range,
       age_group: data.age_group,
       city_tier: data.city_tier,
@@ -142,12 +144,12 @@ export default function MoneyLeaks() {
       monthly_rent: data.monthly_rent ?? null,
       monthly_emi: data.monthly_emi ?? null,
       money_profile_completed: true,
-    }).eq('id', user.id);
+    } as any, { onConflict: 'id' });
     if (error) {
       toast({ title: 'Could not save', description: error.message, variant: 'destructive' });
       return;
     }
-    setProfile(data);
+    setProfile({ ...data, money_profile_completed: true });
     toast({ title: 'Money profile saved 🎯', description: 'Your personalized leak insights are ready.' });
   };
 
