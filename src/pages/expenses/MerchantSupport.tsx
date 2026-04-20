@@ -531,57 +531,9 @@ export default function MerchantSupport() {
         </div>
       )}
 
-      {/* ─── Location ─── */}
-      {loading ? <SectionSkeleton /> : hasLocation ? (
-        <div className="glass-card rounded-2xl p-5 space-y-3">
-          <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium flex items-center gap-1.5">
-            <MapPin className="h-3 w-3" /> Location
-          </p>
+      {/* ─── Location section removed per user request ─── */}
 
-          {supportData!.location.address && (
-            <div className="flex items-start gap-3 p-3 rounded-xl bg-secondary/30">
-              <MapPin className="h-4 w-4 text-red-400 shrink-0 mt-0.5" />
-              <div className="flex-1">
-                <span className="text-sm text-foreground">{supportData!.location.address}</span>
-                <div className="mt-1">
-                  <ConfidenceBadge level={supportData!.location.address_confidence} />
-                </div>
-              </div>
-            </div>
-          )}
-
-          {supportData!.location.google_maps_url && (
-            <a href={supportData!.location.google_maps_url} target="_blank" rel="noopener noreferrer"
-              className="flex items-center gap-3 p-3 rounded-xl bg-secondary/30 hover:bg-secondary/50 transition-all active:scale-[0.98]">
-              <div className="h-9 w-9 rounded-xl bg-red-500/10 flex items-center justify-center shrink-0">
-                <MapPin className="h-4 w-4 text-red-400" />
-              </div>
-              <span className="text-sm text-foreground flex-1">Open in Google Maps</span>
-              <ExternalLink className="h-3.5 w-3.5 text-muted-foreground" />
-            </a>
-          )}
-        </div>
-      ) : null}
-
-      {/* ─── Bill Insights ─── */}
-      {!loading && billContext && billContext.items.length > 0 && (
-        <div className="glass-card rounded-2xl p-5 space-y-3">
-          <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium flex items-center gap-1.5">
-            <Package className="h-3 w-3" /> Items on this Bill
-          </p>
-          <div className="space-y-2">
-            {billContext.items.slice(0, 5).map((item: any, i: number) => (
-              <div key={i} className="flex items-center justify-between p-2.5 rounded-lg bg-secondary/20">
-                <span className="text-sm text-foreground truncate flex-1 mr-2">{item.name}</span>
-                <span className="text-xs text-muted-foreground shrink-0">×{item.quantity || 1}</span>
-              </div>
-            ))}
-            {billContext.items.length > 5 && (
-              <p className="text-xs text-muted-foreground text-center">+{billContext.items.length - 5} more items</p>
-            )}
-          </div>
-        </div>
-      )}
+      {/* ─── Bill Insights section removed per user request ─── */}
 
       {/* ─── Data Sources ─── */}
       {!loading && supportData?.confidence_scores.sources && supportData.confidence_scores.sources.length > 0 && (
@@ -593,15 +545,7 @@ export default function MerchantSupport() {
         </div>
       )}
 
-      {/* ─── Google Search Fallback ─── */}
-      {!loading && (
-        <a href={`https://www.google.com/search?q=${encodeURIComponent((supportData?.merchant.normalized_name || billContext?.merchant || '') + ' customer support returns warranty India')}`}
-          target="_blank" rel="noopener noreferrer">
-          <Button variant="outline" className="w-full min-h-[44px] text-sm glass-button border-0 active:scale-[0.97]">
-            <Search className="h-4 w-4 mr-2" /> Search More on Google
-          </Button>
-        </a>
-      )}
+      {/* ─── Google Search section removed per user request ─── */}
 
       {/* ─── Error State ─── */}
       {error && !supportData && (
