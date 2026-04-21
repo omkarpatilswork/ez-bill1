@@ -271,15 +271,63 @@ export default function Analytics() {
   }, [monthlyTrend]);
 
   const topMerchants = useMemo(() => {
-    const map: Record<string, { amount: number; count: number }> = {};
+    const map: Record<string, {
+      amount: number;
+      count: number;
+      dates: string[];
+      categories: Record<string, number>;
+      currencies: Set<string>;
+      max: { amount: number; date: string };
+      min: { amount: number; date: string };
+      monthly: Record<string, number>;
+    }> = {};
+    const catNameById: Record<string, string> = {};
+    categories.forEach(c => { catNameById[c.id] = c.name; });
     filteredExpenses.forEach(e => {
       const m = e.merchant || 'Unknown';
-      if (!map[m]) map[m] = { amount: 0, count: 0 };
-      map[m].amount += conv(Number(e.amount), e.currency || 'INR');
-      map[m].count += 1;
+      const amt = conv(Number(e.amount), e.currency || 'INR');
+      if (!map[m]) map[m] = {
+        amount: 0, count: 0, dates: [], categories: {}, currencies: new Set(),
+        max: { amount: -Infinity, date: '' }, min: { amount: Infinity, date: '' }, monthly: {},
+      };
+      const r = map[m];
+      r.amount += amt;
+      r.count += 1;
+      r.dates.push(e.expense_date);
+      r.currencies.add(e.currency || 'INR');
+      const catName = e.category_id ? (catNameById[e.category_id] || 'Other') : 'Other';
+      r.categories[catName] = (r.categories[catName] || 0) + amt;
+      if (amt > r.max.amount) r.max = { amount: amt, date: e.expense_date };
+      if (amt < r.min.amount) r.min = { amount: amt, date: e.expense_date };
+      const d = new Date(e.expense_date);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      r.monthly[key] = (r.monthly[key] || 0) + amt;
     });
-    return Object.entries(map).map(([name, data]) => ({ name, amount: Math.round(data.amount * 100) / 100, count: data.count }))
-      .sort((a, b) => b.amount - a.amount).slice(0, 8);
+    const totalSpend = Object.values(map).reduce((s, r) => s + r.amount, 0);
+    return Object.entries(map).map(([name, data]) => {
+      const sortedDates = [...data.dates].sort();
+      const first = sortedDates[0];
+      const last = sortedDates[sortedDates.length - 1];
+      const topCat = Object.entries(data.categories).sort((a, b) => b[1] - a[1])[0];
+      const monthsActive = Object.keys(data.monthly).length || 1;
+      return {
+        name,
+        amount: Math.round(data.amount * 100) / 100,
+        count: data.count,
+        avgPerVisit: data.amount / data.count,
+        sharePct: totalSpend > 0 ? (data.amount / totalSpend) * 100 : 0,
+        firstVisit: first,
+        lastVisit: last,
+        topCategory: topCat ? topCat[0] : 'Other',
+        topCategoryAmount: topCat ? topCat[1] : 0,
+        currencies: Array.from(data.currencies),
+        max: data.max,
+        min: { amount: data.min.amount === Infinity ? 0 : data.min.amount, date: data.min.date },
+        monthlyAvg: data.amount / monthsActive,
+        monthsActive,
+        sparkline: Object.entries(data.monthly).sort(([a], [b]) => a.localeCompare(b)).map(([k, v]) => ({ k, v })),
+      };
+    }).sort((a, b) => b.amount - a.amount).slice(0, 8);
   }, [filteredExpenses, displayCurrency]);
 
   // Most loyal merchant (by frequency)
