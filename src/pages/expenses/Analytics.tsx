@@ -57,6 +57,7 @@ export default function Analytics() {
   const [loading, setLoading] = useState(true);
   const [timeRange, setTimeRange] = useState('all');
   const [displayCurrency, setDisplayCurrency] = useState(profile?.default_currency || 'INR');
+  const [selectedTaxType, setSelectedTaxType] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -148,21 +149,39 @@ export default function Analytics() {
   // Tax & Discount
   const taxDiscountStats = useMemo(() => {
     let totalTax = 0, totalDiscount = 0, billsWithTax = 0, billsWithDiscount = 0;
-    const taxTypes: Record<string, number> = {};
+    const taxTypes: Record<string, { count: number; amount: number; rates: Set<string> }> = {};
     filteredExpenses.forEach(e => {
       const desc = e.description || '';
       const taxAmt = Number(parseField(desc, 'Tax')) || 0;
       const discAmt = Number(parseField(desc, 'Discount')) || 0;
       const taxDetailsStr = parseField(desc, 'TaxDetails');
       if (taxAmt > 0) {
-        totalTax += conv(taxAmt, e.currency || 'INR');
+        const convertedTax = conv(taxAmt, e.currency || 'INR');
+        totalTax += convertedTax;
         billsWithTax++;
         if (taxDetailsStr) {
-          taxDetailsStr.split(/[+,&]/).forEach(p => {
-            const name = p.trim().replace(/\s*[\d.]+%?\s*$/, '').trim() || 'Tax';
-            taxTypes[name] = (taxTypes[name] || 0) + 1;
+          const parts = taxDetailsStr.split(/[+,&]/).map(p => p.trim()).filter(Boolean);
+          // Try to parse rates so we can split the tax amount fairly
+          const parsed = parts.map(p => {
+            const m = p.match(/([\d.]+)\s*%/);
+            const rate = m ? Number(m[1]) : 0;
+            const name = p.replace(/\s*[\d.]+%?\s*$/, '').trim() || 'Tax';
+            return { name, rate, raw: p };
           });
-        } else { taxTypes['Tax'] = (taxTypes['Tax'] || 0) + 1; }
+          const totalRate = parsed.reduce((s, x) => s + x.rate, 0);
+          parsed.forEach(x => {
+            if (!taxTypes[x.name]) taxTypes[x.name] = { count: 0, amount: 0, rates: new Set() };
+            taxTypes[x.name].count += 1;
+            if (x.rate > 0) taxTypes[x.name].rates.add(`${x.rate}%`);
+            // Allocate this bill's tax across types proportionally to rate; fallback to equal split
+            const share = totalRate > 0 ? x.rate / totalRate : 1 / parsed.length;
+            taxTypes[x.name].amount += convertedTax * share;
+          });
+        } else {
+          if (!taxTypes['Tax']) taxTypes['Tax'] = { count: 0, amount: 0, rates: new Set() };
+          taxTypes['Tax'].count += 1;
+          taxTypes['Tax'].amount += convertedTax;
+        }
       }
       if (discAmt > 0) {
         totalDiscount += conv(discAmt, e.currency || 'INR');
@@ -174,7 +193,14 @@ export default function Analytics() {
       totalTax: Math.round(totalTax * 100) / 100,
       totalDiscount: Math.round(totalDiscount * 100) / 100,
       billsWithTax, billsWithDiscount,
-      taxTypes: Object.entries(taxTypes).sort((a, b) => b[1] - a[1]),
+      taxTypes: Object.entries(taxTypes)
+        .map(([name, v]) => ({
+          name,
+          count: v.count,
+          amount: Math.round(v.amount * 100) / 100,
+          rates: Array.from(v.rates).sort(),
+        }))
+        .sort((a, b) => b.amount - a.amount),
       savingsRate,
     };
   }, [filteredExpenses, displayCurrency, totalAmount]);
@@ -534,14 +560,77 @@ export default function Analytics() {
                 <p className="text-2xl font-bold text-foreground mb-3">{fmt2(taxDiscountStats.totalTax)}</p>
                 {taxDiscountStats.taxTypes.length > 0 && (
                   <div className="space-y-2">
-                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">Tax Types</p>
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">Tap a tax type for details</p>
                     <div className="flex flex-wrap gap-1.5">
-                      {taxDiscountStats.taxTypes.map(([name, count]) => (
-                        <span key={name} className="text-xs bg-secondary/50 text-foreground px-2 py-1 rounded-md">
-                          {name} <span className="text-muted-foreground">({count})</span>
-                        </span>
-                      ))}
+                      {taxDiscountStats.taxTypes.map(t => {
+                        const isActive = selectedTaxType === t.name;
+                        return (
+                          <button
+                            key={t.name}
+                            type="button"
+                            onClick={() => setSelectedTaxType(isActive ? null : t.name)}
+                            className={`group flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-lg border transition-all ${
+                              isActive
+                                ? 'bg-info/15 border-info/50 text-foreground'
+                                : 'bg-secondary/40 border-transparent text-foreground hover:bg-secondary/60'
+                            }`}
+                            aria-pressed={isActive}
+                          >
+                            <span
+                              className={`h-3 w-3 rounded-full border-2 transition-colors ${
+                                isActive ? 'border-info bg-info' : 'border-muted-foreground/40'
+                              }`}
+                            />
+                            <span className="font-medium">{t.name}</span>
+                            <span className="text-muted-foreground">({t.count})</span>
+                          </button>
+                        );
+                      })}
                     </div>
+                    {selectedTaxType && (() => {
+                      const t = taxDiscountStats.taxTypes.find(x => x.name === selectedTaxType);
+                      if (!t) return null;
+                      const sharePct = taxDiscountStats.totalTax > 0
+                        ? (t.amount / taxDiscountStats.totalTax) * 100 : 0;
+                      const avgPerBill = t.count > 0 ? t.amount / t.count : 0;
+                      return (
+                        <div className="mt-3 rounded-xl border border-info/25 bg-info/5 p-3 animate-fade-in">
+                          <div className="flex items-center justify-between gap-2 mb-2">
+                            <p className="text-sm font-semibold text-foreground">{t.name} breakdown</p>
+                            {t.rates.length > 0 && (
+                              <div className="flex flex-wrap gap-1">
+                                {t.rates.map(r => (
+                                  <span key={r} className="text-[10px] px-1.5 py-0.5 rounded bg-info/15 text-info font-medium">{r}</span>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                          <div className="grid grid-cols-3 gap-2 text-center">
+                            <div className="rounded-lg bg-background/40 p-2">
+                              <p className="text-[9px] uppercase tracking-wider text-muted-foreground">Total</p>
+                              <p className="text-sm font-bold text-foreground mt-0.5">{fmt2(t.amount)}</p>
+                            </div>
+                            <div className="rounded-lg bg-background/40 p-2">
+                              <p className="text-[9px] uppercase tracking-wider text-muted-foreground">Bills</p>
+                              <p className="text-sm font-bold text-foreground mt-0.5">{t.count}</p>
+                            </div>
+                            <div className="rounded-lg bg-background/40 p-2">
+                              <p className="text-[9px] uppercase tracking-wider text-muted-foreground">Avg/bill</p>
+                              <p className="text-sm font-bold text-foreground mt-0.5">{fmt2(avgPerBill)}</p>
+                            </div>
+                          </div>
+                          <div className="mt-2.5 space-y-1">
+                            <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+                              <span>Share of total tax</span>
+                              <span className="text-foreground font-medium">{sharePct.toFixed(1)}%</span>
+                            </div>
+                            <div className="h-1.5 w-full rounded-full bg-muted/40 overflow-hidden">
+                              <div className="h-full rounded-full bg-info transition-all duration-500" style={{ width: `${Math.max(sharePct, 2)}%` }} />
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })()}
                   </div>
                 )}
               </CardContent>
