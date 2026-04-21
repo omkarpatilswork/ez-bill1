@@ -452,75 +452,118 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* ━━━ 5. HOW TO USE EZ BILL — static, non-clickable ━━━ */}
-      <div className="pt-2">
-        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-3">How to use EZ Bill</p>
-        <div className="flex items-start gap-0 overflow-x-auto pb-1">
-          {[
-            { num: '1', label: 'Upload', sub: 'Photo or PDF', icon: Scan },
-            { num: '2', label: 'AI Extracts', sub: 'Auto-fill data', icon: Bot },
-            { num: '3', label: 'Analyze', sub: 'Track spending', icon: TrendingUp },
-            { num: '4', label: 'Split/Claim', sub: 'Share or support', icon: UsersIcon },
-          ].map((step, i) => (
-            <div key={step.num} className="flex items-center shrink-0">
-              <div className="flex flex-col items-center text-center w-[72px]">
-                <div className="h-8 w-8 rounded-full flex items-center justify-center mb-1"
-                  style={{ background: 'hsla(152, 45%, 35%, 0.12)' }}>
-                  <step.icon className="h-3.5 w-3.5 text-primary" />
+      {/* ━━━ 5. HOW EZ BILL WORKS — refined 4-step flow ━━━ */}
+      <div className="pt-3">
+        <div className="flex items-center justify-between mb-3">
+          <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">How it works</p>
+          <span className="text-[10px] text-muted-foreground/70">4 simple steps</span>
+        </div>
+        <div className="glass-card rounded-2xl p-4">
+          <div className="grid grid-cols-4 gap-1">
+            {[
+              { label: 'Capture', sub: 'Photo, PDF or SMS', icon: Camera },
+              { label: 'AI Extract', sub: 'Auto-filled data', icon: Bot },
+              { label: 'Analyze', sub: 'Spend insights', icon: TrendingUp },
+              { label: 'Act', sub: 'Split · Cancel · Support', icon: Sparkles },
+            ].map((step, i) => (
+              <div key={step.label} className="flex flex-col items-center text-center relative">
+                {i < 3 && (
+                  <div
+                    className="absolute top-5 left-[60%] right-[-40%] h-px"
+                    style={{
+                      background: 'linear-gradient(90deg, hsla(152, 45%, 45%, 0.4), hsla(43, 80%, 50%, 0.2))',
+                    }}
+                  />
+                )}
+                <div className="relative h-10 w-10 rounded-xl flex items-center justify-center mb-1.5 z-10"
+                  style={{
+                    background: 'linear-gradient(135deg, hsla(152, 45%, 35%, 0.18), hsla(43, 80%, 50%, 0.08))',
+                    border: '1px solid hsla(152, 45%, 45%, 0.2)',
+                  }}>
+                  <step.icon className="h-4 w-4 text-primary" />
                 </div>
                 <p className="text-[10px] font-semibold text-foreground leading-tight">{step.label}</p>
-                <p className="text-[9px] text-muted-foreground leading-tight">{step.sub}</p>
+                <p className="text-[9px] text-muted-foreground leading-tight mt-0.5">{step.sub}</p>
               </div>
-              {i < 3 && (
-                <div className="w-4 h-px mx-0.5 mt-[-12px]" style={{ background: 'hsla(160, 8%, 40%, 0.3)' }} />
-              )}
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* ━━━ 6. WHY EZ BILL — informational, no card styling ━━━ */}
-      <div className="pt-1">
-        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-3">Why EZ Bill</p>
-        <div className="space-y-3">
-          {[
-            { icon: Scan, title: 'Smart OCR', desc: 'AI bill scanning — GST, UPI, handwritten receipts.' },
-            { icon: Droplets, title: 'Money Leaks', desc: 'Discover hidden patterns. Get advice to save.' },
-            { icon: ShieldCheck, title: 'Privacy First', desc: 'Your data stays secure. No unnecessary tracking.' },
-            { icon: Zap, title: 'Lightning Fast', desc: 'Process bills in seconds. Instant insights.' },
-          ].map(usp => (
-            <div key={usp.title} className="flex items-start gap-3">
-              <usp.icon className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
-              <div>
-                <p className="text-xs font-semibold text-foreground">{usp.title}</p>
-                <p className="text-[11px] text-muted-foreground leading-relaxed">{usp.desc}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* ━━━ 7. BUILT IN INDIA — brand statement, not a card ━━━ */}
-      <div className="pt-4 pb-2">
-        <div className="h-px w-full mb-5" style={{ background: 'hsla(160, 8%, 30%, 0.2)' }} />
-        <div className="text-center">
-          <div className="flex items-center justify-center gap-1.5 mb-1.5">
-            <span className="text-lg">🇮🇳</span>
-            <Heart className="h-3 w-3 text-destructive" />
-          </div>
-          <h3 className="text-sm font-bold text-foreground tracking-tight">
-            Built in India, for India
-          </h3>
-          <p className="text-[11px] text-muted-foreground leading-relaxed max-w-[260px] mx-auto mt-1">
-            Designed for Indian bills — GST, UPI receipts, handwritten invoices. Your money, your way.
-          </p>
-          <div className="flex items-center justify-center gap-3 mt-3">
-            {['INR First', 'GST Ready', 'UPI Smart'].map(tag => (
-              <span key={tag} className="text-[9px] text-muted-foreground font-semibold uppercase tracking-wider px-2 py-1 rounded-full"
-                style={{ background: 'hsla(160, 8%, 20%, 0.4)' }}>
-                {tag}
-              </span>
             ))}
+          </div>
+        </div>
+      </div>
+
+      {/* ━━━ 6. WHAT EZ BILL DOES FOR YOU — feature-led, reflects new modules ━━━ */}
+      <div className="pt-1">
+        <div className="flex items-center justify-between mb-3">
+          <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">What you get</p>
+          <span className="text-[10px] text-gold/80 font-medium">All-in-one</span>
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          {[
+            { icon: Scan, title: 'Smart OCR', desc: 'GST · UPI · handwritten', tint: 'hsla(152, 45%, 45%, 0.14)', color: 'text-primary' },
+            { icon: Droplets, title: 'AI Money Leaks', desc: 'Personalised advice', tint: 'hsla(43, 80%, 50%, 0.14)', color: 'text-gold' },
+            { icon: UsersIcon, title: 'Smart Split', desc: 'Friends & balances', tint: 'hsla(199, 70%, 45%, 0.14)', color: 'text-info' },
+            { icon: Repeat, title: 'Subscriptions', desc: 'Track & cancel waste', tint: 'hsla(280, 50%, 55%, 0.14)', color: 'text-purple-400' },
+            { icon: Headphones, title: 'Support Hub', desc: 'Reach any merchant', tint: 'hsla(199, 70%, 45%, 0.14)', color: 'text-info' },
+            { icon: Bot, title: 'Ask AI', desc: 'Chat with your money', tint: 'hsla(152, 45%, 45%, 0.14)', color: 'text-primary' },
+          ].map(item => (
+            <div key={item.title} className="glass-card rounded-xl p-3 flex items-start gap-2.5">
+              <div className="h-8 w-8 rounded-lg flex items-center justify-center shrink-0"
+                style={{ background: item.tint }}>
+                <item.icon className={`h-4 w-4 ${item.color}`} />
+              </div>
+              <div className="min-w-0">
+                <p className="text-[11px] font-semibold text-foreground leading-tight">{item.title}</p>
+                <p className="text-[10px] text-muted-foreground leading-tight mt-0.5 truncate">{item.desc}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Trust strip */}
+        <div className="flex items-center justify-around mt-3 px-2 py-2.5 rounded-xl"
+          style={{ background: 'hsla(160, 12%, 14%, 0.4)', border: '1px solid hsla(160, 10%, 40%, 0.08)' }}>
+          {[
+            { icon: ShieldCheck, label: 'Privacy first' },
+            { icon: Zap, label: 'Instant' },
+            { icon: Smartphone, label: 'Mobile-first' },
+          ].map(t => (
+            <div key={t.label} className="flex items-center gap-1.5">
+              <t.icon className="h-3 w-3 text-muted-foreground" />
+              <span className="text-[10px] text-muted-foreground font-medium">{t.label}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ━━━ 7. BUILT IN INDIA — refined brand statement ━━━ */}
+      <div className="pt-5 pb-2">
+        <div className="relative rounded-2xl p-5 overflow-hidden"
+          style={{
+            background: 'linear-gradient(135deg, hsla(152, 45%, 25%, 0.18), hsla(43, 80%, 50%, 0.08))',
+            border: '1px solid hsla(43, 80%, 50%, 0.12)',
+          }}>
+          <div className="absolute top-0 right-0 w-24 h-24 rounded-full blur-2xl opacity-40"
+            style={{ background: 'hsla(43, 80%, 50%, 0.25)' }} />
+          <div className="relative text-center">
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full mb-2.5"
+              style={{ background: 'hsla(160, 12%, 10%, 0.5)', border: '1px solid hsla(160, 10%, 40%, 0.15)' }}>
+              <span className="text-sm leading-none">🇮🇳</span>
+              <span className="text-[9px] font-bold text-foreground uppercase tracking-widest">Made in India</span>
+              <Heart className="h-2.5 w-2.5 text-destructive fill-destructive" />
+            </div>
+            <h3 className="text-base font-bold text-foreground tracking-tight">
+              Built for how India pays
+            </h3>
+            <p className="text-[11px] text-muted-foreground leading-relaxed max-w-[280px] mx-auto mt-1.5">
+              GST invoices, UPI receipts, kirana scribbles — we read them all. Your money, your rules.
+            </p>
+            <div className="flex items-center justify-center flex-wrap gap-1.5 mt-3.5">
+              {['INR First', 'GST Ready', 'UPI Smart', 'WhatsApp Bills'].map(tag => (
+                <span key={tag} className="text-[9px] text-foreground/80 font-semibold uppercase tracking-wider px-2 py-1 rounded-full"
+                  style={{ background: 'hsla(160, 12%, 10%, 0.55)', border: '1px solid hsla(43, 80%, 50%, 0.18)' }}>
+                  {tag}
+                </span>
+              ))}
+            </div>
           </div>
         </div>
       </div>
