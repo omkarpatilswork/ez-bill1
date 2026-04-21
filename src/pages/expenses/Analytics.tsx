@@ -58,6 +58,7 @@ export default function Analytics() {
   const [timeRange, setTimeRange] = useState('all');
   const [displayCurrency, setDisplayCurrency] = useState(profile?.default_currency || 'INR');
   const [selectedTaxType, setSelectedTaxType] = useState<string | null>(null);
+  const [selectedMerchant, setSelectedMerchant] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) return;
