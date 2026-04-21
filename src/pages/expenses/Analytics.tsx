@@ -148,21 +148,39 @@ export default function Analytics() {
   // Tax & Discount
   const taxDiscountStats = useMemo(() => {
     let totalTax = 0, totalDiscount = 0, billsWithTax = 0, billsWithDiscount = 0;
-    const taxTypes: Record<string, number> = {};
+    const taxTypes: Record<string, { count: number; amount: number; rates: Set<string> }> = {};
     filteredExpenses.forEach(e => {
       const desc = e.description || '';
       const taxAmt = Number(parseField(desc, 'Tax')) || 0;
       const discAmt = Number(parseField(desc, 'Discount')) || 0;
       const taxDetailsStr = parseField(desc, 'TaxDetails');
       if (taxAmt > 0) {
-        totalTax += conv(taxAmt, e.currency || 'INR');
+        const convertedTax = conv(taxAmt, e.currency || 'INR');
+        totalTax += convertedTax;
         billsWithTax++;
         if (taxDetailsStr) {
-          taxDetailsStr.split(/[+,&]/).forEach(p => {
-            const name = p.trim().replace(/\s*[\d.]+%?\s*$/, '').trim() || 'Tax';
-            taxTypes[name] = (taxTypes[name] || 0) + 1;
+          const parts = taxDetailsStr.split(/[+,&]/).map(p => p.trim()).filter(Boolean);
+          // Try to parse rates so we can split the tax amount fairly
+          const parsed = parts.map(p => {
+            const m = p.match(/([\d.]+)\s*%/);
+            const rate = m ? Number(m[1]) : 0;
+            const name = p.replace(/\s*[\d.]+%?\s*$/, '').trim() || 'Tax';
+            return { name, rate, raw: p };
           });
-        } else { taxTypes['Tax'] = (taxTypes['Tax'] || 0) + 1; }
+          const totalRate = parsed.reduce((s, x) => s + x.rate, 0);
+          parsed.forEach(x => {
+            if (!taxTypes[x.name]) taxTypes[x.name] = { count: 0, amount: 0, rates: new Set() };
+            taxTypes[x.name].count += 1;
+            if (x.rate > 0) taxTypes[x.name].rates.add(`${x.rate}%`);
+            // Allocate this bill's tax across types proportionally to rate; fallback to equal split
+            const share = totalRate > 0 ? x.rate / totalRate : 1 / parsed.length;
+            taxTypes[x.name].amount += convertedTax * share;
+          });
+        } else {
+          if (!taxTypes['Tax']) taxTypes['Tax'] = { count: 0, amount: 0, rates: new Set() };
+          taxTypes['Tax'].count += 1;
+          taxTypes['Tax'].amount += convertedTax;
+        }
       }
       if (discAmt > 0) {
         totalDiscount += conv(discAmt, e.currency || 'INR');
@@ -174,7 +192,14 @@ export default function Analytics() {
       totalTax: Math.round(totalTax * 100) / 100,
       totalDiscount: Math.round(totalDiscount * 100) / 100,
       billsWithTax, billsWithDiscount,
-      taxTypes: Object.entries(taxTypes).sort((a, b) => b[1] - a[1]),
+      taxTypes: Object.entries(taxTypes)
+        .map(([name, v]) => ({
+          name,
+          count: v.count,
+          amount: Math.round(v.amount * 100) / 100,
+          rates: Array.from(v.rates).sort(),
+        }))
+        .sort((a, b) => b.amount - a.amount),
       savingsRate,
     };
   }, [filteredExpenses, displayCurrency, totalAmount]);
