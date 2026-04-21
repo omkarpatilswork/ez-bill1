@@ -800,32 +800,146 @@ export default function Analytics() {
               <Flame className="h-4 w-4 text-gold" /> Top Merchants
             </CardTitle>
             <CardDescription>
-              {mostFrequentMerchant ? `Most loyal: ${mostFrequentMerchant.name} (${mostFrequentMerchant.count}x)` : 'Where you spend the most'}
+              {mostFrequentMerchant ? `Tap a merchant to see the breakdown · Most loyal: ${mostFrequentMerchant.name} (${mostFrequentMerchant.count}x)` : 'Where you spend the most'}
             </CardDescription>
           </CardHeader>
           <CardContent>
             {topMerchants.length === 0 ? (
               <p className="text-muted-foreground text-center py-8">No data yet</p>
             ) : (
-              <div className="space-y-3">
-                {topMerchants.map((m, i) => {
+              <div className="space-y-2">
+                {(() => {
                   const maxAmount = topMerchants[0].amount;
-                  const pct = (m.amount / maxAmount) * 100;
+                  const totalCount = topMerchants.reduce((s, m) => s + m.count, 0);
                   return (
-                    <div key={m.name} className="space-y-1.5">
-                      <div className="flex items-center justify-between text-xs sm:text-sm">
-                        <span className="font-medium truncate flex items-center gap-1.5">
-                          {i === 0 && <Trophy className="h-3 w-3 text-gold shrink-0" />}
-                          {m.name}
-                        </span>
-                        <span className="text-muted-foreground text-xs">{fmt(m.amount)} · {m.count}x</span>
+                    <>
+                      {/* Quick stats strip */}
+                      <div className="grid grid-cols-3 gap-2 mb-3">
+                        <div className="rounded-xl p-2.5 text-center" style={{ background: 'hsla(43,80%,50%,0.10)' }}>
+                          <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Merchants</div>
+                          <div className="text-sm sm:text-base font-bold text-gold">{topMerchants.length}</div>
+                        </div>
+                        <div className="rounded-xl p-2.5 text-center" style={{ background: 'hsla(152,55%,40%,0.10)' }}>
+                          <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Visits</div>
+                          <div className="text-sm sm:text-base font-bold text-primary">{totalCount}</div>
+                        </div>
+                        <div className="rounded-xl p-2.5 text-center" style={{ background: 'hsla(199,70%,45%,0.10)' }}>
+                          <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Top share</div>
+                          <div className="text-sm sm:text-base font-bold text-info">{topMerchants[0].sharePct.toFixed(0)}%</div>
+                        </div>
                       </div>
-                      <div className="h-2 w-full rounded-full bg-muted/50">
-                        <div className="h-full rounded-full transition-all duration-500" style={{ width: `${pct}%`, backgroundColor: CHART_COLORS[i % CHART_COLORS.length] }} />
-                      </div>
-                    </div>
+                      {topMerchants.map((m, i) => {
+                        const pct = (m.amount / maxAmount) * 100;
+                        const color = CHART_COLORS[i % CHART_COLORS.length];
+                        const isOpen = selectedMerchant === m.name;
+                        const sparkMax = Math.max(...m.sparkline.map(s => s.v), 1);
+                        return (
+                          <div key={m.name} className="rounded-xl border border-border/40 overflow-hidden transition-all" style={{ background: isOpen ? 'hsla(160, 10%, 14%, 0.6)' : 'transparent' }}>
+                            <button
+                              type="button"
+                              onClick={() => setSelectedMerchant(isOpen ? null : m.name)}
+                              className="w-full text-left p-2.5 hover:bg-muted/30 transition-colors"
+                            >
+                              <div className="flex items-center justify-between text-xs sm:text-sm gap-2">
+                                <span className="font-medium truncate flex items-center gap-1.5 min-w-0">
+                                  <span className="inline-flex items-center justify-center h-5 w-5 rounded-md text-[10px] font-bold shrink-0" style={{ background: `${color}22`, color }}>{i + 1}</span>
+                                  {i === 0 && <Trophy className="h-3 w-3 text-gold shrink-0" />}
+                                  <span className="truncate">{m.name}</span>
+                                </span>
+                                <span className="text-muted-foreground text-xs whitespace-nowrap">{fmt(m.amount)} · {m.count}x</span>
+                              </div>
+                              <div className="mt-1.5 h-2 w-full rounded-full bg-muted/40 overflow-hidden">
+                                <div className="h-full rounded-full transition-all duration-500" style={{ width: `${pct}%`, backgroundColor: color }} />
+                              </div>
+                              <div className="flex items-center justify-between mt-1 text-[10px] text-muted-foreground">
+                                <span>{m.sharePct.toFixed(1)}% of merchant spend</span>
+                                <span className="flex items-center gap-1">
+                                  {m.topCategory}
+                                  <ArrowUpRight className={`h-3 w-3 transition-transform ${isOpen ? 'rotate-90' : ''}`} />
+                                </span>
+                              </div>
+                            </button>
+                            {isOpen && (
+                              <div className="px-3 pb-3 pt-1 space-y-3 animate-fade-in border-t border-border/30">
+                                {/* Mini KPIs */}
+                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2">
+                                  <div className="rounded-lg p-2" style={{ background: 'hsla(160,10%,18%,0.5)' }}>
+                                    <div className="text-[10px] text-muted-foreground">Avg / visit</div>
+                                    <div className="text-sm font-bold">{fmt(m.avgPerVisit)}</div>
+                                  </div>
+                                  <div className="rounded-lg p-2" style={{ background: 'hsla(160,10%,18%,0.5)' }}>
+                                    <div className="text-[10px] text-muted-foreground">Avg / month</div>
+                                    <div className="text-sm font-bold">{fmt(m.monthlyAvg)}</div>
+                                  </div>
+                                  <div className="rounded-lg p-2" style={{ background: 'hsla(43,80%,50%,0.10)' }}>
+                                    <div className="text-[10px] text-muted-foreground">Biggest</div>
+                                    <div className="text-sm font-bold text-gold">{fmt(m.max.amount)}</div>
+                                  </div>
+                                  <div className="rounded-lg p-2" style={{ background: 'hsla(152,55%,40%,0.10)' }}>
+                                    <div className="text-[10px] text-muted-foreground">Smallest</div>
+                                    <div className="text-sm font-bold text-primary">{fmt(m.min.amount)}</div>
+                                  </div>
+                                </div>
+
+                                {/* Sparkline */}
+                                {m.sparkline.length > 1 && (
+                                  <div>
+                                    <div className="flex items-center justify-between text-[10px] text-muted-foreground mb-1">
+                                      <span>Monthly pattern</span>
+                                      <span>{m.monthsActive} mo active</span>
+                                    </div>
+                                    <div className="flex items-end gap-1 h-12">
+                                      {m.sparkline.map(s => (
+                                        <div key={s.k} className="flex-1 rounded-t" style={{ height: `${(s.v / sparkMax) * 100}%`, backgroundColor: color, opacity: 0.7, minHeight: '4px' }} title={`${s.k}: ${fmt(s.v)}`} />
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+
+                                {/* Meta facts */}
+                                <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 text-[11px]">
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-muted-foreground">First visit</span>
+                                    <span className="font-medium">{new Date(m.firstVisit).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: '2-digit' })}</span>
+                                  </div>
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-muted-foreground">Last visit</span>
+                                    <span className="font-medium">{new Date(m.lastVisit).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: '2-digit' })}</span>
+                                  </div>
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-muted-foreground">Top category</span>
+                                    <span className="font-medium truncate ml-2">{m.topCategory}</span>
+                                  </div>
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-muted-foreground">Currency</span>
+                                    <span className="font-medium">{m.currencies.join(', ')}</span>
+                                  </div>
+                                </div>
+
+                                {/* Share of total */}
+                                <div>
+                                  <div className="flex items-center justify-between text-[11px] mb-1">
+                                    <span className="text-muted-foreground">Share of total spend</span>
+                                    <span className="font-semibold" style={{ color }}>
+                                      {totalAmount > 0 ? ((m.amount / totalAmount) * 100).toFixed(1) : '0'}%
+                                    </span>
+                                  </div>
+                                  <div className="h-1.5 w-full rounded-full bg-muted/40 overflow-hidden">
+                                    <div className="h-full rounded-full" style={{ width: `${totalAmount > 0 ? Math.min(100, (m.amount / totalAmount) * 100) : 0}%`, backgroundColor: color }} />
+                                  </div>
+                                </div>
+
+                                <Badge variant="outline" className="text-[10px]">
+                                  {m.count >= 5 ? '🔥 Loyal customer' : m.count >= 3 ? '✨ Frequent visitor' : '👋 Occasional'}
+                                </Badge>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </>
                   );
-                })}
+                })()}
               </div>
             )}
           </CardContent>
