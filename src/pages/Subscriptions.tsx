@@ -310,15 +310,10 @@ function PopularCard({
   return (
     <div
       className={`relative rounded-2xl p-3 select-none transition-colors ${
-        isActive ? 'border border-primary/40' : 'border border-border/30'
+        isActive
+          ? 'border border-primary/40 sub-tile sub-tile-active'
+          : 'border border-border/30 sub-tile'
       }`}
-      style={{
-        background: isActive
-          ? 'linear-gradient(135deg, hsla(160, 30%, 18%, 0.55), hsla(160, 12%, 10%, 0.35))'
-          : 'linear-gradient(135deg, hsla(160, 8%, 14%, 0.45), hsla(160, 8%, 9%, 0.30))',
-        backdropFilter: 'blur(20px) saturate(1.4)',
-        boxShadow: 'inset 0 1px 0 0 hsla(0, 0%, 100%, 0.04)',
-      }}
     >
       <div className="flex items-start justify-between gap-2 mb-2">
         <div className="h-9 w-9 rounded-xl bg-background/40 flex items-center justify-center text-lg shrink-0">
