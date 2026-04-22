@@ -700,7 +700,22 @@ export default function NewExpense() {
                       <EBillField icon={Calendar} label="Date" value={form.expense_date} editing={false} />
                     )}
                     <EBillField icon={CreditCard} label="Payment Method" value={form.payment_method}
-                      editing={isEditing} onChange={v => setForm(f => ({ ...f, payment_method: v }))} />
+                      editing={false} onChange={v => setForm(f => ({ ...f, payment_method: v }))} />
+                    {isEditing && (
+                      <div className="space-y-1 -mt-2">
+                        <label className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">Payment Method</label>
+                        <Select value={form.payment_method || ''} onValueChange={v => setForm(f => ({ ...f, payment_method: v }))}>
+                          <SelectTrigger className="min-h-[40px] bg-secondary/30 border-border/30">
+                            <SelectValue placeholder="Select payment method" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {['Cash','UPI','Credit Card','Debit Card','Net Banking','Wallet','Cheque','Bank Transfer','Other'].map(p => (
+                              <SelectItem key={p} value={p}>{p}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
                     {/* Currency */}
                     {isEditing ? (
                       <div className="space-y-1">
