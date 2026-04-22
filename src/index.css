@@ -75,8 +75,8 @@
     --muted: 160 8% 93%;
     --muted-foreground: 160 8% 40%;
 
-    --accent: 43 80% 50%;
-    --accent-foreground: 160 10% 6%;
+    --accent: 36 85% 32%;
+    --accent-foreground: 0 0% 100%;
 
     --destructive: 0 63% 45%;
     --destructive-foreground: 0 0% 100%;
@@ -84,13 +84,13 @@
     --success: 152 55% 35%;
     --success-foreground: 0 0% 100%;
 
-    --warning: 43 80% 50%;
-    --warning-foreground: 160 10% 6%;
+    --warning: 36 85% 35%;
+    --warning-foreground: 0 0% 100%;
 
     --info: 199 70% 45%;
     --info-foreground: 0 0% 100%;
 
-    --gold: 43 80% 45%;
+    --gold: 36 85% 32%;
     --gold-foreground: 160 10% 6%;
 
     --border: 160 8% 88%;
@@ -261,4 +261,64 @@
   );
   background-size: 200% 100%;
   animation: liquid-shimmer 4s ease-in-out infinite;
+}
+
+/* ── Light mode overrides for hardcoded dark surfaces ── */
+.light .bottom-nav-surface {
+  background: hsla(0, 0%, 100%, 0.85) !important;
+  border-top: 1px solid hsla(160, 10%, 80%, 0.4) !important;
+  box-shadow: inset 0 1px 0 0 hsla(0,0%,100%,0.9), 0 -4px 24px -4px hsla(0,0%,0%,0.08) !important;
+}
+
+.light .bottom-sheet-surface {
+  background: hsla(0, 0%, 100%, 0.95) !important;
+  color: hsl(var(--foreground));
+}
+
+/* Dialog / Sheet / Drawer / AlertDialog overlays — soften in light mode */
+.light [data-radix-popper-content-wrapper] ~ * .bg-black\/80,
+.light .bg-black\/80 {
+  background-color: hsla(160, 10%, 30%, 0.45) !important;
+}
+
+/* Gold gradient text — darker, readable variant for light mode */
+.light .text-gold-gradient {
+  background: linear-gradient(135deg, hsl(36, 90%, 32%), hsl(30, 90%, 28%), hsl(24, 90%, 30%));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Chat bubble markdown prose — invert mapping for light mode */
+.light .prose-invert {
+  color: hsl(var(--foreground));
+}
+.light .prose-invert :where(p, li, strong, em, h1, h2, h3, h4, code, blockquote):not(:where([class~="not-prose"] *)) {
+  color: hsl(var(--foreground));
+}
+.light .prose-invert :where(a):not(:where([class~="not-prose"] *)) {
+  color: hsl(var(--primary));
+}
+
+/* Drop shadow used by bottom nav active icon — re-tint in light mode */
+.light .drop-shadow-\[0_0_8px_hsla\(43\,80\%\,50\%\,0\.6\)\] {
+  filter: drop-shadow(0 0 6px hsla(36, 85%, 35%, 0.45));
+}
+
+/* Subscription tiles */
+.sub-tile {
+  background: linear-gradient(135deg, hsla(160, 8%, 14%, 0.45), hsla(160, 8%, 9%, 0.30));
+  backdrop-filter: blur(20px) saturate(1.4);
+  -webkit-backdrop-filter: blur(20px) saturate(1.4);
+  box-shadow: inset 0 1px 0 0 hsla(0, 0%, 100%, 0.04);
+}
+.sub-tile.sub-tile-active {
+  background: linear-gradient(135deg, hsla(160, 30%, 18%, 0.55), hsla(160, 12%, 10%, 0.35));
+}
+.light .sub-tile {
+  background: linear-gradient(135deg, hsla(0, 0%, 100%, 0.85), hsla(160, 10%, 96%, 0.7));
+  box-shadow: inset 0 1px 0 0 hsla(0, 0%, 100%, 0.9), 0 2px 10px -4px hsla(0,0%,0%,0.06);
+}
+.light .sub-tile.sub-tile-active {
+  background: linear-gradient(135deg, hsla(152, 35%, 92%, 0.9), hsla(152, 30%, 86%, 0.7));
 }
