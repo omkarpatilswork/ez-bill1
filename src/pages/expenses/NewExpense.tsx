@@ -29,6 +29,8 @@ interface LineItem {
 
 interface ExtractedData {
   merchant_name?: string;
+  merchant_legal_name?: string;
+  aggregator?: string;
   merchant_address?: string;
   merchant_gstin?: string;
   amount?: number | null;
@@ -71,6 +73,7 @@ function cleanDescription(desc: string | null | undefined): string {
   let clean = idx >= 0 ? desc.slice(0, idx) : desc;
   clean = clean.replace(/Category:\s*[^|]+\|?\s*/g, '').replace(/Invoice:\s*[^|]+\|?\s*/g, '').replace(/Payment:\s*[^|]+\|?\s*/g, '').replace(/\d+ item\(s\)\s*\|?\s*/g, '');
   clean = clean.replace(/Tax:\s*[^|]+\|?\s*/g, '').replace(/TaxDetails:\s*[^|]+\|?\s*/g, '').replace(/Discount:\s*[^|]+\|?\s*/g, '').replace(/Subtotal:\s*[^|]+\|?\s*/g, '');
+  clean = clean.replace(/Aggregator:\s*[^|]+\|?\s*/g, '').replace(/Address:\s*[^|]+\|?\s*/g, '');
   clean = clean.replace(/From email:\s*[^|]+\|?\s*/g, '').replace(/\[Subscription\]\s*\|?\s*/g, '');
   clean = clean.replace(/\[upload\]\s*\|?\s*/g, '').replace(/\[scan\]\s*\|?\s*/g, '').replace(/\[manual\]\s*\|?\s*/g, '').replace(/\[email\]\s*\|?\s*/g, '');
   return clean.replace(/\|\s*$/g, '').replace(/^\|\s*/g, '').trim();
@@ -122,6 +125,7 @@ export default function NewExpense() {
     category_id: '', category_name: '', cost_center: '', description: '',
     payment_method: '', invoice_number: '', tax_amount: '', tax_details: '', subtotal: '', discount: '',
     currency: DEFAULT_BILL_CURRENCY,
+    aggregator: '', merchant_address: '',
   });
   const [editLineItems, setEditLineItems] = useState<LineItem[]>([]);
 
@@ -167,6 +171,8 @@ export default function NewExpense() {
         subtotal: parseFieldFromDesc(e.description, 'Subtotal') || '',
         discount: parseFieldFromDesc(e.description, 'Discount') || '',
         currency: e.currency || DEFAULT_BILL_CURRENCY,
+        aggregator: parseFieldFromDesc(e.description, 'Aggregator') || '',
+        merchant_address: parseFieldFromDesc(e.description, 'Address') || '',
       });
       setEditLineItems(lineItems);
       setExtractionData({ line_items: lineItems });
@@ -360,6 +366,8 @@ export default function NewExpense() {
       subtotal: safeNum(data.subtotal),
       discount: discountAmt ? String(discountAmt) : safeNum(data.discount),
       currency: finalCurrency,
+      aggregator: data.aggregator && data.aggregator !== 'Not Found' ? data.aggregator : '',
+      merchant_address: data.merchant_address && data.merchant_address !== 'Not Found' ? data.merchant_address : '',
     });
     setEditLineItems(data.line_items || []);
   };
@@ -439,6 +447,8 @@ export default function NewExpense() {
   const buildDescription = () => {
     const parts: string[] = [];
     if (form.category_name) parts.push(`Category: ${form.category_name}`);
+    if (form.aggregator) parts.push(`Aggregator: ${form.aggregator}`);
+    if (form.merchant_address) parts.push(`Address: ${form.merchant_address}`);
     if (form.invoice_number) parts.push(`Invoice: ${form.invoice_number}`);
     if (form.payment_method) parts.push(`Payment: ${form.payment_method}`);
     if (editLineItems.length > 0) parts.push(`${editLineItems.length} item(s)`);

@@ -39,7 +39,9 @@ serve(async (req) => {
     const systemPrompt = `You are an advanced OCR extraction engine for Indian bills, receipts, and invoices. Extract ALL structured data and return ONLY valid JSON with these fields:
 
 {
-  "merchant_name": "string - name of store/restaurant/provider, or 'Not Found'",
+  "merchant_name": "string - the POPULAR/COMMERCIAL/BRAND name of the merchant (e.g. 'Insider.in (Paytm Insider)' instead of 'WASTELAND ENTERTAINMENT PVT. LTD', 'Starbucks' instead of 'TATA STARBUCKS PRIVATE LIMITED', 'Domino's' instead of 'JUBILANT FOODWORKS LTD'). If the bill is from an aggregator (Swiggy, Zomato, BookMyShow, MakeMyTrip, Uber, Ola, Amazon, Flipkart, Dunzo, Insider, etc.), this MUST be the actual restaurant / cinema / hotel / vendor / store name shown on the bill — NOT the aggregator. Use 'Not Found' only if truly unknown.",
+  "merchant_legal_name": "string - the registered legal entity name as printed (e.g. 'WASTELAND ENTERTAINMENT PVT. LTD'), or 'Not Found'",
+  "aggregator": "string - name of the aggregator/marketplace platform if the bill was placed through one (Swiggy, Zomato, BookMyShow, Insider, MakeMyTrip, Goibibo, Uber, Ola, Rapido, Amazon, Flipkart, Myntra, Dunzo, Zepto, Blinkit, Instamart, etc.). Return 'Not Found' if the bill is directly from the merchant with NO aggregator involved. Do NOT invent — only set when clearly indicated on the bill.",
   "merchant_address": "string - full address if visible, or 'Not Found'",
   "merchant_gstin": "string - GSTIN number if visible on Indian bills, or 'Not Found'",
   "amount": "number - total/grand total amount as float without currency symbols, or null",
@@ -65,6 +67,9 @@ serve(async (req) => {
 
 Rules:
 - Do NOT infer or hallucinate missing values. Use 'Not Found' or null.
+- merchant_name: ALWAYS prefer the popular/commercial brand name customers know, not the registered legal entity. Map common Indian legal names to brands (e.g. 'JUBILANT FOODWORKS' → "Domino's", 'DEVYANI INTERNATIONAL' → 'KFC/Pizza Hut as applicable', 'TATA STARBUCKS' → 'Starbucks', 'WASTELAND ENTERTAINMENT' → 'Insider.in (Paytm Insider)').
+- aggregator vs merchant: Swiggy / Zomato / BookMyShow / MakeMyTrip etc. are AGGREGATORS, never the merchant. The merchant is the underlying restaurant, cinema, hotel, or store. If no aggregator is involved, set aggregator to 'Not Found'.
+- merchant_address: capture the full address printed on the bill (usually at the top under the merchant name), including city and pincode if present.
 - Amount must be a valid number without currency symbols.
 - Extract EVERY line item visible on the bill with name, quantity, unit price, and total.
 - If quantity is not shown, default to 1.
