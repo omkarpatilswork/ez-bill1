@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import {
   ArrowLeft, Store, Package, Hash, Calendar, CreditCard, IndianRupee,
-  Receipt, Eye, Users, Pencil, FileText, Trash2, Headphones
+  Receipt, Eye, Users, Pencil, FileText, Trash2, Headphones, Network, MapPin
 } from 'lucide-react';
 import type { Expense } from '@/lib/types';
 import { getCurrencySymbol } from '@/lib/countries';
@@ -115,6 +115,8 @@ export default function ExpenseDetail() {
   const currencySymbol = getCurrencySymbol(expense.currency || 'INR');
   const savedCategory = parseField(expense.description, 'Category');
   const categoryLabel = savedCategory || smartCategoryFromMerchant(expense.merchant || '', expense.title);
+  const aggregator = parseField(expense.description, 'Aggregator');
+  const merchantAddress = parseField(expense.description, 'Address');
 
   return (
     <div className="max-w-3xl mx-auto space-y-4 pb-24 animate-fade-in">
@@ -138,6 +140,9 @@ export default function ExpenseDetail() {
         <TabsContent value="ebill" className="mt-3 space-y-3">
           <div className="glass-card rounded-2xl p-5 space-y-3">
             <EBillRow icon={Store} label="Merchant" value={expense.merchant || '—'} />
+            {aggregator && (
+              <EBillRow icon={Network} label="Aggregator" value={aggregator} />
+            )}
             <EBillRow icon={Package} label="Category" value={categoryLabel} />
             <EBillRow icon={Hash} label="Invoice Number" value={invoiceNum || '—'} />
             <EBillRow icon={Calendar} label="Date" value={new Date(expense.expense_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })} />
@@ -200,6 +205,20 @@ export default function ExpenseDetail() {
               </span>
             </div>
           </div>
+
+          {merchantAddress && (
+            <div className="glass-card rounded-2xl p-5">
+              <div className="flex items-start gap-3">
+                <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                  <MapPin className="h-4 w-4 text-primary/70" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium mb-0.5">Merchant Address</p>
+                  <p className="text-sm text-foreground leading-relaxed whitespace-pre-line">{merchantAddress}</p>
+                </div>
+              </div>
+            </div>
+          )}
         </TabsContent>
 
         <TabsContent value="original" className="mt-3">
