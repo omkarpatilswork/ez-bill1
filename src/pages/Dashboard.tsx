@@ -505,7 +505,18 @@ export default function Dashboard() {
             { icon: Headphones, title: 'Support Hub', desc: 'Reach any merchant', tint: 'hsla(199, 70%, 45%, 0.14)', color: 'text-info' },
             { icon: Bot, title: 'Ask AI', desc: 'Chat with your money', tint: 'hsla(152, 45%, 45%, 0.14)', color: 'text-primary' },
           ].map(item => (
-            <div key={item.title} className="glass-card rounded-xl p-3 flex items-start gap-2.5">
+            <div
+              key={item.title}
+              aria-disabled="true"
+              className="rounded-xl p-3 flex items-start gap-2.5 select-none pointer-events-none"
+              style={{
+                background: 'linear-gradient(135deg, hsla(160, 12%, 16%, 0.55), hsla(160, 12%, 10%, 0.35))',
+                backdropFilter: 'blur(20px) saturate(1.4)',
+                WebkitBackdropFilter: 'blur(20px) saturate(1.4)',
+                border: '1px solid hsla(160, 10%, 60%, 0.12)',
+                boxShadow: 'inset 0 1px 0 0 hsla(0, 0%, 100%, 0.04)',
+              }}
+            >
               <div className="h-8 w-8 rounded-lg flex items-center justify-center shrink-0"
                 style={{ background: item.tint }}>
                 <item.icon className={`h-4 w-4 ${item.color}`} />
