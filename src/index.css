@@ -262,3 +262,45 @@
   background-size: 200% 100%;
   animation: liquid-shimmer 4s ease-in-out infinite;
 }
+
+/* ── Light mode overrides for hardcoded dark surfaces ── */
+.light .bottom-nav-surface {
+  background: hsla(0, 0%, 100%, 0.85) !important;
+  border-top: 1px solid hsla(160, 10%, 80%, 0.4) !important;
+  box-shadow: inset 0 1px 0 0 hsla(0,0%,100%,0.9), 0 -4px 24px -4px hsla(0,0%,0%,0.08) !important;
+}
+
+.light .bottom-sheet-surface {
+  background: hsla(0, 0%, 100%, 0.95) !important;
+  color: hsl(var(--foreground));
+}
+
+/* Dialog / Sheet / Drawer / AlertDialog overlays — soften in light mode */
+.light [data-radix-popper-content-wrapper] ~ * .bg-black\/80,
+.light .bg-black\/80 {
+  background-color: hsla(160, 10%, 30%, 0.45) !important;
+}
+
+/* Gold gradient text — darker, readable variant for light mode */
+.light .text-gold-gradient {
+  background: linear-gradient(135deg, hsl(36, 90%, 32%), hsl(30, 90%, 28%), hsl(24, 90%, 30%));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Chat bubble markdown prose — invert mapping for light mode */
+.light .prose-invert {
+  color: hsl(var(--foreground));
+}
+.light .prose-invert :where(p, li, strong, em, h1, h2, h3, h4, code, blockquote):not(:where([class~="not-prose"] *)) {
+  color: hsl(var(--foreground));
+}
+.light .prose-invert :where(a):not(:where([class~="not-prose"] *)) {
+  color: hsl(var(--primary));
+}
+
+/* Drop shadow used by bottom nav active icon — re-tint in light mode */
+.light .drop-shadow-\[0_0_8px_hsla\(43\,80\%\,50\%\,0\.6\)\] {
+  filter: drop-shadow(0 0 6px hsla(36, 85%, 35%, 0.45));
+}
