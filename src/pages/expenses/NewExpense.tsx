@@ -365,6 +365,8 @@ export default function NewExpense() {
       subtotal: safeNum(data.subtotal),
       discount: discountAmt ? String(discountAmt) : safeNum(data.discount),
       currency: finalCurrency,
+      aggregator: data.aggregator && data.aggregator !== 'Not Found' ? data.aggregator : '',
+      merchant_address: data.merchant_address && data.merchant_address !== 'Not Found' ? data.merchant_address : '',
     });
     setEditLineItems(data.line_items || []);
   };
@@ -444,6 +446,8 @@ export default function NewExpense() {
   const buildDescription = () => {
     const parts: string[] = [];
     if (form.category_name) parts.push(`Category: ${form.category_name}`);
+    if (form.aggregator) parts.push(`Aggregator: ${form.aggregator}`);
+    if (form.merchant_address) parts.push(`Address: ${form.merchant_address}`);
     if (form.invoice_number) parts.push(`Invoice: ${form.invoice_number}`);
     if (form.payment_method) parts.push(`Payment: ${form.payment_method}`);
     if (editLineItems.length > 0) parts.push(`${editLineItems.length} item(s)`);
