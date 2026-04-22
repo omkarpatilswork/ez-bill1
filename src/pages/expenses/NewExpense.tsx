@@ -29,6 +29,8 @@ interface LineItem {
 
 interface ExtractedData {
   merchant_name?: string;
+  merchant_legal_name?: string;
+  aggregator?: string;
   merchant_address?: string;
   merchant_gstin?: string;
   amount?: number | null;
