@@ -31,7 +31,7 @@ export function BottomNav() {
 
   return (
     <>
-      <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden" style={{
+      <nav className="bottom-nav-surface fixed bottom-0 left-0 right-0 z-50 md:hidden" style={{
         background: 'hsla(160, 12%, 10%, 0.6)',
         backdropFilter: 'blur(32px) saturate(1.8)',
         WebkitBackdropFilter: 'blur(32px) saturate(1.8)',
@@ -77,7 +77,7 @@ export function BottomNav() {
       </nav>
 
       <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
-        <SheetContent side="bottom" className="rounded-t-3xl border-border/20 pb-8"
+        <SheetContent side="bottom" className="bottom-sheet-surface rounded-t-3xl border-border/20 pb-8"
           style={{
             background: 'hsla(160, 12%, 10%, 0.85)',
             backdropFilter: 'blur(40px) saturate(1.8)',
