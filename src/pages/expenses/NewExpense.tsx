@@ -124,6 +124,7 @@ export default function NewExpense() {
     category_id: '', category_name: '', cost_center: '', description: '',
     payment_method: '', invoice_number: '', tax_amount: '', tax_details: '', subtotal: '', discount: '',
     currency: DEFAULT_BILL_CURRENCY,
+    aggregator: '', merchant_address: '',
   });
   const [editLineItems, setEditLineItems] = useState<LineItem[]>([]);
 
@@ -169,6 +170,8 @@ export default function NewExpense() {
         subtotal: parseFieldFromDesc(e.description, 'Subtotal') || '',
         discount: parseFieldFromDesc(e.description, 'Discount') || '',
         currency: e.currency || DEFAULT_BILL_CURRENCY,
+        aggregator: parseFieldFromDesc(e.description, 'Aggregator') || '',
+        merchant_address: parseFieldFromDesc(e.description, 'Address') || '',
       });
       setEditLineItems(lineItems);
       setExtractionData({ line_items: lineItems });
