@@ -75,24 +75,31 @@ export function AppSidebar() {
       <SidebarFooter>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton onClick={handleSignOut} className="text-muted-foreground hover:text-foreground">
+            <SidebarMenuButton
+              asChild
+              isActive={isActive('/profile')}
+              tooltip="Profile"
+              className="h-auto py-2"
+            >
+              <NavLink to="/profile" end>
+                <Avatar className="h-7 w-7">
+                  <AvatarFallback className="bg-primary text-primary-foreground text-xs">{initials}</AvatarFallback>
+                </Avatar>
+                {!collapsed && (
+                  <div className="flex flex-col leading-tight min-w-0">
+                    <span className="text-sm font-medium truncate text-foreground">{profile?.full_name || 'User'}</span>
+                    <span className="text-xs text-muted-foreground truncate">Profile</span>
+                  </div>
+                )}
+              </NavLink>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <SidebarMenuButton onClick={handleSignOut} tooltip="Sign Out" className="text-muted-foreground hover:text-foreground">
               <LogOut className="h-4 w-4" />
               {!collapsed && <span>Sign Out</span>}
             </SidebarMenuButton>
           </SidebarMenuItem>
-          {!collapsed && (
-            <SidebarMenuItem>
-              <div className="flex items-center gap-2 px-2 py-1.5">
-                <Avatar className="h-7 w-7">
-                  <AvatarFallback className="bg-primary text-primary-foreground text-xs">{initials}</AvatarFallback>
-                </Avatar>
-                <div className="flex flex-col leading-tight">
-                  <span className="text-sm font-medium truncate text-foreground">{profile?.full_name || 'User'}</span>
-                  <span className="text-xs text-muted-foreground truncate">{profile?.department}</span>
-                </div>
-              </div>
-            </SidebarMenuItem>
-          )}
         </SidebarMenu>
       </SidebarFooter>
     </Sidebar>
