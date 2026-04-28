@@ -214,3 +214,55 @@ export function getCancelLink(merchant: string): string | null {
   }
   return null;
 }
+
+/**
+ * Detect "likely subscriptions" from expenses where the merchant matches a
+ * popular subscription catalog, even with only ONE charge so far. This
+ * complements detectSubscriptions() which requires 2+ recurring charges.
+ *
+ * @param expenses recent expenses
+ * @param matcher  function returning a stable key + display name for known services
+ */
+export interface LikelySubscription {
+  serviceKey: string;
+  serviceName: string;
+  category: string;
+  lastAmount: number;
+  lastDate: string;
+  occurrences: number;
+  expenseIds: string[];
+}
+
+export function detectLikelySubscriptions(
+  expenses: ExpenseLite[],
+  matcher: (text: string) => { key: string; name: string; category: string } | null,
+): LikelySubscription[] {
+  const map = new Map<string, LikelySubscription>();
+  for (const e of expenses) {
+    const text = `${e.merchant || ''} ${e.title || ''}`;
+    const m = matcher(text);
+    if (!m) continue;
+    const ex = map.get(m.key);
+    if (!ex) {
+      map.set(m.key, {
+        serviceKey: m.key,
+        serviceName: m.name,
+        category: m.category,
+        lastAmount: Number(e.amount) || 0,
+        lastDate: e.expense_date,
+        occurrences: 1,
+        expenseIds: [e.id],
+      });
+    } else {
+      ex.occurrences++;
+      ex.expenseIds.push(e.id);
+      if (new Date(e.expense_date) > new Date(ex.lastDate)) {
+        ex.lastDate = e.expense_date;
+        ex.lastAmount = Number(e.amount) || ex.lastAmount;
+      }
+    }
+  }
+  return Array.from(map.values()).sort(
+    (a, b) => new Date(b.lastDate).getTime() - new Date(a.lastDate).getTime(),
+  );
+}
