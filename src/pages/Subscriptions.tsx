@@ -51,6 +51,9 @@ export default function Subscriptions() {
   const [inboxSubs, setInboxSubs] = useState<DetectedSubRow[]>([]);
   const [gmailConnected, setGmailConnected] = useState(false);
   const [scanning, setScanning] = useState(false);
+  const [scanProgress, setScanProgress] = useState(0);          // 0-100 simulated
+  const [scanAnalyzed, setScanAnalyzed] = useState(0);          // animated count
+  const [lastScanResult, setLastScanResult] = useState<{ scanned: number; total: number; detected: number } | null>(null);
 
   const loadInboxSubs = async () => {
     if (!user) return;
@@ -170,20 +173,46 @@ export default function Subscriptions() {
       return;
     }
     setScanning(true);
+    setScanProgress(0);
+    setScanAnalyzed(0);
+    setLastScanResult(null);
+
+    // Simulated progress while the edge function runs (typical: 8-15s).
+    // Climbs toward 90% with an animated message counter (0 → ~100).
+    const startedAt = Date.now();
+    const targetMs = 12000;
+    const targetCount = 100;
+    const tick = setInterval(() => {
+      const elapsed = Date.now() - startedAt;
+      const pct = Math.min(90, Math.round((elapsed / targetMs) * 90));
+      setScanProgress(pct);
+      setScanAnalyzed(Math.min(targetCount, Math.round((elapsed / targetMs) * targetCount)));
+    }, 200);
+
     try {
       const { data, error } = await supabase.functions.invoke('gmail-subscription-scan', {
         body: { days: 180 },
       });
       if (error) throw error;
+      // Snap to real numbers from the server.
+      const scanned = data?.scanned ?? scanAnalyzed;
+      const total = data?.total_found ?? scanned;
+      const detected = data?.detected_count ?? 0;
+      setScanAnalyzed(scanned);
+      setScanProgress(100);
+      setLastScanResult({ scanned, total, detected });
       await loadInboxSubs();
       toast({
         title: 'Inbox scan complete',
-        description: `Found ${data?.detected_count ?? 0} subscription${(data?.detected_count ?? 0) === 1 ? '' : 's'} in your inbox.`,
+        description: `Analyzed ${scanned} email${scanned === 1 ? '' : 's'} · ${detected} subscription${detected === 1 ? '' : 's'} found.`,
       });
     } catch (err: any) {
       toast({ title: 'Scan failed', description: err?.message || 'Could not scan inbox', variant: 'destructive' });
     } finally {
+      clearInterval(tick);
       setScanning(false);
+      // Keep the result visible; reset progress after a beat so the bar stays full briefly.
+      setTimeout(() => setScanProgress(0), 1500);
     }
   };
 
