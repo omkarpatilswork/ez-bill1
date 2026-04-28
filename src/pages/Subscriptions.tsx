@@ -7,14 +7,14 @@ import { useToast } from '@/hooks/use-toast';
 import {
   ArrowLeft, Repeat, Loader2, AlertTriangle, ExternalLink,
   CheckCircle2, Copy, Calendar, TrendingDown, Search, Sparkles,
-  PiggyBank, Plus,
+  PiggyBank, Plus, Mail, X, Check, Inbox, Link2,
 } from 'lucide-react';
 import {
-  detectSubscriptions, getCancelLink,
+  detectSubscriptions, detectLikelySubscriptions, getCancelLink,
   type DetectedSubscription, type SubscriptionStatus,
 } from '@/lib/subscription-engine';
 import {
-  POPULAR_SERVICES, POPULAR_CATEGORIES, matchService,
+  POPULAR_SERVICES, POPULAR_CATEGORIES, matchService, getServiceByKey,
   type PopularCategory, type PopularService,
 } from '@/lib/popular-subscriptions';
 
@@ -25,6 +25,21 @@ const STATUS_META: Record<SubscriptionStatus, { label: string; color: string; bg
   duplicate: { label: 'Duplicate', color: 'text-destructive', bg: 'bg-destructive/15' },
 };
 
+interface DetectedSubRow {
+  id: string;
+  service_key: string;
+  service_name: string;
+  category: string;
+  source: string;
+  email_status: string;                  // 'active' | 'cancelled'
+  user_confirmed_status: string | null;  // 'subscribed' | 'unsubscribed' | null
+  last_email_subject: string | null;
+  last_email_from: string | null;
+  last_email_date: string | null;
+  last_amount: number | null;
+  email_count: number;
+}
+
 export default function Subscriptions() {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -33,24 +48,56 @@ export default function Subscriptions() {
   const [expenses, setExpenses] = useState<any[]>([]);
   const [search, setSearch] = useState('');
   const [activeCat, setActiveCat] = useState<PopularCategory | 'all'>('all');
+  const [inboxSubs, setInboxSubs] = useState<DetectedSubRow[]>([]);
+  const [gmailConnected, setGmailConnected] = useState(false);
+  const [scanning, setScanning] = useState(false);
+
+  const loadInboxSubs = async () => {
+    if (!user) return;
+    const { data } = await supabase
+      .from('detected_subscriptions')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('last_email_date', { ascending: false });
+    setInboxSubs((data as DetectedSubRow[]) || []);
+  };
 
   useEffect(() => {
     if (!user) return;
     (async () => {
       const sixMonthsAgo = new Date();
       sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
-      const { data } = await supabase
+      const [{ data: exp }] = await Promise.all([
+        supabase
         .from('expenses')
         .select('id, amount, expense_date, merchant, title')
         .eq('user_id', user.id)
         .gte('expense_date', sixMonthsAgo.toISOString().slice(0, 10))
-        .order('expense_date', { ascending: true });
-      setExpenses(data || []);
+          .order('expense_date', { ascending: true }),
+      ]);
+      setExpenses(exp || []);
+      await loadInboxSubs();
+      // Check Gmail connection (silent)
+      try {
+        const { data: gmailStatus } = await supabase.functions.invoke('gmail-auth', {
+          body: { action: 'status' },
+        });
+        if (gmailStatus?.connected) setGmailConnected(true);
+      } catch {}
       setLoading(false);
     })();
   }, [user]);
 
   const summary = useMemo(() => detectSubscriptions(expenses), [expenses]);
+
+  /** Likely subscriptions from a single bill (catalog match). */
+  const likelyFromBills = useMemo(() => detectLikelySubscriptions(
+    expenses,
+    (text) => {
+      const m = matchService(text);
+      return m ? { key: m.key, name: m.name, category: m.category } : null;
+    },
+  ), [expenses]);
 
   /** Map each detected subscription back to a known PopularService (when possible). */
   const detectedByService = useMemo(() => {
@@ -72,6 +119,19 @@ export default function Subscriptions() {
     return set;
   }, [expenses]);
 
+  /** Inbox-detected subs keyed by service_key for fast lookup. */
+  const inboxByKey = useMemo(() => {
+    const map = new Map<string, DetectedSubRow>();
+    for (const r of inboxSubs) map.set(r.service_key, r);
+    return map;
+  }, [inboxSubs]);
+
+  /** Subs that need user confirmation: detected from inbox & not yet confirmed. */
+  const pendingConfirm = useMemo(
+    () => inboxSubs.filter(r => r.user_confirmed_status === null && r.email_status === 'active'),
+    [inboxSubs],
+  );
+
   const filteredCatalog = useMemo(() => {
     const q = search.trim().toLowerCase();
     return POPULAR_SERVICES.filter(s => {
@@ -81,7 +141,15 @@ export default function Subscriptions() {
     });
   }, [search, activeCat]);
 
-  const activeFromCatalog = POPULAR_SERVICES.filter(s => detectedByService.has(s.name)).length;
+  /** A service is "active" if any of: recurring detection, inbox active+confirmed/unconfirmed, or seen in bills. */
+  const isServiceActive = (svc: PopularService): boolean => {
+    if (detectedByService.has(svc.name)) return true;
+    const inbox = inboxByKey.get(svc.key);
+    if (inbox && inbox.user_confirmed_status !== 'unsubscribed' && inbox.email_status === 'active') return true;
+    if (likelyFromBills.some(l => l.serviceKey === svc.key)) return true;
+    return false;
+  };
+  const activeFromCatalog = POPULAR_SERVICES.filter(isServiceActive).length;
 
   const handleCancel = (merchant: string, monthly: number) => {
     const link = getCancelLink(merchant);
@@ -94,6 +162,45 @@ export default function Subscriptions() {
         description: `Search "${merchant} cancel subscription" or check account settings.`,
       });
     }
+  };
+
+  const handleScanInbox = async () => {
+    if (!gmailConnected) {
+      navigate('/email-bills');
+      return;
+    }
+    setScanning(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('gmail-subscription-scan', {
+        body: { days: 180 },
+      });
+      if (error) throw error;
+      await loadInboxSubs();
+      toast({
+        title: 'Inbox scan complete',
+        description: `Found ${data?.detected_count ?? 0} subscription${(data?.detected_count ?? 0) === 1 ? '' : 's'} in your inbox.`,
+      });
+    } catch (err: any) {
+      toast({ title: 'Scan failed', description: err?.message || 'Could not scan inbox', variant: 'destructive' });
+    } finally {
+      setScanning(false);
+    }
+  };
+
+  const confirmStatus = async (row: DetectedSubRow, status: 'subscribed' | 'unsubscribed') => {
+    const { error } = await supabase
+      .from('detected_subscriptions')
+      .update({ user_confirmed_status: status })
+      .eq('id', row.id);
+    if (error) {
+      toast({ title: 'Could not save', description: error.message, variant: 'destructive' });
+      return;
+    }
+    setInboxSubs(prev => prev.map(r => r.id === row.id ? { ...r, user_confirmed_status: status } : r));
+    toast({
+      title: status === 'subscribed' ? 'Marked as active' : 'Marked as cancelled',
+      description: row.service_name,
+    });
   };
 
   if (loading) {
@@ -117,6 +224,39 @@ export default function Subscriptions() {
             <Repeat className="h-5 w-5 text-primary" /> Subscriptions
           </h1>
           <p className="text-xs text-muted-foreground">Your one-page hub to track and cancel recurring spends</p>
+        </div>
+      </div>
+
+      {/* Scan Inbox CTA — frictionless detection */}
+      <div className="glass-card rounded-2xl p-4 border border-primary/30 bg-gradient-to-r from-primary/10 to-transparent">
+        <div className="flex items-start gap-3">
+          <div className="h-10 w-10 rounded-xl bg-primary/15 flex items-center justify-center shrink-0">
+            <Inbox className="h-5 w-5 text-primary" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-foreground">
+              {gmailConnected ? 'Scan your inbox for subscriptions' : 'Connect Gmail to find your subscriptions'}
+            </p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {gmailConnected
+                ? 'We\u2019ll find renewal & welcome emails so nothing slips through.'
+                : 'Detect Netflix, Spotify, ChatGPT and 40+ services automatically.'}
+            </p>
+          </div>
+          <Button
+            size="sm"
+            onClick={handleScanInbox}
+            disabled={scanning}
+            className="rounded-xl shrink-0"
+          >
+            {scanning ? (
+              <><Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> Scanning</>
+            ) : gmailConnected ? (
+              <><Sparkles className="h-3.5 w-3.5 mr-1.5" /> Scan</>
+            ) : (
+              <><Link2 className="h-3.5 w-3.5 mr-1.5" /> Connect</>
+            )}
+          </Button>
         </div>
       </div>
 
@@ -166,6 +306,72 @@ export default function Subscriptions() {
           </div>
         )}
       </div>
+
+      {/* Found in inbox — confirm Yes/No */}
+      {pendingConfirm.length > 0 && (
+        <section className="space-y-2.5">
+          <div className="flex items-center justify-between px-1">
+            <h2 className="text-sm font-semibold text-foreground flex items-center gap-1.5">
+              <Mail className="h-4 w-4 text-primary" /> Found in your inbox
+            </h2>
+            <span className="text-[11px] text-muted-foreground">{pendingConfirm.length} to confirm</span>
+          </div>
+          <p className="text-[11px] text-muted-foreground px-1 -mt-1">
+            We saw these in your email. Are you still subscribed?
+          </p>
+          <div className="space-y-2">
+            {pendingConfirm.map(row => {
+              const svc = getServiceByKey(row.service_key);
+              const lastDate = row.last_email_date ? new Date(row.last_email_date) : null;
+              return (
+                <div key={row.id} className="glass-card rounded-2xl p-3.5">
+                  <div className="flex items-center gap-3">
+                    <div className="h-11 w-11 rounded-xl bg-primary/10 flex items-center justify-center shrink-0 text-xl">
+                      {svc?.emoji || '📩'}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-sm font-semibold text-foreground truncate">
+                          {row.service_name}
+                        </span>
+                        {row.last_amount ? (
+                          <span className="text-sm font-bold tabular-nums text-foreground shrink-0">
+                            ₹{row.last_amount.toLocaleString('en-IN')}
+                          </span>
+                        ) : null}
+                      </div>
+                      <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
+                        <span className="text-[10px] text-muted-foreground">
+                          {row.category} · {row.email_count} email{row.email_count > 1 ? 's' : ''}
+                          {lastDate && <> · last {lastDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}</>}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex gap-2 mt-3">
+                    <Button
+                      size="sm"
+                      onClick={() => confirmStatus(row, 'subscribed')}
+                      className="flex-1 rounded-xl bg-success/15 hover:bg-success/25 text-success border border-success/30"
+                      variant="outline"
+                    >
+                      <Check className="h-3.5 w-3.5 mr-1.5" /> Still subscribed
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={() => confirmStatus(row, 'unsubscribed')}
+                      className="flex-1 rounded-xl"
+                      variant="outline"
+                    >
+                      <X className="h-3.5 w-3.5 mr-1.5" /> No, cancelled
+                    </Button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
 
       {/* Detected subscriptions (recurring with multiple charges) */}
       {summary.subscriptions.length > 0 && (
@@ -277,6 +483,7 @@ export default function Subscriptions() {
               svc={svc}
               detected={detectedByService.get(svc.name)}
               seen={seenInExpenses.has(svc.name)}
+              inbox={inboxByKey.get(svc.key)}
               onCancel={handleCancel}
               onAdd={() => navigate('/expenses/new')}
             />
@@ -295,17 +502,21 @@ export default function Subscriptions() {
 
 /* ───────── Popular service tile ───────── */
 function PopularCard({
-  svc, detected, seen, onCancel, onAdd,
+  svc, detected, seen, inbox, onCancel, onAdd,
 }: {
   svc: PopularService;
   detected?: DetectedSubscription;
   seen: boolean;
+  inbox?: DetectedSubRow;
   onCancel: (merchant: string, monthly: number) => void;
   onAdd: () => void;
 }) {
-  const isActive = !!detected;
+  // Active if recurring detected, OR inbox shows active+confirmed/unconfirmed (not unsubscribed).
+  const inboxActive = !!inbox && inbox.user_confirmed_status !== 'unsubscribed' && inbox.email_status === 'active';
+  const isActive = !!detected || inboxActive;
   const meta = detected ? STATUS_META[detected.status] : null;
-  const cost = detected?.monthlyCost ?? svc.typical ?? 0;
+  const cost = detected?.monthlyCost ?? inbox?.last_amount ?? svc.typical ?? 0;
+  const inboxCancelled = !!inbox && (inbox.email_status === 'cancelled' || inbox.user_confirmed_status === 'unsubscribed');
 
   return (
     <div
@@ -319,7 +530,11 @@ function PopularCard({
         <div className="h-9 w-9 rounded-xl bg-background/40 flex items-center justify-center text-lg shrink-0">
           {svc.emoji}
         </div>
-        {isActive ? (
+        {inboxCancelled ? (
+          <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground">
+            Cancelled
+          </span>
+        ) : isActive ? (
           <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full bg-success/20 text-success flex items-center gap-1">
             <CheckCircle2 className="h-2.5 w-2.5" /> Active
           </span>
@@ -358,6 +573,24 @@ function PopularCard({
             >
               Cancel <ExternalLink className="h-2.5 w-2.5" />
             </button>
+          )}
+        </div>
+      )}
+
+      {isActive && !detected && inbox && (
+        <div className="mt-2 flex items-center justify-between gap-1.5">
+          <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full bg-primary/15 text-primary flex items-center gap-0.5">
+            <Mail className="h-2.5 w-2.5" /> From inbox
+          </span>
+          {svc.cancelUrl && (
+            <a
+              href={svc.cancelUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[10px] font-semibold text-foreground hover:text-primary flex items-center gap-1"
+            >
+              Manage <ExternalLink className="h-2.5 w-2.5" />
+            </a>
           )}
         </div>
       )}
