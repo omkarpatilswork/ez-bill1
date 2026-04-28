@@ -264,12 +264,20 @@ export default function Subscriptions() {
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-semibold text-foreground">
-              {gmailConnected ? 'Scan your inbox for subscriptions' : 'Connect Gmail to find your subscriptions'}
+              {scanning
+                ? 'Scanning your inbox…'
+                : gmailConnected
+                  ? 'Scan your inbox for subscriptions'
+                  : 'Connect Gmail to find your subscriptions'}
             </p>
             <p className="text-xs text-muted-foreground mt-0.5">
-              {gmailConnected
-                ? 'We\u2019ll find renewal & welcome emails so nothing slips through.'
-                : 'Detect Netflix, Spotify, ChatGPT and 40+ services automatically.'}
+              {scanning
+                ? `Analyzed ${scanAnalyzed} message${scanAnalyzed === 1 ? '' : 's'}…`
+                : lastScanResult
+                  ? `Last scan: analyzed ${lastScanResult.scanned} of ${lastScanResult.total} · ${lastScanResult.detected} found.`
+                  : gmailConnected
+                    ? 'We\u2019ll find renewal & welcome emails so nothing slips through.'
+                    : 'Detect Netflix, Spotify, ChatGPT and 40+ services automatically.'}
             </p>
           </div>
           <Button
@@ -287,6 +295,22 @@ export default function Subscriptions() {
             )}
           </Button>
         </div>
+
+        {/* Progress bar — visible while scanning or briefly after completion */}
+        {(scanning || scanProgress > 0) && (
+          <div className="mt-3">
+            <div className="h-1.5 w-full rounded-full bg-background/40 overflow-hidden">
+              <div
+                className="h-full bg-gradient-to-r from-primary to-gold transition-[width] duration-300 ease-out"
+                style={{ width: `${scanProgress}%` }}
+              />
+            </div>
+            <div className="flex items-center justify-between mt-1.5 text-[10px] text-muted-foreground">
+              <span>{scanning ? 'Reading email metadata…' : 'Done'}</span>
+              <span className="tabular-nums">{scanProgress}%</span>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Hero summary */}
