@@ -141,6 +141,60 @@ export type Database = {
           },
         ]
       }
+      detected_subscriptions: {
+        Row: {
+          category: string
+          created_at: string
+          email_count: number
+          email_status: string
+          id: string
+          last_amount: number | null
+          last_email_date: string | null
+          last_email_from: string | null
+          last_email_subject: string | null
+          service_key: string
+          service_name: string
+          source: string
+          updated_at: string
+          user_confirmed_status: string | null
+          user_id: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          email_count?: number
+          email_status?: string
+          id?: string
+          last_amount?: number | null
+          last_email_date?: string | null
+          last_email_from?: string | null
+          last_email_subject?: string | null
+          service_key: string
+          service_name: string
+          source?: string
+          updated_at?: string
+          user_confirmed_status?: string | null
+          user_id: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          email_count?: number
+          email_status?: string
+          id?: string
+          last_amount?: number | null
+          last_email_date?: string | null
+          last_email_from?: string | null
+          last_email_subject?: string | null
+          service_key?: string
+          service_name?: string
+          source?: string
+          updated_at?: string
+          user_confirmed_status?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       expense_categories: {
         Row: {
           description: string | null
