@@ -51,6 +51,9 @@ export default function Subscriptions() {
   const [inboxSubs, setInboxSubs] = useState<DetectedSubRow[]>([]);
   const [gmailConnected, setGmailConnected] = useState(false);
   const [scanning, setScanning] = useState(false);
+  const [scanProgress, setScanProgress] = useState(0);          // 0-100 simulated
+  const [scanAnalyzed, setScanAnalyzed] = useState(0);          // animated count
+  const [lastScanResult, setLastScanResult] = useState<{ scanned: number; total: number; detected: number } | null>(null);
 
   const loadInboxSubs = async () => {
     if (!user) return;
@@ -170,20 +173,46 @@ export default function Subscriptions() {
       return;
     }
     setScanning(true);
+    setScanProgress(0);
+    setScanAnalyzed(0);
+    setLastScanResult(null);
+
+    // Simulated progress while the edge function runs (typical: 8-15s).
+    // Climbs toward 90% with an animated message counter (0 → ~100).
+    const startedAt = Date.now();
+    const targetMs = 12000;
+    const targetCount = 100;
+    const tick = setInterval(() => {
+      const elapsed = Date.now() - startedAt;
+      const pct = Math.min(90, Math.round((elapsed / targetMs) * 90));
+      setScanProgress(pct);
+      setScanAnalyzed(Math.min(targetCount, Math.round((elapsed / targetMs) * targetCount)));
+    }, 200);
+
     try {
       const { data, error } = await supabase.functions.invoke('gmail-subscription-scan', {
         body: { days: 180 },
       });
       if (error) throw error;
+      // Snap to real numbers from the server.
+      const scanned = data?.scanned ?? scanAnalyzed;
+      const total = data?.total_found ?? scanned;
+      const detected = data?.detected_count ?? 0;
+      setScanAnalyzed(scanned);
+      setScanProgress(100);
+      setLastScanResult({ scanned, total, detected });
       await loadInboxSubs();
       toast({
         title: 'Inbox scan complete',
-        description: `Found ${data?.detected_count ?? 0} subscription${(data?.detected_count ?? 0) === 1 ? '' : 's'} in your inbox.`,
+        description: `Analyzed ${scanned} email${scanned === 1 ? '' : 's'} · ${detected} subscription${detected === 1 ? '' : 's'} found.`,
       });
     } catch (err: any) {
       toast({ title: 'Scan failed', description: err?.message || 'Could not scan inbox', variant: 'destructive' });
     } finally {
+      clearInterval(tick);
       setScanning(false);
+      // Keep the result visible; reset progress after a beat so the bar stays full briefly.
+      setTimeout(() => setScanProgress(0), 1500);
     }
   };
 
@@ -235,12 +264,20 @@ export default function Subscriptions() {
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-semibold text-foreground">
-              {gmailConnected ? 'Scan your inbox for subscriptions' : 'Connect Gmail to find your subscriptions'}
+              {scanning
+                ? 'Scanning your inbox…'
+                : gmailConnected
+                  ? 'Scan your inbox for subscriptions'
+                  : 'Connect Gmail to find your subscriptions'}
             </p>
             <p className="text-xs text-muted-foreground mt-0.5">
-              {gmailConnected
-                ? 'We\u2019ll find renewal & welcome emails so nothing slips through.'
-                : 'Detect Netflix, Spotify, ChatGPT and 40+ services automatically.'}
+              {scanning
+                ? `Analyzed ${scanAnalyzed} message${scanAnalyzed === 1 ? '' : 's'}…`
+                : lastScanResult
+                  ? `Last scan: analyzed ${lastScanResult.scanned} of ${lastScanResult.total} · ${lastScanResult.detected} found.`
+                  : gmailConnected
+                    ? 'We\u2019ll find renewal & welcome emails so nothing slips through.'
+                    : 'Detect Netflix, Spotify, ChatGPT and 40+ services automatically.'}
             </p>
           </div>
           <Button
@@ -258,6 +295,22 @@ export default function Subscriptions() {
             )}
           </Button>
         </div>
+
+        {/* Progress bar — visible while scanning or briefly after completion */}
+        {(scanning || scanProgress > 0) && (
+          <div className="mt-3">
+            <div className="h-1.5 w-full rounded-full bg-background/40 overflow-hidden">
+              <div
+                className="h-full bg-gradient-to-r from-primary to-gold transition-[width] duration-300 ease-out"
+                style={{ width: `${scanProgress}%` }}
+              />
+            </div>
+            <div className="flex items-center justify-between mt-1.5 text-[10px] text-muted-foreground">
+              <span>{scanning ? 'Reading email metadata…' : 'Done'}</span>
+              <span className="tabular-nums">{scanProgress}%</span>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Hero summary */}
