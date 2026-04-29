@@ -7,26 +7,22 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-// Subjects/senders to exclude — brokerage & bank statements
-const EXCLUDE_PATTERNS = [
-  // Brokers
-  /zerodha/i, /indmoney/i, /ind\s*money/i, /kotak\s*neo/i, /kotak\s*securities/i,
-  /groww/i, /upstox/i, /angel\s*one/i, /angel\s*broking/i, /motilal\s*oswal/i,
-  /icici\s*direct/i, /hdfc\s*securities/i, /sharekhan/i, /5paisa/i, /paytm\s*money/i,
-  /kite/i, /coin\s*by\s*zerodha/i, /smallcase/i, /dhan/i,
-  // Statement keywords
+// Patterns that should NOT be imported as bills (statements, trades, etc.)
+// — these go into the "Financial Documents" hub instead via gmail-financial-scan.
+const NON_BILL_PATTERNS = [
   /statement\s*of\s*account/i, /account\s*statement/i, /bank\s*statement/i,
+  /credit\s*card\s*statement/i, /card\s*statement/i,
   /portfolio\s*statement/i, /holding\s*statement/i, /demat\s*statement/i,
-  /contract\s*note/i, /weekly\s*report/i, /monthly\s*statement/i,
+  /contract\s*note/i, /trade\s*confirmation/i,
   /transaction\s*statement/i, /ledger\s*statement/i, /p\s*&?\s*l\s*statement/i,
   /profit\s*(and|&)\s*loss/i, /capital\s*gain/i, /tax\s*statement/i,
-  /annual\s*statement/i, /quarterly\s*statement/i,
+  /annual\s*statement/i, /quarterly\s*statement/i, /monthly\s*statement/i,
   /mutual\s*fund\s*statement/i, /cas\s*statement/i, /consolidated\s*account/i,
 ];
 
-function isExcluded(subject: string, from: string): boolean {
+function isNonBill(subject: string, from: string): boolean {
   const text = `${subject} ${from}`;
-  return EXCLUDE_PATTERNS.some(p => p.test(text));
+  return NON_BILL_PATTERNS.some(p => p.test(text));
 }
 
 async function refreshToken(supabase: any, userId: string, connection: any, clientId: string, clientSecret: string) {
@@ -113,13 +109,18 @@ serve(async (req) => {
       accessToken = await refreshToken(supabase, user.id, connection, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET);
     }
 
-    const { max_results = 50, days = 30 } = await req.json().catch(() => ({}));
+    const { max_results = 80, days = 30 } = await req.json().catch(() => ({}));
 
-    // More focused query: bills & receipts only, exclude statements
-    const query = `has:attachment (subject:(invoice OR receipt OR bill OR payment OR "order confirmation" OR purchase OR "credit card" OR subscription) OR from:(swiggy OR zomato OR amazon OR flipkart OR uber OR ola OR paytm OR phonepe OR gpay OR razorpay OR paypal OR netflix OR spotify OR bigbasket OR myntra OR ajio OR bookmyshow OR makemytrip OR cleartrip OR dunzo OR blinkit OR zepto OR jiomart OR "hdfc bank" OR "icici bank" OR "sbi card" OR "axis bank" OR "kotak" OR "amex" OR "american express" OR "citi" OR hotstar OR "youtube premium" OR "apple" OR airtel OR jio OR vi OR bsnl)) -subject:"statement of account" -subject:"account statement" -subject:"bank statement" -subject:"contract note" -subject:"portfolio" -subject:"holdings" -subject:"P&L" -subject:"weekly report" newer_than:${days}d`;
+    // Maximum-coverage query: broad subjects + huge sender list across food, travel, shopping,
+    // utilities, telecom, OTT, fintech, edtech, insurance, healthcare, fuel, ride-hailing, SaaS.
+    const subjectMatch = `subject:(invoice OR receipt OR bill OR payment OR "order confirmation" OR "order placed" OR purchase OR "tax invoice" OR "e-invoice" OR "GST invoice" OR "payment confirmation" OR "payment successful" OR "booking confirmation" OR "ticket" OR "your order" OR "your bill" OR "your invoice" OR "your receipt" OR "thanks for your order" OR "thank you for your" OR "renewal" OR "subscription" OR "due" OR "premium")`;
+    const senderMatch = `from:(swiggy OR zomato OR dominos OR mcdonalds OR kfc OR pizzahut OR starbucks OR dunzo OR blinkit OR zepto OR bigbasket OR jiomart OR dmart OR amazon OR flipkart OR myntra OR ajio OR meesho OR nykaa OR tatacliq OR croma OR reliance OR shoppersstop OR uber OR ola OR rapido OR bookmyshow OR insider OR makemytrip OR cleartrip OR yatra OR easemytrip OR goibibo OR irctc OR oyo OR airbnb OR booking OR agoda OR indigo OR vistara OR airindia OR spicejet OR akasaair OR netflix OR hotstar OR "disney" OR spotify OR "youtube premium" OR "prime video" OR sony OR zee5 OR voot OR jiocinema OR apple OR icloud OR adobe OR microsoft OR google OR canva OR notion OR dropbox OR github OR openai OR chatgpt OR claude OR perplexity OR airtel OR jio OR "vi " OR vodafone OR bsnl OR tataplay OR "tata sky" OR dish OR "act fibernet" OR hathway OR razorpay OR paytm OR phonepe OR gpay OR cred OR mobikwik OR "hdfc bank" OR "icici bank" OR "sbi card" OR "axis bank" OR kotak OR yesbank OR indusind OR rbl OR amex OR "american express" OR citi OR hsbc OR standardchartered OR onecard OR "tata neu" OR niyo OR fi OR jupiter OR slice OR uni OR lazypay OR simpl OR zestmoney OR bajajfinserv OR hdfclife OR "icici prudential" OR licindia OR maxlife OR sbilife OR "tata aig" OR "policybazaar" OR "acko" OR "digit" OR pharmeasy OR netmeds OR 1mg OR practo OR cult OR hpcl OR bpcl OR iocl OR "indian oil" OR "bharat petroleum" OR "hindustan petroleum" OR fastag OR paytmfastag OR upstox OR groww OR zerodha OR coursera OR udemy OR byjus OR unacademy OR vedantu OR linkedin)`;
+    // Exclude statements/trades — those go to financial-scan
+    const exclusions = `-subject:"statement of account" -subject:"account statement" -subject:"bank statement" -subject:"credit card statement" -subject:"contract note" -subject:"portfolio" -subject:"holdings" -subject:"P&L" -subject:"weekly report" -subject:"monthly statement" -subject:"trade confirmation" -subject:unsubscribe -subject:newsletter`;
+    const query = `(has:attachment OR ${subjectMatch}) (${subjectMatch} OR ${senderMatch}) ${exclusions} newer_than:${days}d`;
 
     // Fetch more results to compensate for filtering
-    const fetchMax = Math.min(max_results * 2, 100);
+    const fetchMax = Math.min(max_results * 3, 200);
     const searchUrl = `https://gmail.googleapis.com/gmail/v1/users/me/messages?q=${encodeURIComponent(query)}&maxResults=${fetchMax}`;
 
     let searchRes = await gmailFetch(searchUrl, accessToken);
