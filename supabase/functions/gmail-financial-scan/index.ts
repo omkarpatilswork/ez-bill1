@@ -118,6 +118,29 @@ async function sha256(input: string): Promise<string> {
   return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
 }
 
+// Normalize a value for hashing: lowercase, strip currency symbols/codes, commas,
+// whitespace, and zero-pad numbers to 2 decimals when possible.
+function normVal(v: any): string {
+  if (v == null) return "";
+  let s = String(v).toLowerCase();
+  // strip currency symbols & codes
+  s = s.replace(/(₹|rs\.?|inr|usd|\$|eur|€|gbp|£|aed|dhs)/gi, "");
+  // strip thousands separators and whitespace
+  s = s.replace(/[,\s]+/g, "");
+  // collapse punctuation noise but keep digits/letters/.- (for dates and decimals)
+  s = s.replace(/[^a-z0-9.\-]/g, "");
+  // if it parses as a number, normalize to fixed 2 decimals
+  const num = Number(s);
+  if (!Number.isNaN(num) && /^-?\d+(\.\d+)?$/.test(s)) return num.toFixed(2);
+  return s;
+}
+
+function normIssuer(v: any): string {
+  return String(v ?? "").toLowerCase()
+    .replace(/[^a-z0-9]/g, "")  // keep only alphanumerics — drops "Ltd.", spaces, dashes
+    .slice(0, 40);
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
@@ -194,13 +217,17 @@ serve(async (req) => {
         const body = extractTextBody(md.payload);
         const ai = await aiClassifyAndExtract(docType, subject, from, body) || {};
 
-        // Build content hash: docType + issuer + key amount/date
+        // Build a normalized content hash so trivial differences (whitespace,
+        // currency symbols, "Rs." vs "₹", casing) don't create false mismatches.
         const hashSeed = [
           docType,
-          (ai.issuer || ai.broker || from).toString().toLowerCase().slice(0, 40),
-          (ai.total_amount ?? ai.amount ?? ai.trade_value ?? "").toString(),
-          (ai.due_date ?? ai.txn_date ?? ai.trade_date ?? ai.statement_date ?? ai.period_end ?? "").toString(),
-          (ai.reference_number ?? ai.trade_symbol ?? "").toString(),
+          normIssuer(ai.issuer || ai.broker || from),
+          normVal(ai.account_label ?? ai.card_last4 ?? ""),
+          normVal(ai.total_amount ?? ai.amount ?? ai.trade_value),
+          normVal(ai.due_date ?? ai.txn_date ?? ai.trade_date ?? ai.statement_date ?? ai.period_end),
+          normVal(ai.reference_number ?? ai.trade_symbol),
+          normVal(ai.trade_side),
+          normVal(ai.trade_quantity),
         ].join("|");
         const contentHash = await sha256(hashSeed);
 
