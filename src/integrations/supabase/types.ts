@@ -249,6 +249,7 @@ export type Database = {
         Row: {
           amount: number
           category_id: string | null
+          content_hash: string | null
           conversion_rate: number | null
           converted_amount: number | null
           cost_center: string | null
@@ -267,6 +268,7 @@ export type Database = {
         Insert: {
           amount: number
           category_id?: string | null
+          content_hash?: string | null
           conversion_rate?: number | null
           converted_amount?: number | null
           cost_center?: string | null
@@ -285,6 +287,7 @@ export type Database = {
         Update: {
           amount?: number
           category_id?: string | null
+          content_hash?: string | null
           conversion_rate?: number | null
           converted_amount?: number | null
           cost_center?: string | null
@@ -309,6 +312,129 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      financial_documents: {
+        Row: {
+          account_label: string | null
+          broker: string | null
+          closing_balance: number | null
+          content_hash: string | null
+          counterparty: string | null
+          created_at: string
+          currency: string
+          description: string | null
+          doc_type: string
+          due_date: string | null
+          email_date: string | null
+          email_from: string | null
+          email_subject: string | null
+          gmail_message_id: string | null
+          id: string
+          issuer: string | null
+          min_due: number | null
+          opening_balance: number | null
+          period_end: string | null
+          period_start: string | null
+          raw_extracted: Json | null
+          reference_number: string | null
+          statement_date: string | null
+          status: string
+          title: string
+          total_amount: number | null
+          total_credits: number | null
+          total_debits: number | null
+          trade_date: string | null
+          trade_price: number | null
+          trade_quantity: number | null
+          trade_side: string | null
+          trade_symbol: string | null
+          trade_value: number | null
+          txn_date: string | null
+          txn_type: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          account_label?: string | null
+          broker?: string | null
+          closing_balance?: number | null
+          content_hash?: string | null
+          counterparty?: string | null
+          created_at?: string
+          currency?: string
+          description?: string | null
+          doc_type: string
+          due_date?: string | null
+          email_date?: string | null
+          email_from?: string | null
+          email_subject?: string | null
+          gmail_message_id?: string | null
+          id?: string
+          issuer?: string | null
+          min_due?: number | null
+          opening_balance?: number | null
+          period_end?: string | null
+          period_start?: string | null
+          raw_extracted?: Json | null
+          reference_number?: string | null
+          statement_date?: string | null
+          status?: string
+          title?: string
+          total_amount?: number | null
+          total_credits?: number | null
+          total_debits?: number | null
+          trade_date?: string | null
+          trade_price?: number | null
+          trade_quantity?: number | null
+          trade_side?: string | null
+          trade_symbol?: string | null
+          trade_value?: number | null
+          txn_date?: string | null
+          txn_type?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          account_label?: string | null
+          broker?: string | null
+          closing_balance?: number | null
+          content_hash?: string | null
+          counterparty?: string | null
+          created_at?: string
+          currency?: string
+          description?: string | null
+          doc_type?: string
+          due_date?: string | null
+          email_date?: string | null
+          email_from?: string | null
+          email_subject?: string | null
+          gmail_message_id?: string | null
+          id?: string
+          issuer?: string | null
+          min_due?: number | null
+          opening_balance?: number | null
+          period_end?: string | null
+          period_start?: string | null
+          raw_extracted?: Json | null
+          reference_number?: string | null
+          statement_date?: string | null
+          status?: string
+          title?: string
+          total_amount?: number | null
+          total_credits?: number | null
+          total_debits?: number | null
+          trade_date?: string | null
+          trade_price?: number | null
+          trade_quantity?: number | null
+          trade_side?: string | null
+          trade_symbol?: string | null
+          trade_value?: number | null
+          txn_date?: string | null
+          txn_type?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       friends: {
         Row: {
