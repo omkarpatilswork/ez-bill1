@@ -183,8 +183,8 @@ async function processMessages(searchData: any, accessToken: string, userId: str
       const from = getHeader("From");
       const date = getHeader("Date");
 
-      // Exclude broker/bank statements
-      if (isExcluded(subject, from)) continue;
+      // Exclude statements/contracts — those go to the financial-scan flow
+      if (isNonBill(subject, from)) continue;
 
       const attachments: any[] = [];
       const findAttachments = (parts: any[]) => {
