@@ -112,7 +112,7 @@ export default function EmailBills() {
   const [dateRange, setDateRange] = useState(30);
 
   const [importProgress, setImportProgress] = useState({ phase: '', current: 0, total: 0 });
-  const [importResult, setImportResult] = useState<{ saved: number; skipped: number; total: number } | null>(null);
+  const [importResult, setImportResult] = useState<{ saved: number; skipped: number; duplicates: number; total: number } | null>(null);
 
   const [smsText, setSmsText] = useState('');
   const [isParsing, setIsParsing] = useState(false);
@@ -217,13 +217,48 @@ export default function EmailBills() {
 
       let saved = 0;
       let skipped = 0;
+      let duplicates = 0;
       let totalAttachments = 0;
       for (const e of emails) totalAttachments += e.attachments.length;
 
       setImportProgress({ phase: 'Extracting & importing bills...', current: 0, total: totalAttachments });
       let processed = 0;
 
+      // Pre-load existing expenses for duplicate detection (last 180 days, lightweight)
+      const sinceISO = new Date(Date.now() - 180 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+      const { data: existingExpenses } = await supabase
+        .from('expenses')
+        .select('merchant, amount, expense_date, content_hash')
+        .eq('user_id', user.id)
+        .gte('expense_date', sinceISO);
+
+      const existingHashes = new Set((existingExpenses || []).map((e: any) => e.content_hash).filter(Boolean));
+      const existingTriples = new Set(
+        (existingExpenses || []).map((e: any) =>
+          `${(e.merchant || '').toLowerCase().trim()}|${Number(e.amount).toFixed(2)}|${e.expense_date}`
+        )
+      );
+
+      // Pre-load already-processed message ids to skip wholesale
+      const { data: processedRows } = await supabase
+        .from('processed_emails')
+        .select('gmail_message_id')
+        .eq('user_id', user.id)
+        .in('gmail_message_id', emails.map(e => e.message_id));
+      const processedMsgs = new Set((processedRows || []).map((r: any) => r.gmail_message_id));
+
+      const sha256 = async (s: string) => {
+        const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s));
+        return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+      };
+
       for (const email of emails) {
+        if (processedMsgs.has(email.message_id)) {
+          duplicates += email.attachments.length;
+          processed += email.attachments.length;
+          setImportProgress({ phase: 'Extracting & importing bills...', current: processed, total: totalAttachments });
+          continue;
+        }
         for (const att of email.attachments) {
           processed++;
           setImportProgress({ phase: 'Extracting & importing bills...', current: processed, total: totalAttachments });
@@ -265,6 +300,17 @@ export default function EmailBills() {
             const expenseDate = ext.date_time && ext.date_time !== 'Not Found'
               ? ext.date_time.slice(0, 10) : new Date().toISOString().slice(0, 10);
 
+            // Duplicate check: invoice# OR (merchant + amount + date)
+            const triple = `${merchantName.toLowerCase().trim()}|${Number(amount).toFixed(2)}|${expenseDate}`;
+            const hashSeed = `${merchantName.toLowerCase().trim()}|${Number(amount).toFixed(2)}|${expenseDate}|${invoiceNumber}`;
+            const contentHash = await sha256(hashSeed);
+            if (existingHashes.has(contentHash) || existingTriples.has(triple)) {
+              duplicates++;
+              continue;
+            }
+            existingHashes.add(contentHash);
+            existingTriples.add(triple);
+
             const isSubscription = isSubscriptionMerchant(`${merchantName} ${email.subject}`);
 
             const LINE_ITEMS_MARKER = '::ITEMS::';
@@ -297,6 +343,7 @@ export default function EmailBills() {
               description,
               status: 'draft',
               cost_center: isSubscription ? 'Subscription' : paymentMethod,
+              content_hash: contentHash,
             } as any).select().single();
 
             if (error) { skipped++; continue; }
@@ -335,10 +382,10 @@ export default function EmailBills() {
         }
       }
 
-      setImportResult({ saved, skipped, total: totalAttachments });
+      setImportResult({ saved, skipped, duplicates, total: totalAttachments });
       toast({
         title: 'Import complete',
-        description: `Imported ${saved} bill(s). ${skipped > 0 ? `${skipped} skipped (no amount or extraction failed).` : ''}`,
+        description: `Imported ${saved} bill(s). ${duplicates > 0 ? `${duplicates} duplicate(s) blocked. ` : ''}${skipped > 0 ? `${skipped} skipped (no amount or extraction failed).` : ''}`,
       });
 
       if (saved > 0) {
