@@ -313,6 +313,48 @@ export type Database = {
           },
         ]
       }
+      fin_scan_dedup_log: {
+        Row: {
+          content_hash: string | null
+          created_at: string
+          decision: string
+          doc_type: string | null
+          email_from: string | null
+          email_subject: string | null
+          gmail_message_id: string | null
+          id: string
+          matched_document_id: string | null
+          reason: string | null
+          user_id: string
+        }
+        Insert: {
+          content_hash?: string | null
+          created_at?: string
+          decision: string
+          doc_type?: string | null
+          email_from?: string | null
+          email_subject?: string | null
+          gmail_message_id?: string | null
+          id?: string
+          matched_document_id?: string | null
+          reason?: string | null
+          user_id: string
+        }
+        Update: {
+          content_hash?: string | null
+          created_at?: string
+          decision?: string
+          doc_type?: string | null
+          email_from?: string | null
+          email_subject?: string | null
+          gmail_message_id?: string | null
+          id?: string
+          matched_document_id?: string | null
+          reason?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       financial_documents: {
         Row: {
           account_label: string | null
