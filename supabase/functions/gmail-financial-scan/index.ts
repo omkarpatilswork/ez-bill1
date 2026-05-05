@@ -196,11 +196,53 @@ serve(async (req) => {
     let saved = 0, skipped_dupe = 0, skipped_nomatch = 0, processed = 0;
     const byType: Record<string, number> = {};
 
+    // Collect dedup audit entries for this scan and bulk-insert at the end.
+    const auditEntries: any[] = [];
+    const logAudit = (e: {
+      gmail_message_id?: string;
+      email_subject?: string;
+      email_from?: string;
+      doc_type?: string | null;
+      content_hash?: string | null;
+      decision: "allowed" | "blocked_message_id" | "blocked_content_hash" | "skipped_no_match" | "insert_failed";
+      reason: string;
+      matched_document_id?: string | null;
+    }) => {
+      auditEntries.push({
+        user_id: user.id,
+        gmail_message_id: e.gmail_message_id ?? null,
+        email_subject: e.email_subject ?? null,
+        email_from: e.email_from ?? null,
+        doc_type: e.doc_type ?? null,
+        content_hash: e.content_hash ?? null,
+        decision: e.decision,
+        reason: e.reason,
+        matched_document_id: e.matched_document_id ?? null,
+      });
+    };
+
     for (const m of messages) {
       if (saved + skipped_dupe + skipped_nomatch >= max_results) break;
       processed++;
       try {
-        if (alreadySet.has(m.id)) { skipped_dupe++; continue; }
+        if (alreadySet.has(m.id)) {
+          // Find which existing doc shares this gmail_message_id
+          const { data: prev } = await supabase
+            .from("financial_documents")
+            .select("id")
+            .eq("user_id", user.id)
+            .eq("gmail_message_id", m.id)
+            .limit(1)
+            .maybeSingle();
+          logAudit({
+            gmail_message_id: m.id,
+            decision: "blocked_message_id",
+            reason: "Gmail message_id already imported",
+            matched_document_id: prev?.id || null,
+          });
+          skipped_dupe++;
+          continue;
+        }
 
         const r = await gmailFetch(`https://gmail.googleapis.com/gmail/v1/users/me/messages/${m.id}?format=full`, accessToken);
         if (!r.ok) continue;
@@ -212,7 +254,17 @@ serve(async (req) => {
         const date = getH("Date");
 
         const docType = classify(subject, from);
-        if (!docType) { skipped_nomatch++; continue; }
+        if (!docType) {
+          logAudit({
+            gmail_message_id: m.id,
+            email_subject: subject,
+            email_from: from,
+            decision: "skipped_no_match",
+            reason: "Subject/sender did not match any financial doc classifier",
+          });
+          skipped_nomatch++;
+          continue;
+        }
 
         const body = extractTextBody(md.payload);
         const ai = await aiClassifyAndExtract(docType, subject, from, body) || {};
@@ -239,7 +291,20 @@ serve(async (req) => {
           .eq("content_hash", contentHash)
           .limit(1)
           .maybeSingle();
-        if (dupe) { skipped_dupe++; continue; }
+        if (dupe) {
+          logAudit({
+            gmail_message_id: m.id,
+            email_subject: subject,
+            email_from: from,
+            doc_type: docType,
+            content_hash: contentHash,
+            decision: "blocked_content_hash",
+            reason: `Normalized content hash matched existing document (seed: ${hashSeed})`,
+            matched_document_id: dupe.id,
+          });
+          skipped_dupe++;
+          continue;
+        }
 
         const issuer = ai.issuer || ai.broker || (from.split("<")[0] || from).trim();
         let title = subject || `${docType} from ${issuer}`;
@@ -302,12 +367,38 @@ serve(async (req) => {
         }
 
         const { error: insErr } = await supabase.from("financial_documents").insert(insertRow);
-        if (insErr) { console.error("insert error", insErr); continue; }
+        if (insErr) {
+          console.error("insert error", insErr);
+          logAudit({
+            gmail_message_id: m.id,
+            email_subject: subject,
+            email_from: from,
+            doc_type: docType,
+            content_hash: contentHash,
+            decision: "insert_failed",
+            reason: insErr.message || "Insert failed",
+          });
+          continue;
+        }
         saved++;
         byType[docType] = (byType[docType] || 0) + 1;
+        logAudit({
+          gmail_message_id: m.id,
+          email_subject: subject,
+          email_from: from,
+          doc_type: docType,
+          content_hash: contentHash,
+          decision: "allowed",
+          reason: `New ${docType} imported (seed: ${hashSeed})`,
+        });
       } catch (err) {
         console.error("msg error", m.id, err);
       }
+    }
+
+    if (auditEntries.length) {
+      const { error: auditErr } = await supabase.from("fin_scan_dedup_log").insert(auditEntries);
+      if (auditErr) console.error("audit insert error", auditErr);
     }
 
     return new Response(JSON.stringify({
@@ -317,6 +408,7 @@ serve(async (req) => {
       skipped_dupe,
       skipped_nomatch,
       by_type: byType,
+      audit_logged: auditEntries.length,
     }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (e) {
     console.error("gmail-financial-scan error:", e);
