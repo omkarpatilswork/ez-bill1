@@ -20,6 +20,7 @@ import {
 import type { ExpenseCategory } from '@/lib/types';
 import { AutoSync } from '@/lib/auto-bill-import';
 import { runBillImport, type BillImportPhase } from '@/lib/auto-bill-import';
+import { SyncProgressSteps } from '@/components/email-bills/SyncProgressSteps';
 
 interface EmailAttachment {
   id: string;
