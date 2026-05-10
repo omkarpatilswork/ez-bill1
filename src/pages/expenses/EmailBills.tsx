@@ -169,6 +169,10 @@ export default function EmailBills() {
     if (!user) return;
     setIsSyncingNow(true);
     setSyncProgress({ phase: 'fetching', current: 0, total: 0, message: `Starting import (last ${days} day${days === 1 ? '' : 's'})…` });
+    toast({
+      title: opts.updateLastSync ? 'Syncing bills…' : 'Importing bills…',
+      description: `Fetching from the last ${days} day${days === 1 ? '' : 's'}.`,
+    });
     try {
       const result = await runBillImport({
         userId: user.id,
