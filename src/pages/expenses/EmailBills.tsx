@@ -622,6 +622,18 @@ export default function EmailBills() {
                 )}
               </Button>
 
+              <Button
+                onClick={importLast30}
+                disabled={isSyncingNow || isScanning}
+                className="w-full min-h-[44px] active:scale-[0.97]"
+              >
+                {isSyncingNow ? (
+                  <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Importing…</>
+                ) : (
+                  <><Download className="h-4 w-4 mr-2" /> Import bills (last 30 days)</>
+                )}
+              </Button>
+
               {(isSyncingNow || syncProgress.phase !== 'idle') && (
                 <SyncProgressSteps
                   phase={syncProgress.phase}
