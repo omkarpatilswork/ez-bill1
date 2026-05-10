@@ -761,6 +761,10 @@ export default function EmailBills() {
               </div>
             </div>
           )}
+
+          {isConnected && (
+            <SyncHistoryPanel refreshKey={historyRefreshKey} />
+          )}
         </TabsContent>
 
         {isNative && <TabsContent value="upi" className="space-y-4">
