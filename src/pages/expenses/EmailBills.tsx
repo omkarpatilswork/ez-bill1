@@ -21,6 +21,7 @@ import type { ExpenseCategory } from '@/lib/types';
 import { AutoSync } from '@/lib/auto-bill-import';
 import { runBillImport, SyncLockedError, type BillImportPhase } from '@/lib/auto-bill-import';
 import { SyncProgressSteps } from '@/components/email-bills/SyncProgressSteps';
+import { SyncHistoryPanel } from '@/components/email-bills/SyncHistoryPanel';
 
 interface EmailAttachment {
   id: string;
@@ -129,6 +130,7 @@ export default function EmailBills() {
   const [autoSyncEnabled, setAutoSyncEnabled] = useState(false);
   const [autoSyncLastSync, setAutoSyncLastSync] = useState<string | null>(null);
   const [isSyncingNow, setIsSyncingNow] = useState(false);
+  const [historyRefreshKey, setHistoryRefreshKey] = useState(0);
   const [syncProgress, setSyncProgress] = useState<{
     phase: BillImportPhase | 'idle';
     current: number;
@@ -204,6 +206,7 @@ export default function EmailBills() {
       setSyncProgress({ phase: 'idle', current: 0, total: 0, message: '' });
     } finally {
       setIsSyncingNow(false);
+      setHistoryRefreshKey(k => k + 1);
       setTimeout(() => setSyncProgress({ phase: 'idle', current: 0, total: 0, message: '' }), 2000);
     }
   };
