@@ -7,7 +7,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
 } from '@/components/ui/dialog';
 import {
-  History, RefreshCw, CheckCircle2, XCircle, Lock, Loader2, ChevronDown, ChevronUp,
+  History, RefreshCw, CheckCircle2, XCircle, MinusCircle, Loader2, ChevronDown, ChevronUp,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -48,8 +48,13 @@ function rangeLabel(run: SyncRun) {
 function StatusIcon({ status }: { status: string }) {
   if (status === 'success') return <CheckCircle2 className="h-4 w-4 text-success" />;
   if (status === 'failed') return <XCircle className="h-4 w-4 text-destructive" />;
-  if (status === 'locked') return <Lock className="h-4 w-4 text-muted-foreground" />;
+  if (status === 'locked') return <MinusCircle className="h-4 w-4 text-muted-foreground" />;
   return <Loader2 className="h-4 w-4 text-primary animate-spin" />;
+}
+
+function statusLabel(status: string) {
+  if (status === 'locked') return 'skipped';
+  return status;
 }
 
 export function SyncHistoryPanel({ refreshKey }: { refreshKey?: number }) {
@@ -119,7 +124,7 @@ export function SyncHistoryPanel({ refreshKey }: { refreshKey?: number }) {
                         variant={run.status === 'success' ? 'default' : run.status === 'failed' ? 'destructive' : 'secondary'}
                         className="text-[10px] capitalize"
                       >
-                        {run.status}
+                        {statusLabel(run.status)}
                       </Badge>
                       <span className="text-xs text-muted-foreground">{rangeLabel(run)}</span>
                     </div>
@@ -141,7 +146,7 @@ export function SyncHistoryPanel({ refreshKey }: { refreshKey?: number }) {
                       <p className="text-xs text-destructive mt-1 line-clamp-2">{run.error_message}</p>
                     )}
                     {run.status === 'locked' && (
-                      <p className="text-xs text-muted-foreground mt-1">Skipped — another sync was running.</p>
+                      <p className="text-xs text-muted-foreground mt-1">Skipped — another sync was already in progress.</p>
                     )}
                   </div>
                 </button>
@@ -163,7 +168,7 @@ export function SyncHistoryPanel({ refreshKey }: { refreshKey?: number }) {
                     variant={selected.status === 'success' ? 'default' : selected.status === 'failed' ? 'destructive' : 'secondary'}
                     className="text-[10px] capitalize ml-1"
                   >
-                    {selected.status}
+                    {statusLabel(selected.status)}
                   </Badge>
                 </DialogTitle>
                 <DialogDescription>
