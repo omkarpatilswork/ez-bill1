@@ -34,7 +34,7 @@ export function useAutoSyncBills() {
           description: `Fetching new bills from the last ${days} day${days === 1 ? '' : 's'}.`,
         });
 
-        const result = await runBillImport({ userId: user.id, days });
+        const result = await runBillImport({ userId: user.id, days, kind: 'auto' });
         if (cancelled) return;
 
         AutoSync.setLastRunToday(user.id);

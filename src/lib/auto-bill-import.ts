@@ -85,20 +85,34 @@ async function releaseSyncLock(): Promise<void> {
  * Reusable bill import core. Scans Gmail for the last `days` days and imports
  * extracted bills as expenses (with dedup).
  */
+export type BillImportKind = 'auto' | 'sync_now' | 'manual_30';
+
 export async function runBillImport(opts: {
   userId: string;
   days: number;
+  kind?: BillImportKind;
   categories?: ExpenseCategory[];
   maxResults?: number;
   onProgress?: (p: BillImportProgress) => void;
 }): Promise<BillImportResult> {
-  const { userId, days, maxResults = 50, onProgress } = opts;
+  const { userId, days, kind = 'sync_now', maxResults = 50, onProgress } = opts;
   const emit = (p: BillImportProgress) => { try { onProgress?.(p); } catch {} };
 
   const acquired = await acquireSyncLock();
   if (!acquired) {
+    // Log a 'locked' run for history visibility
+    await supabase.from('sync_runs' as any).insert({
+      user_id: userId, kind, days, status: 'locked',
+      finished_at: new Date().toISOString(),
+      error_message: 'Another sync was already running.',
+    } as any);
     throw new SyncLockedError();
   }
+
+  const { data: runRow } = await supabase.from('sync_runs' as any).insert({
+    user_id: userId, kind, days, status: 'running',
+  } as any).select('id').single();
+  const runId = (runRow as any)?.id as string | undefined;
 
   try {
   let categories = opts.categories;
@@ -121,6 +135,11 @@ export async function runBillImport(opts: {
 
   if (emails.length === 0) {
     emit({ phase: 'done', current: 0, total: 0, message: 'No bills found.' });
+    if (runId) {
+      await supabase.from('sync_runs' as any).update({
+        status: 'success', finished_at: new Date().toISOString(),
+      } as any).eq('id', runId);
+    }
     return { saved: 0, skipped: 0, duplicates: 0, total: 0, scanned: 0 };
   }
 
@@ -257,7 +276,22 @@ export async function runBillImport(opts: {
   }
 
   emit({ phase: 'done', current: total, total, message: 'Sync complete.' });
-  return { saved, skipped, duplicates, total, scanned: emails.length };
+  const result = { saved, skipped, duplicates, total, scanned: emails.length };
+  if (runId) {
+    await supabase.from('sync_runs' as any).update({
+      status: 'success', finished_at: new Date().toISOString(),
+      saved, skipped, duplicates, total,
+    } as any).eq('id', runId);
+  }
+  return result;
+  } catch (err: any) {
+    if (runId) {
+      await supabase.from('sync_runs' as any).update({
+        status: 'failed', finished_at: new Date().toISOString(),
+        error_message: String(err?.message || err).slice(0, 500),
+      } as any).eq('id', runId);
+    }
+    throw err;
   } finally {
     await releaseSyncLock().catch(() => {});
   }
