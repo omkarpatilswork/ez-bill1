@@ -19,7 +19,7 @@ import {
 } from 'lucide-react';
 import type { ExpenseCategory } from '@/lib/types';
 import { AutoSync } from '@/lib/auto-bill-import';
-import { runBillImport, type BillImportPhase } from '@/lib/auto-bill-import';
+import { runBillImport, SyncLockedError, type BillImportPhase } from '@/lib/auto-bill-import';
 import { SyncProgressSteps } from '@/components/email-bills/SyncProgressSteps';
 
 interface EmailAttachment {
@@ -193,7 +193,14 @@ export default function EmailBills() {
           : (result.scanned === 0 ? 'No new bills found.' : 'Everything is up to date.'),
       });
     } catch (err: any) {
-      toast({ title: 'Import failed', description: err.message, variant: 'destructive' });
+      if (err instanceof SyncLockedError) {
+        toast({
+          title: 'Sync already running',
+          description: 'A bill sync is currently in progress. Please wait for it to finish.',
+        });
+      } else {
+        toast({ title: 'Import failed', description: err.message, variant: 'destructive' });
+      }
       setSyncProgress({ phase: 'idle', current: 0, total: 0, message: '' });
     } finally {
       setIsSyncingNow(false);
