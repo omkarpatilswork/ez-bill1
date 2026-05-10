@@ -19,7 +19,8 @@ import {
 } from 'lucide-react';
 import type { ExpenseCategory } from '@/lib/types';
 import { AutoSync } from '@/lib/auto-bill-import';
-import { runBillImport } from '@/lib/auto-bill-import';
+import { runBillImport, type BillImportPhase } from '@/lib/auto-bill-import';
+import { SyncProgressSteps } from '@/components/email-bills/SyncProgressSteps';
 
 interface EmailAttachment {
   id: string;
@@ -128,6 +129,12 @@ export default function EmailBills() {
   const [autoSyncEnabled, setAutoSyncEnabled] = useState(false);
   const [autoSyncLastSync, setAutoSyncLastSync] = useState<string | null>(null);
   const [isSyncingNow, setIsSyncingNow] = useState(false);
+  const [syncProgress, setSyncProgress] = useState<{
+    phase: BillImportPhase | 'idle';
+    current: number;
+    total: number;
+    message: string;
+  }>({ phase: 'idle', current: 0, total: 0, message: '' });
 
   useEffect(() => {
     if (!user) return;
@@ -151,10 +158,15 @@ export default function EmailBills() {
   const syncNow = async () => {
     if (!user) return;
     setIsSyncingNow(true);
+    setSyncProgress({ phase: 'fetching', current: 0, total: 0, message: 'Starting sync…' });
     try {
       const days = AutoSync.computeSyncDays(user.id);
-      toast({ title: 'Syncing bills…', description: `Fetching new bills from the last ${days} day${days === 1 ? '' : 's'}.` });
-      const result = await runBillImport({ userId: user.id, days, categories });
+      const result = await runBillImport({
+        userId: user.id,
+        days,
+        categories,
+        onProgress: (p) => setSyncProgress({ phase: p.phase, current: p.current, total: p.total, message: p.message || '' }),
+      });
       AutoSync.setLastRunToday(user.id);
       AutoSync.setLastSync(user.id, new Date().toISOString().slice(0, 10));
       setAutoSyncLastSync(AutoSync.getLastSync(user.id));
@@ -167,8 +179,10 @@ export default function EmailBills() {
       });
     } catch (err: any) {
       toast({ title: 'Sync failed', description: err.message, variant: 'destructive' });
+      setSyncProgress({ phase: 'idle', current: 0, total: 0, message: '' });
     } finally {
       setIsSyncingNow(false);
+      setTimeout(() => setSyncProgress({ phase: 'idle', current: 0, total: 0, message: '' }), 2000);
     }
   };
 
@@ -596,6 +610,15 @@ export default function EmailBills() {
                   <><RefreshCw className="h-4 w-4 mr-2" /> Sync now (last {AutoSync.computeSyncDays(user?.id || '')} day{AutoSync.computeSyncDays(user?.id || '') === 1 ? '' : 's'})</>
                 )}
               </Button>
+
+              {(isSyncingNow || syncProgress.phase !== 'idle') && (
+                <SyncProgressSteps
+                  phase={syncProgress.phase}
+                  current={syncProgress.current}
+                  total={syncProgress.total}
+                  message={syncProgress.message}
+                />
+              )}
 
               <div className="flex flex-col sm:flex-row gap-3">
                 <div className="flex items-center gap-2 flex-1">
