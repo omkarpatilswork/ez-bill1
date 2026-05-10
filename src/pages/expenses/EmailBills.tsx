@@ -9,14 +9,16 @@ import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import {
   Mail, Link2, Unlink, Loader2, Download,
   CheckCircle2, AlertCircle, ScanLine,
   Smartphone, Send, IndianRupee, Clock, CreditCard, Filter,
-  Trash2,
+  Trash2, RefreshCw,
 } from 'lucide-react';
 import type { ExpenseCategory } from '@/lib/types';
+import { AutoSync } from '@/lib/auto-bill-import';
 
 interface EmailAttachment {
   id: string;
@@ -121,6 +123,28 @@ export default function EmailBills() {
   const [isAutoScanning, setIsAutoScanning] = useState(false);
   const [showNativeScan] = useState(() => isNativeApp() && isAndroid());
   const isNative = isNativeApp();
+
+  const [autoSyncEnabled, setAutoSyncEnabled] = useState(false);
+  const [autoSyncLastSync, setAutoSyncLastSync] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!user) return;
+    setAutoSyncEnabled(AutoSync.isEnabled(user.id));
+    setAutoSyncLastSync(AutoSync.getLastSync(user.id));
+  }, [user]);
+
+  const handleToggleAutoSync = (checked: boolean) => {
+    if (!user) return;
+    AutoSync.setEnabled(user.id, checked);
+    setAutoSyncEnabled(checked);
+    setAutoSyncLastSync(AutoSync.getLastSync(user.id));
+    toast({
+      title: checked ? 'Auto-sync enabled' : 'Auto-sync disabled',
+      description: checked
+        ? 'Bills will sync automatically once a day when you open the app.'
+        : 'You can still import bills manually anytime.',
+    });
+  };
 
   useEffect(() => {
     checkConnection();
@@ -515,6 +539,25 @@ export default function EmailBills() {
           {/* Scan Controls */}
           {isConnected && (
             <div className="glass-card rounded-2xl p-5 space-y-4">
+              {/* Auto-Sync consent */}
+              <div className="flex items-start justify-between gap-3 pb-4 border-b border-border/30">
+                <div className="flex items-start gap-3 min-w-0">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/15 text-primary">
+                    <RefreshCw className="h-4 w-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="font-semibold text-sm text-foreground">Auto-Sync Bills</p>
+                    <p className="text-xs text-muted-foreground">
+                      Fetch new bills automatically once a day (up to 30 days back).
+                      {autoSyncEnabled && autoSyncLastSync && (
+                        <> Last synced: <span className="text-foreground">{autoSyncLastSync}</span>.</>
+                      )}
+                    </p>
+                  </div>
+                </div>
+                <Switch checked={autoSyncEnabled} onCheckedChange={handleToggleAutoSync} />
+              </div>
+
               <div className="flex flex-col sm:flex-row gap-3">
                 <div className="flex items-center gap-2 flex-1">
                   <Filter className="h-4 w-4 text-muted-foreground shrink-0" />
