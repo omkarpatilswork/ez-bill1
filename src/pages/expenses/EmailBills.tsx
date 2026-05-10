@@ -157,28 +157,39 @@ export default function EmailBills() {
 
   const syncNow = async () => {
     if (!user) return;
+    await runImportWithProgress(AutoSync.computeSyncDays(user.id), { updateLastSync: true });
+  };
+
+  const importLast30 = async () => {
+    if (!user) return;
+    await runImportWithProgress(30, { updateLastSync: false });
+  };
+
+  const runImportWithProgress = async (days: number, opts: { updateLastSync: boolean }) => {
+    if (!user) return;
     setIsSyncingNow(true);
-    setSyncProgress({ phase: 'fetching', current: 0, total: 0, message: 'Starting sync…' });
+    setSyncProgress({ phase: 'fetching', current: 0, total: 0, message: `Starting import (last ${days} day${days === 1 ? '' : 's'})…` });
     try {
-      const days = AutoSync.computeSyncDays(user.id);
       const result = await runBillImport({
         userId: user.id,
         days,
         categories,
         onProgress: (p) => setSyncProgress({ phase: p.phase, current: p.current, total: p.total, message: p.message || '' }),
       });
-      AutoSync.setLastRunToday(user.id);
-      AutoSync.setLastSync(user.id, new Date().toISOString().slice(0, 10));
-      setAutoSyncLastSync(AutoSync.getLastSync(user.id));
+      if (opts.updateLastSync) {
+        AutoSync.setLastRunToday(user.id);
+        AutoSync.setLastSync(user.id, new Date().toISOString().slice(0, 10));
+        setAutoSyncLastSync(AutoSync.getLastSync(user.id));
+      }
       setImportResult({ saved: result.saved, skipped: result.skipped, duplicates: result.duplicates, total: result.total });
       toast({
-        title: 'Sync complete',
+        title: 'Import complete',
         description: result.saved > 0
           ? `Imported ${result.saved} new bill(s).${result.duplicates ? ` ${result.duplicates} duplicate(s) skipped.` : ''}`
           : (result.scanned === 0 ? 'No new bills found.' : 'Everything is up to date.'),
       });
     } catch (err: any) {
-      toast({ title: 'Sync failed', description: err.message, variant: 'destructive' });
+      toast({ title: 'Import failed', description: err.message, variant: 'destructive' });
       setSyncProgress({ phase: 'idle', current: 0, total: 0, message: '' });
     } finally {
       setIsSyncingNow(false);
