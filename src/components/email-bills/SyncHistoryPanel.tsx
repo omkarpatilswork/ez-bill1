@@ -4,6 +4,9 @@ import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
+} from '@/components/ui/dialog';
+import {
   History, RefreshCw, CheckCircle2, XCircle, Lock, Loader2, ChevronDown, ChevronUp,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -54,6 +57,7 @@ export function SyncHistoryPanel({ refreshKey }: { refreshKey?: number }) {
   const [runs, setRuns] = useState<SyncRun[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
+  const [selected, setSelected] = useState<SyncRun | null>(null);
 
   const load = useCallback(async () => {
     if (!user) return;
@@ -99,9 +103,11 @@ export function SyncHistoryPanel({ refreshKey }: { refreshKey?: number }) {
           ) : (
             <div className="space-y-2">
               {runs.map(run => (
-                <div
+                <button
                   key={run.id}
-                  className="flex items-start gap-3 p-3 rounded-xl bg-secondary/20 border border-border/30"
+                  type="button"
+                  onClick={() => setSelected(run)}
+                  className="w-full text-left flex items-start gap-3 p-3 rounded-xl bg-secondary/20 border border-border/30 hover:bg-secondary/40 hover:border-primary/40 transition-colors"
                 >
                   <div className="mt-0.5"><StatusIcon status={run.status} /></div>
                   <div className="flex-1 min-w-0">
@@ -138,12 +144,99 @@ export function SyncHistoryPanel({ refreshKey }: { refreshKey?: number }) {
                       <p className="text-xs text-muted-foreground mt-1">Skipped — another sync was running.</p>
                     )}
                   </div>
-                </div>
+                </button>
               ))}
             </div>
           )}
         </>
       )}
+
+      <Dialog open={!!selected} onOpenChange={(o) => !o && setSelected(null)}>
+        <DialogContent className="max-w-md">
+          {selected && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <StatusIcon status={selected.status} />
+                  {KIND_LABEL[selected.kind] || selected.kind}
+                  <Badge
+                    variant={selected.status === 'success' ? 'default' : selected.status === 'failed' ? 'destructive' : 'secondary'}
+                    className="text-[10px] capitalize ml-1"
+                  >
+                    {selected.status}
+                  </Badge>
+                </DialogTitle>
+                <DialogDescription>
+                  Fetch window: {rangeLabel(selected)} ({selected.days} day{selected.days === 1 ? '' : 's'})
+                </DialogDescription>
+              </DialogHeader>
+
+              <div className="space-y-4 text-sm">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="rounded-lg bg-secondary/30 border border-border/30 p-3">
+                    <p className="text-[11px] text-muted-foreground uppercase tracking-wide">Started</p>
+                    <p className="text-foreground mt-1">{new Date(selected.started_at).toLocaleString()}</p>
+                  </div>
+                  <div className="rounded-lg bg-secondary/30 border border-border/30 p-3">
+                    <p className="text-[11px] text-muted-foreground uppercase tracking-wide">Finished</p>
+                    <p className="text-foreground mt-1">
+                      {selected.finished_at ? new Date(selected.finished_at).toLocaleString() : '—'}
+                    </p>
+                  </div>
+                </div>
+
+                {selected.finished_at && (
+                  <p className="text-xs text-muted-foreground">
+                    Duration: {Math.max(1, Math.round((new Date(selected.finished_at).getTime() - new Date(selected.started_at).getTime()) / 1000))}s
+                  </p>
+                )}
+
+                <div>
+                  <p className="text-[11px] text-muted-foreground uppercase tracking-wide mb-2">Counts</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="rounded-lg bg-secondary/30 border border-border/30 p-3">
+                      <p className="text-[11px] text-muted-foreground">Bills found</p>
+                      <p className="text-lg font-semibold text-foreground">{selected.total}</p>
+                    </div>
+                    <div className="rounded-lg bg-secondary/30 border border-border/30 p-3">
+                      <p className="text-[11px] text-muted-foreground">Imported</p>
+                      <p className="text-lg font-semibold text-success">{selected.saved}</p>
+                    </div>
+                    <div className="rounded-lg bg-secondary/30 border border-border/30 p-3">
+                      <p className="text-[11px] text-muted-foreground">Duplicates</p>
+                      <p className="text-lg font-semibold text-foreground">{selected.duplicates}</p>
+                    </div>
+                    <div className="rounded-lg bg-secondary/30 border border-border/30 p-3">
+                      <p className="text-[11px] text-muted-foreground">Skipped</p>
+                      <p className="text-lg font-semibold text-foreground">{selected.skipped}</p>
+                    </div>
+                  </div>
+                  {selected.status === 'success' && selected.total > 0 && (
+                    <p className="text-xs text-muted-foreground mt-2">
+                      Of {selected.total} bill{selected.total === 1 ? '' : 's'} found, {selected.saved} {selected.saved === 1 ? 'was' : 'were'} imported and {selected.duplicates} {selected.duplicates === 1 ? 'was a' : 'were'} duplicate{selected.duplicates === 1 ? '' : 's'}.
+                    </p>
+                  )}
+                </div>
+
+                {selected.error_message && (
+                  <div>
+                    <p className="text-[11px] text-muted-foreground uppercase tracking-wide mb-1">Error</p>
+                    <pre className="text-xs text-destructive whitespace-pre-wrap break-words rounded-lg bg-destructive/10 border border-destructive/30 p-3 max-h-48 overflow-auto">
+{selected.error_message}
+                    </pre>
+                  </div>
+                )}
+
+                {selected.status === 'locked' && (
+                  <p className="text-xs text-muted-foreground">
+                    This run was skipped because another sync was already in progress.
+                  </p>
+                )}
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
