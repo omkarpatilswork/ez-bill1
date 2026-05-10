@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { AutoSync, runBillImport } from '@/lib/auto-bill-import';
+import { AutoSync, runBillImport, SyncLockedError } from '@/lib/auto-bill-import';
 import { useAuth } from './useAuth';
 
 /**
@@ -51,6 +51,10 @@ export function useAutoSyncBills() {
         }
       } catch (err: any) {
         if (!cancelled) {
+          if (err instanceof SyncLockedError) {
+            // Another sync (e.g. manual "Sync now") is already running — silently skip.
+            return;
+          }
           toast.error('Auto-sync failed', { description: err?.message || 'Please try again later.' });
         }
       }
