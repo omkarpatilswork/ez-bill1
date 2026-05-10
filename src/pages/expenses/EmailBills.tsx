@@ -613,7 +613,7 @@ export default function EmailBills() {
                   <div className="min-w-0">
                     <p className="font-semibold text-sm text-foreground">Enable automatic sync</p>
                     <p className="text-xs text-muted-foreground">
-                      Fetch new bills automatically in the background, once a day.
+                      When on, EZ Bill checks your inbox in the background once a day and imports any new bills it finds — no need to open this page.
                       {autoSyncEnabled && autoSyncLastSync && (
                         <> Last synced: <span className="text-foreground">{autoSyncLastSync}</span>.</>
                       )}
