@@ -719,6 +719,51 @@ export type Database = {
         }
         Relationships: []
       }
+      sync_runs: {
+        Row: {
+          days: number
+          duplicates: number
+          error_message: string | null
+          finished_at: string | null
+          id: string
+          kind: string
+          saved: number
+          skipped: number
+          started_at: string
+          status: string
+          total: number
+          user_id: string
+        }
+        Insert: {
+          days?: number
+          duplicates?: number
+          error_message?: string | null
+          finished_at?: string | null
+          id?: string
+          kind: string
+          saved?: number
+          skipped?: number
+          started_at?: string
+          status?: string
+          total?: number
+          user_id: string
+        }
+        Update: {
+          days?: number
+          duplicates?: number
+          error_message?: string | null
+          finished_at?: string | null
+          id?: string
+          kind?: string
+          saved?: number
+          skipped?: number
+          started_at?: string
+          status?: string
+          total?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           id: string
