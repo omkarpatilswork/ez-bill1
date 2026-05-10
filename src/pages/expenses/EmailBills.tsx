@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import type { ExpenseCategory } from '@/lib/types';
 import { AutoSync } from '@/lib/auto-bill-import';
+import { runBillImport } from '@/lib/auto-bill-import';
 
 interface EmailAttachment {
   id: string;
@@ -126,6 +127,7 @@ export default function EmailBills() {
 
   const [autoSyncEnabled, setAutoSyncEnabled] = useState(false);
   const [autoSyncLastSync, setAutoSyncLastSync] = useState<string | null>(null);
+  const [isSyncingNow, setIsSyncingNow] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -144,6 +146,30 @@ export default function EmailBills() {
         ? 'Bills will sync automatically once a day when you open the app.'
         : 'You can still import bills manually anytime.',
     });
+  };
+
+  const syncNow = async () => {
+    if (!user) return;
+    setIsSyncingNow(true);
+    try {
+      const days = AutoSync.computeSyncDays(user.id);
+      toast({ title: 'Syncing bills…', description: `Fetching new bills from the last ${days} day${days === 1 ? '' : 's'}.` });
+      const result = await runBillImport({ userId: user.id, days, categories });
+      AutoSync.setLastRunToday(user.id);
+      AutoSync.setLastSync(user.id, new Date().toISOString().slice(0, 10));
+      setAutoSyncLastSync(AutoSync.getLastSync(user.id));
+      setImportResult({ saved: result.saved, skipped: result.skipped, duplicates: result.duplicates, total: result.total });
+      toast({
+        title: 'Sync complete',
+        description: result.saved > 0
+          ? `Imported ${result.saved} new bill(s).${result.duplicates ? ` ${result.duplicates} duplicate(s) skipped.` : ''}`
+          : (result.scanned === 0 ? 'No new bills found.' : 'Everything is up to date.'),
+      });
+    } catch (err: any) {
+      toast({ title: 'Sync failed', description: err.message, variant: 'destructive' });
+    } finally {
+      setIsSyncingNow(false);
+    }
   };
 
   useEffect(() => {
@@ -557,6 +583,19 @@ export default function EmailBills() {
                 </div>
                 <Switch checked={autoSyncEnabled} onCheckedChange={handleToggleAutoSync} />
               </div>
+
+              <Button
+                onClick={syncNow}
+                disabled={isSyncingNow || isScanning}
+                variant="outline"
+                className="w-full min-h-[44px] glass-button border-0 active:scale-[0.97]"
+              >
+                {isSyncingNow ? (
+                  <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Syncing now…</>
+                ) : (
+                  <><RefreshCw className="h-4 w-4 mr-2" /> Sync now (last {AutoSync.computeSyncDays(user?.id || '')} day{AutoSync.computeSyncDays(user?.id || '') === 1 ? '' : 's'})</>
+                )}
+              </Button>
 
               <div className="flex flex-col sm:flex-row gap-3">
                 <div className="flex items-center gap-2 flex-1">
