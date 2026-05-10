@@ -611,9 +611,9 @@ export default function EmailBills() {
                     <RefreshCw className="h-4 w-4" />
                   </div>
                   <div className="min-w-0">
-                    <p className="font-semibold text-sm text-foreground">Auto-Sync Bills</p>
+                    <p className="font-semibold text-sm text-foreground">Enable automatic sync</p>
                     <p className="text-xs text-muted-foreground">
-                      Fetch new bills automatically once a day (up to 30 days back).
+                      Fetch new bills automatically in the background, once a day.
                       {autoSyncEnabled && autoSyncLastSync && (
                         <> Last synced: <span className="text-foreground">{autoSyncLastSync}</span>.</>
                       )}
@@ -632,7 +632,7 @@ export default function EmailBills() {
                 {isSyncingNow ? (
                   <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Syncing now…</>
                 ) : (
-                  <><RefreshCw className="h-4 w-4 mr-2" /> Sync now (last {AutoSync.computeSyncDays(user?.id || '')} day{AutoSync.computeSyncDays(user?.id || '') === 1 ? '' : 's'})</>
+                  <><RefreshCw className="h-4 w-4 mr-2" /> Sync now</>
                 )}
               </Button>
 
@@ -644,7 +644,7 @@ export default function EmailBills() {
                 {isSyncingNow ? (
                   <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Importing…</>
                 ) : (
-                  <><Download className="h-4 w-4 mr-2" /> Import bills (last 30 days)</>
+                  <><Download className="h-4 w-4 mr-2" /> Import recent bills</>
                 )}
               </Button>
 
