@@ -56,6 +56,31 @@ export interface BillImportProgress {
   message?: string;
 }
 
+export class SyncLockedError extends Error {
+  constructor(msg = 'Another sync is already in progress.') {
+    super(msg);
+    this.name = 'SyncLockedError';
+  }
+}
+
+const SYNC_LOCK_KIND = 'bill_import';
+const SYNC_LOCK_TTL = 600; // 10 minutes
+
+async function acquireSyncLock(): Promise<boolean> {
+  const { data, error } = await supabase.rpc('try_acquire_sync_lock' as any, {
+    _kind: SYNC_LOCK_KIND, _ttl_seconds: SYNC_LOCK_TTL,
+  });
+  if (error) {
+    console.warn('try_acquire_sync_lock failed:', error.message);
+    return false;
+  }
+  return data === true;
+}
+
+async function releaseSyncLock(): Promise<void> {
+  await supabase.rpc('release_sync_lock' as any, { _kind: SYNC_LOCK_KIND });
+}
+
 /**
  * Reusable bill import core. Scans Gmail for the last `days` days and imports
  * extracted bills as expenses (with dedup).
@@ -69,6 +94,13 @@ export async function runBillImport(opts: {
 }): Promise<BillImportResult> {
   const { userId, days, maxResults = 50, onProgress } = opts;
   const emit = (p: BillImportProgress) => { try { onProgress?.(p); } catch {} };
+
+  const acquired = await acquireSyncLock();
+  if (!acquired) {
+    throw new SyncLockedError();
+  }
+
+  try {
   let categories = opts.categories;
   if (!categories) {
     const { data } = await supabase.from('expense_categories').select('*');
@@ -226,6 +258,9 @@ export async function runBillImport(opts: {
 
   emit({ phase: 'done', current: total, total, message: 'Sync complete.' });
   return { saved, skipped, duplicates, total, scanned: emails.length };
+  } finally {
+    await releaseSyncLock().catch(() => {});
+  }
 }
 
 // ---------- Auto-sync settings (per-user, localStorage) ----------
