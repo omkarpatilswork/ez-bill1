@@ -48,6 +48,14 @@ export interface BillImportResult {
   scanned: number;
 }
 
+export type BillImportPhase = 'fetching' | 'dedupe' | 'parsing' | 'saving' | 'done';
+export interface BillImportProgress {
+  phase: BillImportPhase;
+  current: number;
+  total: number;
+  message?: string;
+}
+
 /**
  * Reusable bill import core. Scans Gmail for the last `days` days and imports
  * extracted bills as expenses (with dedup).
@@ -57,14 +65,17 @@ export async function runBillImport(opts: {
   days: number;
   categories?: ExpenseCategory[];
   maxResults?: number;
+  onProgress?: (p: BillImportProgress) => void;
 }): Promise<BillImportResult> {
-  const { userId, days, maxResults = 50 } = opts;
+  const { userId, days, maxResults = 50, onProgress } = opts;
+  const emit = (p: BillImportProgress) => { try { onProgress?.(p); } catch {} };
   let categories = opts.categories;
   if (!categories) {
     const { data } = await supabase.from('expense_categories').select('*');
     categories = (data as unknown as ExpenseCategory[]) || [];
   }
 
+  emit({ phase: 'fetching', current: 0, total: 0, message: 'Scanning Gmail inbox…' });
   const { data: scanData, error: scanError } = await supabase.functions.invoke('gmail-scan', {
     body: { max_results: maxResults, days },
   });
@@ -77,12 +88,14 @@ export async function runBillImport(opts: {
   }> = scanData?.emails || [];
 
   if (emails.length === 0) {
+    emit({ phase: 'done', current: 0, total: 0, message: 'No bills found.' });
     return { saved: 0, skipped: 0, duplicates: 0, total: 0, scanned: 0 };
   }
 
   let saved = 0, skipped = 0, duplicates = 0, total = 0;
   for (const e of emails) total += e.attachments.length;
 
+  emit({ phase: 'dedupe', current: 0, total, message: 'Checking for duplicates…' });
   const sinceISO = new Date(Date.now() - 180 * 86400000).toISOString().slice(0, 10);
   const { data: existing } = await supabase
     .from('expenses')
@@ -101,12 +114,17 @@ export async function runBillImport(opts: {
     .in('gmail_message_id', emails.map(e => e.message_id));
   const processedMsgs = new Set((processedRows || []).map((r: any) => r.gmail_message_id));
 
+  let processed = 0;
   for (const email of emails) {
     if (processedMsgs.has(email.message_id)) {
       duplicates += email.attachments.length;
+      processed += email.attachments.length;
+      emit({ phase: 'parsing', current: processed, total, message: 'Skipping already-processed email…' });
       continue;
     }
     for (const att of email.attachments) {
+      processed++;
+      emit({ phase: 'parsing', current: processed, total, message: `Parsing & OCR: ${att.filename}` });
       try {
         const { data: attData, error: attErr } = await supabase.functions.invoke('gmail-attachment', {
           body: { message_id: email.message_id, attachment_id: att.id },
@@ -159,6 +177,7 @@ export async function runBillImport(opts: {
           description += `::ITEMS::${JSON.stringify(lineItems)}::END_ITEMS::`;
         }
 
+        emit({ phase: 'saving', current: processed, total, message: `Saving: ${merchantName || title}` });
         const { data: expense, error: insErr } = await supabase.from('expenses').insert({
           user_id: userId,
           title,
@@ -205,6 +224,7 @@ export async function runBillImport(opts: {
     }
   }
 
+  emit({ phase: 'done', current: total, total, message: 'Sync complete.' });
   return { saved, skipped, duplicates, total, scanned: emails.length };
 }
 
