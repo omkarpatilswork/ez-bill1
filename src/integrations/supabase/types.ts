@@ -698,6 +698,27 @@ export type Database = {
         }
         Relationships: []
       }
+      sync_locks: {
+        Row: {
+          acquired_at: string
+          expires_at: string
+          kind: string
+          user_id: string
+        }
+        Insert: {
+          acquired_at?: string
+          expires_at: string
+          kind: string
+          user_id: string
+        }
+        Update: {
+          acquired_at?: string
+          expires_at?: string
+          kind?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           id: string
@@ -756,6 +777,11 @@ export type Database = {
       }
       is_manager_of: {
         Args: { _employee_id: string; _manager_id: string }
+        Returns: boolean
+      }
+      release_sync_lock: { Args: { _kind: string }; Returns: undefined }
+      try_acquire_sync_lock: {
+        Args: { _kind: string; _ttl_seconds?: number }
         Returns: boolean
       }
       update_my_profile: { Args: { _full_name: string }; Returns: undefined }
