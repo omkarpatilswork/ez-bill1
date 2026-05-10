@@ -648,6 +648,10 @@ export default function EmailBills() {
                 )}
               </Button>
 
+              <p className="text-[11px] text-muted-foreground text-center -mt-1">
+                If a background sync is already running, your new run will be skipped to avoid duplicate work.
+              </p>
+
               {(isSyncingNow || syncProgress.phase !== 'idle') && (
                 <SyncProgressSteps
                   phase={syncProgress.phase}
