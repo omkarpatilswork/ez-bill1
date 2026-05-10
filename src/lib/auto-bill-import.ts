@@ -135,6 +135,11 @@ export async function runBillImport(opts: {
 
   if (emails.length === 0) {
     emit({ phase: 'done', current: 0, total: 0, message: 'No bills found.' });
+    if (runId) {
+      await supabase.from('sync_runs' as any).update({
+        status: 'success', finished_at: new Date().toISOString(),
+      } as any).eq('id', runId);
+    }
     return { saved: 0, skipped: 0, duplicates: 0, total: 0, scanned: 0 };
   }
 
@@ -279,6 +284,14 @@ export async function runBillImport(opts: {
     } as any).eq('id', runId);
   }
   return result;
+  } catch (err: any) {
+    if (runId) {
+      await supabase.from('sync_runs' as any).update({
+        status: 'failed', finished_at: new Date().toISOString(),
+        error_message: String(err?.message || err).slice(0, 500),
+      } as any).eq('id', runId);
+    }
+    throw err;
   } finally {
     await releaseSyncLock().catch(() => {});
   }
