@@ -18,11 +18,36 @@ const NON_BILL_PATTERNS = [
   /profit\s*(and|&)\s*loss/i, /capital\s*gain/i, /tax\s*statement/i,
   /annual\s*statement/i, /quarterly\s*statement/i, /monthly\s*statement/i,
   /mutual\s*fund\s*statement/i, /cas\s*statement/i, /consolidated\s*account/i,
+  // Wallet / UPI / payment-app statements (mess up totals)
+  /paytm\s*(monthly|account|wallet|transaction)?\s*statement/i,
+  /(google\s*pay|gpay|phonepe|amazon\s*pay|mobikwik|freecharge)\s*statement/i,
+  /(monthly|weekly|daily)\s*spend(ing)?\s*(summary|report)/i,
+  /spends?\s*(summary|report|recap)/i,
+  /transaction\s*(summary|history|report)/i,
+  // Broker / stock-market activity (not bills)
+  /(order|trade)\s*(executed|placed|confirmation|update)/i,
+  /(buy|sell)\s*order\s*(executed|placed|confirmed)?/i,
+  /margin\s*(call|statement|shortfall)/i,
+  /equity\s*(trade|order|statement)/i,
+  /sip\s*(installment|investment|confirmation|statement)/i,
+  /folio\s*statement/i, /nav\s*statement/i,
+];
+
+// Sender-domain blocklist — emails from these are never bills (brokers, wallets, banks sending statements).
+const NON_BILL_SENDERS = [
+  'groww', 'zerodha', 'upstox', 'angelone', 'angel one', 'angelbroking',
+  '5paisa', 'icicidirect', 'kotaksecurities', 'hdfcsec', 'sharekhan',
+  'motilaloswal', 'iifl', 'edelweiss', 'paytmmoney', 'dhan.co', 'fyers',
+  'coin.zerodha', 'kuvera', 'smallcase', 'indmoney', 'scripbox',
+  'cdslindia', 'nsdl', 'camsonline', 'kfintech',
 ];
 
 function isNonBill(subject: string, from: string): boolean {
   const text = `${subject} ${from}`;
-  return NON_BILL_PATTERNS.some(p => p.test(text));
+  if (NON_BILL_PATTERNS.some(p => p.test(text))) return true;
+  const fromLower = from.toLowerCase();
+  if (NON_BILL_SENDERS.some(s => fromLower.includes(s))) return true;
+  return false;
 }
 
 async function refreshToken(supabase: any, userId: string, connection: any, clientId: string, clientSecret: string) {
