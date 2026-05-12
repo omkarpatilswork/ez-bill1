@@ -73,6 +73,16 @@ const SERVICES: ServiceDef[] = [
   // Gaming
   { key: 'psn', name: 'PlayStation Plus', category: 'Gaming', senders: ['playstation.com', 'sony.com'], keywords: ['playstation plus', 'psn'] },
   { key: 'xbox', name: 'Xbox Game Pass', category: 'Gaming', senders: ['xbox.com', 'microsoft.com'], keywords: ['game pass', 'xbox'] },
+  // Education / Language
+  { key: 'duolingo', name: 'Duolingo Super', category: 'Education', senders: ['duolingo.com'], keywords: ['duolingo'] },
+  { key: 'coursera', name: 'Coursera Plus', category: 'Education', senders: ['coursera.org'], keywords: ['coursera'] },
+  { key: 'udemy', name: 'Udemy', category: 'Education', senders: ['udemy.com'], keywords: ['udemy'] },
+  { key: 'masterclass', name: 'MasterClass', category: 'Education', senders: ['masterclass.com'], keywords: ['masterclass'] },
+  { key: 'audible', name: 'Audible', category: 'Education', senders: ['audible.com', 'audible.in'], keywords: ['audible'] },
+  { key: 'kindle_unlimited', name: 'Kindle Unlimited', category: 'Education', senders: ['amazon.com', 'amazon.in'], keywords: ['kindle unlimited'] },
+  // News
+  { key: 'nytimes', name: 'New York Times', category: 'News', senders: ['nytimes.com'], keywords: ['new york times', 'nytimes'] },
+  { key: 'medium', name: 'Medium', category: 'News', senders: ['medium.com'], keywords: ['medium membership'] },
 ];
 
 // Patterns suggesting subscription activity
@@ -80,6 +90,10 @@ const ACTIVE_PATTERNS = [
   /subscription/i, /renewal/i, /renewed/i, /payment\s+(received|successful|confirmation)/i,
   /invoice/i, /receipt/i, /your\s+plan/i, /membership/i, /auto-?renew/i,
   /welcome\s+to/i, /thanks\s+for\s+subscribing/i, /billing/i,
+  /(has\s+been\s+)?(extended|started|activated|charged)/i,
+  /trial\s+(has\s+)?(started|begun|begins)/i, /free\s+trial/i,
+  /your\s+(monthly|annual|yearly)\s+(plan|subscription)/i,
+  /next\s+billing\s+date/i, /will\s+renew\s+on/i,
 ];
 const CANCELLED_PATTERNS = [
   /cancell?ation/i, /cancell?ed/i, /your\s+subscription\s+(has\s+)?ended/i,
