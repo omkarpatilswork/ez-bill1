@@ -18,11 +18,36 @@ const NON_BILL_PATTERNS = [
   /profit\s*(and|&)\s*loss/i, /capital\s*gain/i, /tax\s*statement/i,
   /annual\s*statement/i, /quarterly\s*statement/i, /monthly\s*statement/i,
   /mutual\s*fund\s*statement/i, /cas\s*statement/i, /consolidated\s*account/i,
+  // Wallet / UPI / payment-app statements (mess up totals)
+  /paytm\s*(monthly|account|wallet|transaction)?\s*statement/i,
+  /(google\s*pay|gpay|phonepe|amazon\s*pay|mobikwik|freecharge)\s*statement/i,
+  /(monthly|weekly|daily)\s*spend(ing)?\s*(summary|report)/i,
+  /spends?\s*(summary|report|recap)/i,
+  /transaction\s*(summary|history|report)/i,
+  // Broker / stock-market activity (not bills)
+  /(order|trade)\s*(executed|placed|confirmation|update)/i,
+  /(buy|sell)\s*order\s*(executed|placed|confirmed)?/i,
+  /margin\s*(call|statement|shortfall)/i,
+  /equity\s*(trade|order|statement)/i,
+  /sip\s*(installment|investment|confirmation|statement)/i,
+  /folio\s*statement/i, /nav\s*statement/i,
+];
+
+// Sender-domain blocklist — emails from these are never bills (brokers, wallets, banks sending statements).
+const NON_BILL_SENDERS = [
+  'groww', 'zerodha', 'upstox', 'angelone', 'angel one', 'angelbroking',
+  '5paisa', 'icicidirect', 'kotaksecurities', 'hdfcsec', 'sharekhan',
+  'motilaloswal', 'iifl', 'edelweiss', 'paytmmoney', 'dhan.co', 'fyers',
+  'coin.zerodha', 'kuvera', 'smallcase', 'indmoney', 'scripbox',
+  'cdslindia', 'nsdl', 'camsonline', 'kfintech',
 ];
 
 function isNonBill(subject: string, from: string): boolean {
   const text = `${subject} ${from}`;
-  return NON_BILL_PATTERNS.some(p => p.test(text));
+  if (NON_BILL_PATTERNS.some(p => p.test(text))) return true;
+  const fromLower = from.toLowerCase();
+  if (NON_BILL_SENDERS.some(s => fromLower.includes(s))) return true;
+  return false;
 }
 
 async function refreshToken(supabase: any, userId: string, connection: any, clientId: string, clientSecret: string) {
@@ -116,7 +141,7 @@ serve(async (req) => {
     const subjectMatch = `subject:(invoice OR receipt OR bill OR payment OR "order confirmation" OR "order placed" OR purchase OR "tax invoice" OR "e-invoice" OR "GST invoice" OR "payment confirmation" OR "payment successful" OR "booking confirmation" OR "ticket" OR "your order" OR "your bill" OR "your invoice" OR "your receipt" OR "thanks for your order" OR "thank you for your" OR "renewal" OR "subscription" OR "due" OR "premium")`;
     const senderMatch = `from:(swiggy OR zomato OR dominos OR mcdonalds OR kfc OR pizzahut OR starbucks OR dunzo OR blinkit OR zepto OR bigbasket OR jiomart OR dmart OR amazon OR flipkart OR myntra OR ajio OR meesho OR nykaa OR tatacliq OR croma OR reliance OR shoppersstop OR uber OR ola OR rapido OR bookmyshow OR insider OR makemytrip OR cleartrip OR yatra OR easemytrip OR goibibo OR irctc OR oyo OR airbnb OR booking OR agoda OR indigo OR vistara OR airindia OR spicejet OR akasaair OR netflix OR hotstar OR "disney" OR spotify OR "youtube premium" OR "prime video" OR sony OR zee5 OR voot OR jiocinema OR apple OR icloud OR adobe OR microsoft OR google OR canva OR notion OR dropbox OR github OR openai OR chatgpt OR claude OR perplexity OR airtel OR jio OR "vi " OR vodafone OR bsnl OR tataplay OR "tata sky" OR dish OR "act fibernet" OR hathway OR razorpay OR paytm OR phonepe OR gpay OR cred OR mobikwik OR "hdfc bank" OR "icici bank" OR "sbi card" OR "axis bank" OR kotak OR yesbank OR indusind OR rbl OR amex OR "american express" OR citi OR hsbc OR standardchartered OR onecard OR "tata neu" OR niyo OR fi OR jupiter OR slice OR uni OR lazypay OR simpl OR zestmoney OR bajajfinserv OR hdfclife OR "icici prudential" OR licindia OR maxlife OR sbilife OR "tata aig" OR "policybazaar" OR "acko" OR "digit" OR pharmeasy OR netmeds OR 1mg OR practo OR cult OR hpcl OR bpcl OR iocl OR "indian oil" OR "bharat petroleum" OR "hindustan petroleum" OR fastag OR paytmfastag OR upstox OR groww OR zerodha OR coursera OR udemy OR byjus OR unacademy OR vedantu OR linkedin)`;
     // Exclude statements/trades — those go to financial-scan
-    const exclusions = `-subject:"statement of account" -subject:"account statement" -subject:"bank statement" -subject:"credit card statement" -subject:"contract note" -subject:"portfolio" -subject:"holdings" -subject:"P&L" -subject:"weekly report" -subject:"monthly statement" -subject:"trade confirmation" -subject:unsubscribe -subject:newsletter`;
+    const exclusions = `-subject:"statement of account" -subject:"account statement" -subject:"bank statement" -subject:"credit card statement" -subject:"contract note" -subject:"portfolio" -subject:"holdings" -subject:"P&L" -subject:"weekly report" -subject:"monthly statement" -subject:"trade confirmation" -subject:"order executed" -subject:"order placed" -subject:"trade executed" -subject:"sip investment" -subject:"sip installment" -subject:"folio statement" -subject:"transaction summary" -subject:"spending summary" -subject:"paytm statement" -subject:"phonepe statement" -subject:"gpay statement" -subject:"google pay statement" -from:groww -from:zerodha -from:upstox -from:angelone -from:angelbroking -from:5paisa -from:icicidirect -from:kotaksecurities -from:hdfcsec -from:sharekhan -from:motilaloswal -from:iifl -from:edelweiss -from:paytmmoney -from:dhan -from:fyers -from:kuvera -from:smallcase -from:indmoney -from:scripbox -from:cdslindia -from:nsdl -from:camsonline -from:kfintech -subject:unsubscribe -subject:newsletter`;
     const query = `(has:attachment OR ${subjectMatch}) (${subjectMatch} OR ${senderMatch}) ${exclusions} newer_than:${days}d`;
 
     // Fetch more results to compensate for filtering

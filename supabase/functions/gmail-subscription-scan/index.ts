@@ -73,6 +73,16 @@ const SERVICES: ServiceDef[] = [
   // Gaming
   { key: 'psn', name: 'PlayStation Plus', category: 'Gaming', senders: ['playstation.com', 'sony.com'], keywords: ['playstation plus', 'psn'] },
   { key: 'xbox', name: 'Xbox Game Pass', category: 'Gaming', senders: ['xbox.com', 'microsoft.com'], keywords: ['game pass', 'xbox'] },
+  // Education / Language
+  { key: 'duolingo', name: 'Duolingo Super', category: 'Education', senders: ['duolingo.com'], keywords: ['duolingo'] },
+  { key: 'coursera', name: 'Coursera Plus', category: 'Education', senders: ['coursera.org'], keywords: ['coursera'] },
+  { key: 'udemy', name: 'Udemy', category: 'Education', senders: ['udemy.com'], keywords: ['udemy'] },
+  { key: 'masterclass', name: 'MasterClass', category: 'Education', senders: ['masterclass.com'], keywords: ['masterclass'] },
+  { key: 'audible', name: 'Audible', category: 'Education', senders: ['audible.com', 'audible.in'], keywords: ['audible'] },
+  { key: 'kindle_unlimited', name: 'Kindle Unlimited', category: 'Education', senders: ['amazon.com', 'amazon.in'], keywords: ['kindle unlimited'] },
+  // News
+  { key: 'nytimes', name: 'New York Times', category: 'News', senders: ['nytimes.com'], keywords: ['new york times', 'nytimes'] },
+  { key: 'medium', name: 'Medium', category: 'News', senders: ['medium.com'], keywords: ['medium membership'] },
 ];
 
 // Patterns suggesting subscription activity
@@ -80,6 +90,10 @@ const ACTIVE_PATTERNS = [
   /subscription/i, /renewal/i, /renewed/i, /payment\s+(received|successful|confirmation)/i,
   /invoice/i, /receipt/i, /your\s+plan/i, /membership/i, /auto-?renew/i,
   /welcome\s+to/i, /thanks\s+for\s+subscribing/i, /billing/i,
+  /(has\s+been\s+)?(extended|started|activated|charged)/i,
+  /trial\s+(has\s+)?(started|begun|begins)/i, /free\s+trial/i,
+  /your\s+(monthly|annual|yearly)\s+(plan|subscription)/i,
+  /next\s+billing\s+date/i, /will\s+renew\s+on/i,
 ];
 const CANCELLED_PATTERNS = [
   /cancell?ation/i, /cancell?ed/i, /your\s+subscription\s+(has\s+)?ended/i,
@@ -187,7 +201,7 @@ serve(async (req) => {
     const { days = 180 } = await req.json().catch(() => ({}));
 
     // Broad query for subscription-related emails (no attachment requirement)
-    const query = `(subject:(subscription OR renewal OR renewed OR membership OR "payment received" OR "payment successful" OR "your plan" OR "auto-renew" OR cancellation OR cancelled OR "welcome to") OR from:(netflix OR spotify OR hotstar OR primevideo OR youtube OR openai OR anthropic OR perplexity OR notion OR figma OR canva OR adobe OR github OR slack OR zoom OR linkedin OR sonyliv OR zee5 OR jiocinema OR gaana OR wynk OR dropbox OR microsoft OR apple OR airtel OR jio OR myvi OR vodafone OR actcorp OR cult OR curefit OR swiggy OR zomato OR flipkart OR playstation OR xbox OR midjourney)) newer_than:${days}d`;
+    const query = `(subject:(subscription OR renewal OR renewed OR membership OR "payment received" OR "payment successful" OR "your plan" OR "auto-renew" OR cancellation OR cancelled OR "welcome to" OR "trial started" OR "free trial" OR "has been extended" OR "has been renewed" OR "next billing" OR "will renew") OR from:(netflix OR spotify OR hotstar OR primevideo OR youtube OR openai OR anthropic OR perplexity OR notion OR figma OR canva OR adobe OR github OR slack OR zoom OR linkedin OR sonyliv OR zee5 OR jiocinema OR gaana OR wynk OR dropbox OR microsoft OR apple OR airtel OR jio OR myvi OR vodafone OR actcorp OR cult OR curefit OR swiggy OR zomato OR flipkart OR playstation OR xbox OR midjourney OR duolingo OR coursera OR udemy OR masterclass OR audible OR nytimes OR medium)) newer_than:${days}d`;
 
     const searchUrl = `https://gmail.googleapis.com/gmail/v1/users/me/messages?q=${encodeURIComponent(query)}&maxResults=200`;
     let searchRes = await gmailFetch(searchUrl, accessToken);
