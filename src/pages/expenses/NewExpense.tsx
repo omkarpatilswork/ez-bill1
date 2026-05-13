@@ -232,6 +232,13 @@ export default function NewExpense() {
           ? JSON.parse((error as any).context.body) : null;
         throw new Error(errBody?.error || errBody?.detail || (error as any).message || 'Extraction failed');
       }
+      if (data?.fallback) {
+        toast({
+          title: 'Scan needs a clearer file',
+          description: data.error || 'The receipt image was not readable. Please try a clearer photo or enter the details manually.',
+        });
+        return;
+      }
       if (data?.error) throw new Error(data.error);
 
       setExtractionData(data);
