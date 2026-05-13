@@ -1,3 +1,4 @@
+import SEO from '@/components/SEO';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Send, Sparkles, Bot, User, Copy, Check } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';

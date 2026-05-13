@@ -1,3 +1,4 @@
+import SEO from '@/components/SEO';
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { isNativeApp, isAndroid, scanUpiSmsFromDevice } from '@/lib/sms-reader';
