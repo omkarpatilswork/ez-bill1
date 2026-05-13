@@ -165,10 +165,7 @@ Rules:
       if (response.status === 429) message = "AI is busy right now. Please try again in a moment or fill in details manually.";
       if (response.status === 402) message = "AI credits exhausted for this workspace. Please add funds in Settings → Workspace → Usage, or fill in details manually.";
       // Return 200 with a fallback flag so the client shows a toast instead of crashing with a runtime error overlay.
-      return new Response(
-        JSON.stringify({ error: message, fallback: true, upstream_status: response.status }),
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return jsonResponse({ error: message, fallback: true, upstream_status: response.status });
     }
 
     const result = await response.json();
@@ -182,24 +179,12 @@ Rules:
       console.error("Failed to parse AI response:", content);
       // AI refused or returned non-JSON (e.g. unreadable image). Return a soft
       // fallback so the client can show a friendly message instead of crashing.
-      return new Response(
-        JSON.stringify({
-          error: "The image or document was not readable. Please try a clearer file or fill in details manually.",
-          fallback: true,
-          raw: content,
-        }),
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return unreadableFallback(content);
     }
 
-    return new Response(JSON.stringify(extracted), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return jsonResponse(extracted);
   } catch (e) {
     console.error("extract-receipt error:", e);
-    return new Response(
-      JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return jsonResponse({ error: e instanceof Error ? e.message : "Unknown error" }, 500);
   }
 });
