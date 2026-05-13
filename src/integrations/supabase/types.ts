@@ -143,52 +143,73 @@ export type Database = {
       }
       detected_subscriptions: {
         Row: {
+          billing_cycle: string | null
           category: string
           created_at: string
+          currency: string | null
           email_count: number
           email_status: string
           id: string
+          is_trial: boolean
           last_amount: number | null
           last_email_date: string | null
           last_email_from: string | null
+          last_email_snippet: string | null
           last_email_subject: string | null
+          next_billing_date: string | null
           service_key: string
           service_name: string
           source: string
+          started_at: string | null
+          trial_ends_at: string | null
           updated_at: string
           user_confirmed_status: string | null
           user_id: string
         }
         Insert: {
+          billing_cycle?: string | null
           category?: string
           created_at?: string
+          currency?: string | null
           email_count?: number
           email_status?: string
           id?: string
+          is_trial?: boolean
           last_amount?: number | null
           last_email_date?: string | null
           last_email_from?: string | null
+          last_email_snippet?: string | null
           last_email_subject?: string | null
+          next_billing_date?: string | null
           service_key: string
           service_name: string
           source?: string
+          started_at?: string | null
+          trial_ends_at?: string | null
           updated_at?: string
           user_confirmed_status?: string | null
           user_id: string
         }
         Update: {
+          billing_cycle?: string | null
           category?: string
           created_at?: string
+          currency?: string | null
           email_count?: number
           email_status?: string
           id?: string
+          is_trial?: boolean
           last_amount?: number | null
           last_email_date?: string | null
           last_email_from?: string | null
+          last_email_snippet?: string | null
           last_email_subject?: string | null
+          next_billing_date?: string | null
           service_key?: string
           service_name?: string
           source?: string
+          started_at?: string | null
+          trial_ends_at?: string | null
           updated_at?: string
           user_confirmed_status?: string | null
           user_id?: string
