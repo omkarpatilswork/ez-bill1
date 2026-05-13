@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { Receipt } from 'lucide-react';
+import SEO from '@/components/SEO';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -54,7 +55,8 @@ export default function Login() {
   };
 
   return (
-    <div className="flex min-h-screen bg-background">
+    <main className="flex min-h-screen bg-background">
+      <SEO title="Sign in" description="Sign in to EZ Bill to manage your bills, track expenses, and import receipts automatically from email." path="/login" />
       {/* Left side - Login form */}
       <div className="flex w-full lg:w-1/2 items-center justify-center px-4 sm:px-8">
         <Card className="w-full max-w-md border-0 shadow-none bg-transparent glass-card rounded-2xl">
@@ -124,6 +126,6 @@ export default function Login() {
         <div className="absolute top-20 right-20 h-64 w-64 rounded-full bg-primary/10 blur-3xl" />
         <div className="absolute bottom-32 left-16 h-48 w-48 rounded-full bg-gold/5 blur-3xl" />
       </div>
-    </div>
+    </main>
   );
 }

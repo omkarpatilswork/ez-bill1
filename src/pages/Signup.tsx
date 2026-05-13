@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { Receipt } from 'lucide-react';
+import SEO from '@/components/SEO';
 
 const DEPARTMENTS = ['Engineering', 'Marketing', 'Sales', 'Finance', 'HR', 'Operations', 'General'];
 
@@ -54,6 +55,7 @@ export default function Signup() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
+      <SEO title="Create your account" description="Sign up for EZ Bill to automatically import bills from your inbox, track expenses, and split spending with friends." path="/signup" />
       <Card className="w-full max-w-md glass-card border-0 rounded-2xl">
         <CardHeader className="text-center">
           <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-xl bg-primary">

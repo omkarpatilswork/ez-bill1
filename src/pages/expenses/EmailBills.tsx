@@ -1,3 +1,4 @@
+import SEO from '@/components/SEO';
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { isNativeApp, isAndroid, scanUpiSmsFromDevice } from '@/lib/sms-reader';
@@ -551,6 +552,7 @@ export default function EmailBills() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6 animate-fade-in pb-24">
+      <SEO title="Import Bills" description="Connect Gmail to automatically import bills and receipts into EZ Bill." path="/email-bills" />
       <div>
         <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Import Bills</h1>
         <p className="text-sm text-muted-foreground mt-1">

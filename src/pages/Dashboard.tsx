@@ -20,6 +20,7 @@ import {
   ResponsiveContainer, Cell,
 } from 'recharts';
 import type { Expense } from '@/lib/types';
+import SEO from '@/components/SEO';
 
 const BROAD_CATEGORY_MAP: Record<string, string> = {
   'food & dining': 'Food & Dining', food: 'Food & Dining', dining: 'Food & Dining',
@@ -157,6 +158,7 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-5 max-w-2xl mx-auto md:max-w-none animate-fade-in pb-6">
+      <SEO title="Dashboard" description="Your EZ Bill dashboard — see recent bills, monthly spending, and quick actions at a glance." path="/" />
       {/* Bill Selector Modal */}
       {billSelectorFor && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4"

@@ -1,3 +1,4 @@
+import SEO from '@/components/SEO';
 import { useEffect, useState, useMemo } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -258,6 +259,7 @@ export default function MyExpenses() {
 
   return (
     <div className="space-y-4 pb-20 animate-fade-in">
+      <SEO title="All Bills" description="Browse, filter, and search all your imported and manually added bills in EZ Bill." path="/expenses" />
       <div className="flex items-start justify-between">
         <div>
           <h1 className="text-2xl font-bold text-foreground">All Bills</h1>

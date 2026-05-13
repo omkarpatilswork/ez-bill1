@@ -1,3 +1,4 @@
+import SEO from '@/components/SEO';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Send, Sparkles, Bot, User, Copy, Check } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
@@ -170,6 +171,7 @@ export default function AskAI() {
 
   return (
     <div className="flex flex-col h-[calc(100vh-theme(spacing.12)-theme(spacing.6)*2)] sm:h-[calc(100vh-theme(spacing.14)-theme(spacing.6)*2)] max-w-4xl mx-auto w-full">
+      <SEO title="Ask AI" description="Ask EZ Bill's AI assistant questions about your bills, spending, and financial trends." path="/ask-ai" />
       {/* Header */}
       <div className="mb-5 flex items-center gap-3">
         <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
