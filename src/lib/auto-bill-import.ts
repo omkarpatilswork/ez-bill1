@@ -131,6 +131,7 @@ export async function runBillImport(opts: {
   const emails: Array<{
     message_id: string; subject: string; from: string; date: string;
     attachments: Array<{ id: string; filename: string; mimeType: string; size: number }>;
+    body_text?: string;
   }> = scanData?.emails || [];
 
   if (emails.length === 0) {
@@ -144,7 +145,7 @@ export async function runBillImport(opts: {
   }
 
   let saved = 0, skipped = 0, duplicates = 0, total = 0;
-  for (const e of emails) total += e.attachments.length;
+  for (const e of emails) total += Math.max(1, e.attachments.length);
 
   emit({ phase: 'dedupe', current: 0, total, message: 'Checking for duplicates…' });
   const sinceISO = new Date(Date.now() - 180 * 86400000).toISOString().slice(0, 10);
@@ -168,24 +169,44 @@ export async function runBillImport(opts: {
   let processed = 0;
   for (const email of emails) {
     if (processedMsgs.has(email.message_id)) {
-      duplicates += email.attachments.length;
-      processed += email.attachments.length;
+      const n = Math.max(1, email.attachments.length);
+      duplicates += n;
+      processed += n;
       emit({ phase: 'parsing', current: processed, total, message: 'Skipping already-processed email…' });
       continue;
     }
-    for (const att of email.attachments) {
-      processed++;
-      emit({ phase: 'parsing', current: processed, total, message: `Parsing & OCR: ${att.filename}` });
-      try {
-        const { data: attData, error: attErr } = await supabase.functions.invoke('gmail-attachment', {
-          body: { message_id: email.message_id, attachment_id: att.id },
-        });
-        if (attErr || attData?.error) { skipped++; continue; }
 
-        const { data: ext, error: extErr } = await supabase.functions.invoke('extract-receipt', {
-          body: { file_base64: attData.data, file_type: att.mimeType },
-        });
-        if (extErr || ext?.error) { skipped++; continue; }
+    // If no attachments but we have body text, run a single body-extract pass.
+    const units: Array<{ kind: 'attachment' | 'body'; att?: any }> =
+      email.attachments.length > 0
+        ? email.attachments.map((a) => ({ kind: 'attachment' as const, att: a }))
+        : (email.body_text ? [{ kind: 'body' as const }] : []);
+
+    for (const unit of units) {
+      processed++;
+      const label = unit.kind === 'attachment' ? unit.att.filename : (email.subject || 'email body');
+      emit({ phase: 'parsing', current: processed, total, message: `Parsing & OCR: ${label}` });
+      try {
+        let attData: any = null;
+        let ext: any = null;
+        if (unit.kind === 'attachment') {
+          const r = await supabase.functions.invoke('gmail-attachment', {
+            body: { message_id: email.message_id, attachment_id: unit.att.id },
+          });
+          if (r.error || r.data?.error) { skipped++; continue; }
+          attData = r.data;
+          const ex = await supabase.functions.invoke('extract-receipt', {
+            body: { file_base64: attData.data, file_type: unit.att.mimeType },
+          });
+          if (ex.error || ex.data?.error) { skipped++; continue; }
+          ext = ex.data;
+        } else {
+          const ex = await supabase.functions.invoke('extract-receipt', {
+            body: { text_content: email.body_text, source_hint: `Subject: ${email.subject} | From: ${email.from}` },
+          });
+          if (ex.error || ex.data?.error) { skipped++; continue; }
+          ext = ex.data;
+        }
 
         const amount = ext.amount;
         if (amount == null || amount === 0) { skipped++; continue; }
@@ -246,19 +267,21 @@ export async function runBillImport(opts: {
         if (insErr) { skipped++; continue; }
         const expenseId = (expense as any)?.id;
 
-        try {
-          const bin = atob(attData.data);
-          const bytes = new Uint8Array(bin.length);
-          for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-          const blob = new Blob([bytes], { type: att.mimeType });
-          const filePath = `${userId}/${expenseId}/${att.filename}`;
-          const { error: upErr } = await supabase.storage.from('receipts').upload(filePath, blob);
-          if (!upErr) {
-            await supabase.from('expense_receipts').insert({
-              expense_id: expenseId, file_path: filePath, file_name: att.filename,
-            } as any);
-          }
-        } catch (e) { /* ignore upload errors */ }
+        if (unit.kind === 'attachment' && attData?.data) {
+          try {
+            const bin = atob(attData.data);
+            const bytes = new Uint8Array(bin.length);
+            for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+            const blob = new Blob([bytes], { type: unit.att.mimeType });
+            const filePath = `${userId}/${expenseId}/${unit.att.filename}`;
+            const { error: upErr } = await supabase.storage.from('receipts').upload(filePath, blob);
+            if (!upErr) {
+              await supabase.from('expense_receipts').insert({
+                expense_id: expenseId, file_path: filePath, file_name: unit.att.filename,
+              } as any);
+            }
+          } catch (e) { /* ignore upload errors */ }
+        }
 
         await supabase.from('processed_emails').insert({
           user_id: userId,
