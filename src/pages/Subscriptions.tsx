@@ -32,24 +32,59 @@ interface SubRow {
   last_amount: number | null;
   email_count: number;
   created_at: string;
+  next_billing_date?: string | null;
+  billing_cycle?: string | null;         // 'monthly' | 'yearly' | 'weekly'
+  currency?: string | null;
+  is_trial?: boolean | null;
+  trial_ends_at?: string | null;
+  started_at?: string | null;
+  last_email_snippet?: string | null;
 }
 
-const CYCLE_DAYS = 30; // assume monthly
-
+function cycleDays(cycle?: string | null): number {
+  if (cycle === 'yearly') return 365;
+  if (cycle === 'weekly') return 7;
+  return 30;
+}
+function currencySymbol(c?: string | null): string {
+  switch ((c || 'INR').toUpperCase()) {
+    case 'USD': return '$';
+    case 'EUR': return '€';
+    case 'GBP': return '£';
+    default: return '₹';
+  }
+}
+function fmtMoney(n: number, currency?: string | null) {
+  return `${currencySymbol(currency)}${Math.round(n).toLocaleString('en-IN')}`;
+}
 function fmtINR(n: number) {
   return `₹${Math.round(n).toLocaleString('en-IN')}`;
+}
+function monthlyEquivalent(amount: number, cycle?: string | null): number {
+  if (!amount) return 0;
+  if (cycle === 'yearly') return amount / 12;
+  if (cycle === 'weekly') return amount * 4.33;
+  return amount;
 }
 function fmtDate(d: string | null | undefined) {
   if (!d) return '—';
   return new Date(d).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
 }
-function nextRenewal(lastBilled: string | null): Date | null {
-  if (!lastBilled) return null;
-  const t = new Date(lastBilled).getTime();
-  let next = t + CYCLE_DAYS * 86400000;
-  const now = Date.now();
-  while (next < now) next += CYCLE_DAYS * 86400000;
+function nextRenewal(row: Pick<SubRow, 'next_billing_date' | 'last_email_date' | 'billing_cycle'>): Date | null {
+  if (row.next_billing_date) {
+    const d = new Date(row.next_billing_date);
+    if (!isNaN(d.getTime())) return d;
+  }
+  if (!row.last_email_date) return null;
+  const cd = cycleDays(row.billing_cycle) * 86400000;
+  let next = new Date(row.last_email_date).getTime() + cd;
+  while (next < Date.now()) next += cd;
   return new Date(next);
+}
+function cycleLabel(cycle?: string | null): string {
+  if (cycle === 'yearly') return '/yr';
+  if (cycle === 'weekly') return '/wk';
+  return '/mo';
 }
 
 export default function Subscriptions() {
@@ -112,13 +147,16 @@ export default function Subscriptions() {
     [mySubs]
   );
   const totalMonthly = useMemo(
-    () => confirmedOrManual.reduce((s, r) => s + (Number(r.last_amount) || 0), 0),
+    () => confirmedOrManual.reduce(
+      (s, r) => s + monthlyEquivalent(Number(r.last_amount) || 0, r.billing_cycle),
+      0,
+    ),
     [confirmedOrManual]
   );
 
   const nextDueRow = useMemo(() => {
     const withDates = confirmedOrManual
-      .map(r => ({ r, next: nextRenewal(r.last_email_date) }))
+      .map(r => ({ r, next: nextRenewal(r) }))
       .filter(x => x.next) as { r: SubRow; next: Date }[];
     withDates.sort((a, b) => a.next.getTime() - b.next.getTime());
     return withDates[0] || null;
@@ -251,7 +289,7 @@ export default function Subscriptions() {
           <div className="space-y-2">
             {confirmedOrManual.map(r => {
               const svc = getServiceByKey(r.service_key) || matchService(r.service_name);
-              const next = nextRenewal(r.last_email_date);
+              const next = nextRenewal(r);
               const daysToNext = next ? Math.ceil((next.getTime() - Date.now()) / 86400000) : null;
               return (
                 <div key={r.id} className="glass-card rounded-2xl p-3.5">
@@ -263,11 +301,21 @@ export default function Subscriptions() {
                       <div className="flex items-center justify-between gap-2">
                         <span className="text-sm font-semibold text-foreground truncate">{r.service_name}</span>
                         <span className="text-sm font-bold tabular-nums text-foreground shrink-0">
-                          {r.last_amount ? `${fmtINR(r.last_amount)}/mo` : '—'}
+                          {r.last_amount ? `${fmtMoney(r.last_amount, r.currency)}${cycleLabel(r.billing_cycle)}` : '—'}
                         </span>
                       </div>
                       <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
                         <span className="text-[10px] text-muted-foreground">{r.category}</span>
+                        {r.is_trial && (
+                          <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full bg-gold/15 text-gold">
+                            Trial{r.trial_ends_at ? ` · ends ${fmtDate(r.trial_ends_at)}` : ''}
+                          </span>
+                        )}
+                        {r.billing_cycle && r.billing_cycle !== 'monthly' && (
+                          <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full bg-secondary text-muted-foreground capitalize">
+                            {r.billing_cycle}
+                          </span>
+                        )}
                         {r.source === 'manual' ? (
                           <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full bg-secondary text-muted-foreground">
                             Manual
@@ -278,7 +326,11 @@ export default function Subscriptions() {
                           </span>
                         )}
                       </div>
-                      <div className="grid grid-cols-2 gap-2 mt-2">
+                      <div className="grid grid-cols-3 gap-2 mt-2">
+                        <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                          <Calendar className="h-3 w-3" />
+                          <span>Started: <span className="text-foreground">{fmtDate(r.started_at || null)}</span></span>
+                        </div>
                         <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
                           <Calendar className="h-3 w-3" />
                           <span>Last: <span className="text-foreground">{fmtDate(r.last_email_date)}</span></span>
@@ -293,6 +345,11 @@ export default function Subscriptions() {
                           </span>
                         </div>
                       </div>
+                      {r.billing_cycle && r.billing_cycle !== 'monthly' && r.last_amount ? (
+                        <p className="text-[10px] text-muted-foreground mt-1.5">
+                          ≈ {fmtMoney(monthlyEquivalent(Number(r.last_amount), r.billing_cycle), r.currency)}/mo equivalent
+                        </p>
+                      ) : null}
                     </div>
                   </div>
 
