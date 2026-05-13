@@ -12,11 +12,11 @@ serve(async (req) => {
   }
 
   try {
-    const { file_base64, file_type } = await req.json();
+    const { file_base64, file_type, text_content, source_hint } = await req.json();
 
-    if (!file_base64 || !file_type) {
+    if (!file_base64 && !text_content) {
       return new Response(
-        JSON.stringify({ error: "file_base64 and file_type are required" }),
+        JSON.stringify({ error: "Either file_base64+file_type or text_content is required" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -26,15 +26,19 @@ serve(async (req) => {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
+    const isTextMode = !file_base64 && !!text_content;
     const mimeType = file_type || "image/png";
-    console.log("Processing file type:", mimeType, "base64 length:", file_base64.length);
 
-    if (file_base64.length > 10 * 1024 * 1024) {
+    if (file_base64 && file_base64.length > 10 * 1024 * 1024) {
       return new Response(
         JSON.stringify({ error: "File is too large. Please upload an image under 7MB." }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+
+    console.log(isTextMode
+      ? `Processing email body text, length: ${text_content.length}`
+      : `Processing file type: ${mimeType}, base64 length: ${file_base64.length}`);
 
     const systemPrompt = `You are an advanced OCR extraction engine for Indian bills, receipts, and invoices. Extract ALL structured data and return ONLY valid JSON with these fields:
 
@@ -84,22 +88,15 @@ Rules:
 
     const isPdf = mimeType === "application/pdf";
 
-    // Use GPT-5-mini for PDFs (Gemini fails with "document has no pages" on PDFs via OpenAI-compatible API)
-    // Use Gemini for images which it handles well
-    const model = isPdf ? "openai/gpt-5-mini" : "google/gemini-2.5-flash";
+    // Text emails → fast text model. PDFs → GPT-5-mini. Images → Gemini Flash.
+    const model = isTextMode ? "google/gemini-2.5-flash" : (isPdf ? "openai/gpt-5-mini" : "google/gemini-2.5-flash");
 
-    const userContent: any[] = [
-      {
-        type: "image_url",
-        image_url: {
-          url: `data:${mimeType};base64,${file_base64}`,
-        },
-      },
-      {
-        type: "text",
-        text: "Extract ALL bill details including every line item, tax, payment method, and merchant info. Return only JSON.",
-      },
-    ];
+    const userContent: any = isTextMode
+      ? `Extract ALL bill details from this email body. ${source_hint ? `Source hint: ${source_hint}. ` : ""}If the email is NOT a real bill/receipt/order confirmation (e.g. marketing, OTP, newsletter, shipping update with no amount), return {"amount": null}. Return only JSON.\n\n--- EMAIL BODY ---\n${String(text_content).slice(0, 12000)}`
+      : [
+          { type: "image_url", image_url: { url: `data:${mimeType};base64,${file_base64}` } },
+          { type: "text", text: "Extract ALL bill details including every line item, tax, payment method, and merchant info. Return only JSON." },
+        ];
 
     console.log("Using model:", model, "for mime type:", mimeType);
 

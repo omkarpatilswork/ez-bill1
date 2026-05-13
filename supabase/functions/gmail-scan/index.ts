@@ -243,7 +243,17 @@ async function processMessages(searchData: any, accessToken: string, userId: str
         }
       }
 
-      if (attachments.length === 0) continue;
+      // Extract plain-text body (handles multipart and HTML→text fallback).
+      // Many merchants (Amazon, Uber, Swiggy, Zomato, Rapido, BookMyShow, MakeMyTrip,
+      // District, Swiggy Instamart, etc.) email order/ride confirmations as HTML
+      // bodies with NO attachment, so we must fall back to the body content.
+      const bodyText = extractBodyText(msgData.payload);
+
+      // Skip emails that have neither attachment nor any usable body content.
+      if (attachments.length === 0 && (!bodyText || bodyText.length < 40)) continue;
+
+      // Heuristic: only consider body-only emails that look like a bill/receipt.
+      if (attachments.length === 0 && !looksLikeBill(subject, from, bodyText)) continue;
 
       allEmails.push({
         message_id: msg.id,
@@ -251,6 +261,7 @@ async function processMessages(searchData: any, accessToken: string, userId: str
         from,
         date,
         attachments,
+        body_text: bodyText.slice(0, 12000),
         already_imported: processedSet.has(msg.id),
       });
     } catch (err) {
@@ -265,4 +276,62 @@ async function processMessages(searchData: any, accessToken: string, userId: str
   }), {
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
+}
+
+// Decode base64url Gmail body data into UTF-8 text.
+function decodeB64Url(data: string): string {
+  try {
+    const b64 = data.replace(/-/g, "+").replace(/_/g, "/");
+    const padded = b64 + "=".repeat((4 - (b64.length % 4)) % 4);
+    const bin = atob(padded);
+    const bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    return new TextDecoder("utf-8").decode(bytes);
+  } catch { return ""; }
+}
+
+function htmlToText(html: string): string {
+  return html
+    .replace(/<style[\s\S]*?<\/style>/gi, " ")
+    .replace(/<script[\s\S]*?<\/script>/gi, " ")
+    .replace(/<\/(p|div|tr|li|h\d|br)>/gi, "\n")
+    .replace(/<br\s*\/?>(\s*)/gi, "\n")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">")
+    .replace(/&#39;|&apos;/gi, "'")
+    .replace(/&quot;/gi, '"')
+    .replace(/&rupee;|&#8377;/gi, "₹")
+    .replace(/[ \t]+/g, " ")
+    .replace(/\n\s*\n+/g, "\n\n")
+    .trim();
+}
+
+function extractBodyText(payload: any): string {
+  if (!payload) return "";
+  let plain = "";
+  let html = "";
+
+  const walk = (part: any) => {
+    if (!part) return;
+    const mime = part.mimeType || "";
+    const data = part.body?.data;
+    if (data && mime === "text/plain" && !plain) plain = decodeB64Url(data);
+    else if (data && mime === "text/html" && !html) html = decodeB64Url(data);
+    if (Array.isArray(part.parts)) part.parts.forEach(walk);
+  };
+  walk(payload);
+
+  if (plain && plain.trim().length > 40) return plain.trim();
+  if (html) return htmlToText(html);
+  return "";
+}
+
+// Quick check that a body-only email is bill-like (avoids spam, marketing, OTPs, etc.)
+const BILL_KEYWORDS = /(invoice|receipt|order (no|number|id|placed|confirmation|delivered|shipped)|your order|payment (received|successful|confirmation)|thanks for your order|booking (confirmation|confirmed)|ride (with|receipt|completed)|trip receipt|your bill|tax invoice|amount\s*(paid|charged)|total\s*(amount|paid|charged)|grand\s*total|subtotal|payable|₹\s*\d|rs\.?\s*\d|inr\s*\d)/i;
+function looksLikeBill(subject: string, from: string, body: string): boolean {
+  const sample = `${subject}\n${from}\n${body.slice(0, 4000)}`;
+  return BILL_KEYWORDS.test(sample);
 }
