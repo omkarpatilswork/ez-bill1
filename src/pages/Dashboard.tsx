@@ -20,6 +20,7 @@ import {
   ResponsiveContainer, Cell,
 } from 'recharts';
 import type { Expense } from '@/lib/types';
+import SEO from '@/components/SEO';
 
 const BROAD_CATEGORY_MAP: Record<string, string> = {
   'food & dining': 'Food & Dining', food: 'Food & Dining', dining: 'Food & Dining',

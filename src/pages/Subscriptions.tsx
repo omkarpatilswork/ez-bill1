@@ -182,6 +182,7 @@ export default function Subscriptions() {
 
   return (
     <div className="space-y-5 max-w-3xl mx-auto md:max-w-none animate-fade-in pb-24">
+      <SEO title="Subscriptions" description="Track recurring subscriptions detected from your inbox and manage monthly spending in EZ Bill." path="/subscriptions" />
       {/* Header */}
       <div className="flex items-center gap-3">
         <button onClick={() => navigate('/')}

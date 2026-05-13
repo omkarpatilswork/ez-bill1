@@ -342,6 +342,7 @@ export default function MoneyLeaks() {
 
   return (
     <div className="space-y-5 max-w-2xl mx-auto md:max-w-none animate-fade-in pb-24">
+      <SEO title="Money Leaks" description="Find recurring charges, duplicate subscriptions, and small leaks draining your budget with EZ Bill." path="/money-leaks" />
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
