@@ -156,6 +156,126 @@ async function gmailFetch(url: string, token: string) {
   return fetch(url, { headers: { Authorization: `Bearer ${token}` } });
 }
 
+/* ---------- Body extraction helpers ---------- */
+function decodeB64Url(s: string): string {
+  if (!s) return '';
+  try {
+    const b64 = s.replace(/-/g, '+').replace(/_/g, '/');
+    const bin = atob(b64 + '==='.slice((b64.length + 3) % 4));
+    const bytes = Uint8Array.from(bin, c => c.charCodeAt(0));
+    return new TextDecoder('utf-8').decode(bytes);
+  } catch { return ''; }
+}
+function htmlToText(html: string): string {
+  return html
+    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<br\s*\/?>(\s*)/gi, '\n')
+    .replace(/<\/(p|div|tr|li|h[1-6])>/gi, '\n')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/&#39;|&apos;/gi, "'")
+    .replace(/&quot;/gi, '"')
+    .replace(/&[a-z#0-9]+;/gi, ' ')
+    .replace(/[ \t]+/g, ' ')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+function extractBodyText(payload: any): string {
+  if (!payload) return '';
+  const parts: string[] = [];
+  const walk = (p: any) => {
+    if (!p) return;
+    const mime = p.mimeType || '';
+    const data = p.body?.data;
+    if (data && (mime === 'text/plain' || mime === 'text/html')) {
+      const decoded = decodeB64Url(data);
+      parts.push(mime === 'text/html' ? htmlToText(decoded) : decoded);
+    }
+    if (Array.isArray(p.parts)) p.parts.forEach(walk);
+  };
+  walk(payload);
+  return parts.join('\n').slice(0, 4000);
+}
+
+/* ---------- Date parsing ---------- */
+function parseLooseDate(s: string): string | null {
+  if (!s) return null;
+  const t = s.trim();
+  // ISO
+  const iso = t.match(/(\d{4})-(\d{1,2})-(\d{1,2})/);
+  if (iso) {
+    const d = new Date(+iso[1], +iso[2] - 1, +iso[3]);
+    if (!isNaN(d.getTime())) return d.toISOString().slice(0, 10);
+  }
+  // dd Mon yyyy / Mon dd, yyyy
+  const months = ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];
+  const m1 = t.toLowerCase().match(/(\d{1,2})[\s\-]+([a-z]{3,9})[\s\-,]+(\d{4})/);
+  if (m1) {
+    const mi = months.findIndex(m => m1[2].startsWith(m));
+    if (mi >= 0) {
+      const d = new Date(+m1[3], mi, +m1[1]);
+      if (!isNaN(d.getTime())) return d.toISOString().slice(0, 10);
+    }
+  }
+  const m2 = t.toLowerCase().match(/([a-z]{3,9})\s+(\d{1,2})[\s,]+(\d{4})/);
+  if (m2) {
+    const mi = months.findIndex(m => m2[1].startsWith(m));
+    if (mi >= 0) {
+      const d = new Date(+m2[3], mi, +m2[2]);
+      if (!isNaN(d.getTime())) return d.toISOString().slice(0, 10);
+    }
+  }
+  // dd/mm/yyyy
+  const m3 = t.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/);
+  if (m3) {
+    const yr = +m3[3] < 100 ? 2000 + +m3[3] : +m3[3];
+    const d = new Date(yr, +m3[2] - 1, +m3[1]);
+    if (!isNaN(d.getTime())) return d.toISOString().slice(0, 10);
+  }
+  return null;
+}
+function findNextBillingDate(text: string): string | null {
+  const patterns = [
+    /(?:next\s+(?:billing|payment|charge|renewal)\s+(?:date|on)?|will\s+(?:be\s+)?(?:auto[-\s]?)?renew(?:ed)?\s+on|renews\s+on|renewal\s+date)\s*[:\-]?\s*([A-Za-z0-9,\-\/\s]{6,30})/i,
+    /(?:auto[-\s]?renews?|charged?)\s+on\s+([A-Za-z0-9,\-\/\s]{6,30})/i,
+    /(?:trial\s+ends?|free\s+trial\s+ends?)\s+on\s+([A-Za-z0-9,\-\/\s]{6,30})/i,
+  ];
+  for (const p of patterns) {
+    const m = text.match(p);
+    if (m) {
+      const d = parseLooseDate(m[1]);
+      if (d) return d;
+    }
+  }
+  return null;
+}
+function findTrial(text: string): boolean {
+  return /(free\s+trial|trial\s+(has\s+)?(started|begun)|trial\s+period|in\s+trial)/i.test(text);
+}
+function findCycle(text: string): 'monthly' | 'yearly' | 'weekly' {
+  if (/(annual|yearly|per\s*year|\/\s*year|\/\s*yr|12\s*months)/i.test(text)) return 'yearly';
+  if (/(weekly|per\s*week|\/\s*week)/i.test(text)) return 'weekly';
+  return 'monthly';
+}
+function findCurrency(text: string): string {
+  if (/₹|\bINR\b|\brs\.?\b/i.test(text)) return 'INR';
+  if (/\$|\bUSD\b/i.test(text)) return 'USD';
+  if (/€|\bEUR\b/i.test(text)) return 'EUR';
+  if (/£|\bGBP\b/i.test(text)) return 'GBP';
+  return 'INR';
+}
+function addCycle(dateISO: string, cycle: 'monthly' | 'yearly' | 'weekly'): string {
+  const d = new Date(dateISO);
+  if (cycle === 'weekly') d.setDate(d.getDate() + 7);
+  else if (cycle === 'yearly') d.setFullYear(d.getFullYear() + 1);
+  else d.setMonth(d.getMonth() + 1);
+  return d.toISOString().slice(0, 10);
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
