@@ -346,6 +346,13 @@ serve(async (req) => {
       lastAmount: number | null;
       hasCancellation: boolean;
       hasActive: boolean;
+      lastSnippet: string;
+      nextBilling: string | null;
+      cycle: 'monthly' | 'yearly' | 'weekly';
+      currency: string;
+      isTrial: boolean;
+      trialEnds: string | null;
+      startedAt: string | null;
     }
     const aggregates = new Map<string, Agg>();
     const limit = Math.min(messages.length, 100);
@@ -354,7 +361,7 @@ serve(async (req) => {
       const msg = messages[i];
       try {
         const r = await gmailFetch(
-          `https://gmail.googleapis.com/gmail/v1/users/me/messages/${msg.id}?format=metadata&metadataHeaders=Subject&metadataHeaders=From&metadataHeaders=Date`,
+          `https://gmail.googleapis.com/gmail/v1/users/me/messages/${msg.id}?format=full`,
           accessToken,
         );
         if (!r.ok) continue;
@@ -365,29 +372,57 @@ serve(async (req) => {
         const from = get('From');
         const dateStr = get('Date');
         const snippet = m.snippet || '';
+        const body = extractBodyText(m.payload);
+        const fullText = `${subject}\n${snippet}\n${body}`;
 
         const svc = matchService(subject, from);
         if (!svc) continue;
         // Subscription signal — must look like sub/renewal/membership/cancellation
-        const isSubSignal = ACTIVE_PATTERNS.some(p => p.test(subject) || p.test(snippet))
-          || CANCELLED_PATTERNS.some(p => p.test(subject) || p.test(snippet));
+        const isSubSignal = ACTIVE_PATTERNS.some(p => p.test(fullText))
+          || CANCELLED_PATTERNS.some(p => p.test(fullText));
         if (!isSubSignal) continue;
 
-        const status = detectStatus(subject, snippet);
+        const status = detectStatus(subject, `${snippet}\n${body}`);
         const ts = dateStr ? new Date(dateStr).getTime() : Date.now();
-        const amt = parseAmount(`${subject} ${snippet}`);
+        const amt = parseAmount(fullText);
+        const nextBilling = findNextBillingDate(fullText);
+        const cycle = findCycle(fullText);
+        const currency = findCurrency(fullText);
+        const isTrial = findTrial(fullText);
+        const trialEnds = isTrial
+          ? (fullText.match(/trial\s+ends?\s+on\s+([A-Za-z0-9,\-\/\s]{6,30})/i)?.[1]
+              ? parseLooseDate(fullText.match(/trial\s+ends?\s+on\s+([A-Za-z0-9,\-\/\s]{6,30})/i)![1])
+              : null)
+          : null;
+        const isStartSignal = /(welcome\s+to|trial\s+(started|begun)|subscription\s+(started|activated)|thanks\s+for\s+subscribing)/i.test(fullText);
 
         const ex = aggregates.get(svc.key);
         if (!ex) {
           aggregates.set(svc.key, {
             svc, count: 1, lastDate: ts, lastSubject: subject, lastFrom: from, lastAmount: amt,
             hasCancellation: status === 'cancelled', hasActive: status === 'active',
+            lastSnippet: snippet.slice(0, 280),
+            nextBilling,
+            cycle,
+            currency,
+            isTrial,
+            trialEnds,
+            startedAt: isStartSignal ? new Date(ts).toISOString().slice(0, 10) : null,
           });
         } else {
           ex.count++;
           if (ts > ex.lastDate) {
             ex.lastDate = ts; ex.lastSubject = subject; ex.lastFrom = from;
             if (amt) ex.lastAmount = amt;
+            ex.lastSnippet = snippet.slice(0, 280);
+            if (nextBilling) ex.nextBilling = nextBilling;
+            ex.cycle = cycle;
+            ex.currency = currency;
+            ex.isTrial = isTrial;
+            if (trialEnds) ex.trialEnds = trialEnds;
+          }
+          if (isStartSignal && (!ex.startedAt || new Date(ts).getTime() < new Date(ex.startedAt).getTime())) {
+            ex.startedAt = new Date(ts).toISOString().slice(0, 10);
           }
           if (status === 'cancelled') ex.hasCancellation = true;
           else ex.hasActive = true;
@@ -406,6 +441,8 @@ serve(async (req) => {
     const results: any[] = [];
     for (const [, a] of aggregates) {
       const email_status = a.hasCancellation && !a.hasActive ? 'cancelled' : 'active';
+      const lastDateISO = new Date(a.lastDate).toISOString().slice(0, 10);
+      const nextBilling = a.nextBilling || addCycle(lastDateISO, a.cycle);
       results.push({
         user_id: user.id,
         service_key: a.svc.key,
@@ -418,6 +455,13 @@ serve(async (req) => {
         last_email_date: new Date(a.lastDate).toISOString(),
         last_amount: a.lastAmount,
         email_count: a.count,
+        last_email_snippet: a.lastSnippet,
+        next_billing_date: nextBilling,
+        billing_cycle: a.cycle,
+        currency: a.currency,
+        is_trial: a.isTrial,
+        trial_ends_at: a.trialEnds,
+        started_at: a.startedAt,
       });
     }
 
