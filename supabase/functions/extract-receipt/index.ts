@@ -6,6 +6,35 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+const jsonResponse = (body: Record<string, unknown>, status = 200) =>
+  new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+
+const unreadableFallback = (raw = "") => jsonResponse({
+  merchant_name: "Not Found",
+  merchant_legal_name: "Not Found",
+  aggregator: "Not Found",
+  merchant_address: "Not Found",
+  merchant_gstin: "Not Found",
+  amount: null,
+  subtotal: null,
+  tax_amount: null,
+  tax_details: "Not Found",
+  discount: null,
+  date_time: "Not Found",
+  bill_invoice_number: "Not Found",
+  payment_method: "Not Found",
+  category: "Other",
+  line_items: [],
+  total_items: 0,
+  currency: "INR",
+  error: "The image or document was not readable. Please try a clearer file or fill in details manually.",
+  fallback: true,
+  raw,
+});
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -15,10 +44,7 @@ serve(async (req) => {
     const { file_base64, file_type, text_content, source_hint } = await req.json();
 
     if (!file_base64 && !text_content) {
-      return new Response(
-        JSON.stringify({ error: "Either file_base64+file_type or text_content is required" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return jsonResponse({ error: "Either file_base64+file_type or text_content is required" }, 400);
     }
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
@@ -30,10 +56,7 @@ serve(async (req) => {
     const mimeType = file_type || "image/png";
 
     if (file_base64 && file_base64.length > 10 * 1024 * 1024) {
-      return new Response(
-        JSON.stringify({ error: "File is too large. Please upload an image under 7MB." }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return jsonResponse({ error: "File is too large. Please upload an image under 7MB." }, 400);
     }
 
     console.log(isTextMode
