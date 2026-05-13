@@ -156,6 +156,126 @@ async function gmailFetch(url: string, token: string) {
   return fetch(url, { headers: { Authorization: `Bearer ${token}` } });
 }
 
+/* ---------- Body extraction helpers ---------- */
+function decodeB64Url(s: string): string {
+  if (!s) return '';
+  try {
+    const b64 = s.replace(/-/g, '+').replace(/_/g, '/');
+    const bin = atob(b64 + '==='.slice((b64.length + 3) % 4));
+    const bytes = Uint8Array.from(bin, c => c.charCodeAt(0));
+    return new TextDecoder('utf-8').decode(bytes);
+  } catch { return ''; }
+}
+function htmlToText(html: string): string {
+  return html
+    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<br\s*\/?>(\s*)/gi, '\n')
+    .replace(/<\/(p|div|tr|li|h[1-6])>/gi, '\n')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/&#39;|&apos;/gi, "'")
+    .replace(/&quot;/gi, '"')
+    .replace(/&[a-z#0-9]+;/gi, ' ')
+    .replace(/[ \t]+/g, ' ')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+function extractBodyText(payload: any): string {
+  if (!payload) return '';
+  const parts: string[] = [];
+  const walk = (p: any) => {
+    if (!p) return;
+    const mime = p.mimeType || '';
+    const data = p.body?.data;
+    if (data && (mime === 'text/plain' || mime === 'text/html')) {
+      const decoded = decodeB64Url(data);
+      parts.push(mime === 'text/html' ? htmlToText(decoded) : decoded);
+    }
+    if (Array.isArray(p.parts)) p.parts.forEach(walk);
+  };
+  walk(payload);
+  return parts.join('\n').slice(0, 4000);
+}
+
+/* ---------- Date parsing ---------- */
+function parseLooseDate(s: string): string | null {
+  if (!s) return null;
+  const t = s.trim();
+  // ISO
+  const iso = t.match(/(\d{4})-(\d{1,2})-(\d{1,2})/);
+  if (iso) {
+    const d = new Date(+iso[1], +iso[2] - 1, +iso[3]);
+    if (!isNaN(d.getTime())) return d.toISOString().slice(0, 10);
+  }
+  // dd Mon yyyy / Mon dd, yyyy
+  const months = ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];
+  const m1 = t.toLowerCase().match(/(\d{1,2})[\s\-]+([a-z]{3,9})[\s\-,]+(\d{4})/);
+  if (m1) {
+    const mi = months.findIndex(m => m1[2].startsWith(m));
+    if (mi >= 0) {
+      const d = new Date(+m1[3], mi, +m1[1]);
+      if (!isNaN(d.getTime())) return d.toISOString().slice(0, 10);
+    }
+  }
+  const m2 = t.toLowerCase().match(/([a-z]{3,9})\s+(\d{1,2})[\s,]+(\d{4})/);
+  if (m2) {
+    const mi = months.findIndex(m => m2[1].startsWith(m));
+    if (mi >= 0) {
+      const d = new Date(+m2[3], mi, +m2[2]);
+      if (!isNaN(d.getTime())) return d.toISOString().slice(0, 10);
+    }
+  }
+  // dd/mm/yyyy
+  const m3 = t.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/);
+  if (m3) {
+    const yr = +m3[3] < 100 ? 2000 + +m3[3] : +m3[3];
+    const d = new Date(yr, +m3[2] - 1, +m3[1]);
+    if (!isNaN(d.getTime())) return d.toISOString().slice(0, 10);
+  }
+  return null;
+}
+function findNextBillingDate(text: string): string | null {
+  const patterns = [
+    /(?:next\s+(?:billing|payment|charge|renewal)\s+(?:date|on)?|will\s+(?:be\s+)?(?:auto[-\s]?)?renew(?:ed)?\s+on|renews\s+on|renewal\s+date)\s*[:\-]?\s*([A-Za-z0-9,\-\/\s]{6,30})/i,
+    /(?:auto[-\s]?renews?|charged?)\s+on\s+([A-Za-z0-9,\-\/\s]{6,30})/i,
+    /(?:trial\s+ends?|free\s+trial\s+ends?)\s+on\s+([A-Za-z0-9,\-\/\s]{6,30})/i,
+  ];
+  for (const p of patterns) {
+    const m = text.match(p);
+    if (m) {
+      const d = parseLooseDate(m[1]);
+      if (d) return d;
+    }
+  }
+  return null;
+}
+function findTrial(text: string): boolean {
+  return /(free\s+trial|trial\s+(has\s+)?(started|begun)|trial\s+period|in\s+trial)/i.test(text);
+}
+function findCycle(text: string): 'monthly' | 'yearly' | 'weekly' {
+  if (/(annual|yearly|per\s*year|\/\s*year|\/\s*yr|12\s*months)/i.test(text)) return 'yearly';
+  if (/(weekly|per\s*week|\/\s*week)/i.test(text)) return 'weekly';
+  return 'monthly';
+}
+function findCurrency(text: string): string {
+  if (/₹|\bINR\b|\brs\.?\b/i.test(text)) return 'INR';
+  if (/\$|\bUSD\b/i.test(text)) return 'USD';
+  if (/€|\bEUR\b/i.test(text)) return 'EUR';
+  if (/£|\bGBP\b/i.test(text)) return 'GBP';
+  return 'INR';
+}
+function addCycle(dateISO: string, cycle: 'monthly' | 'yearly' | 'weekly'): string {
+  const d = new Date(dateISO);
+  if (cycle === 'weekly') d.setDate(d.getDate() + 7);
+  else if (cycle === 'yearly') d.setFullYear(d.getFullYear() + 1);
+  else d.setMonth(d.getMonth() + 1);
+  return d.toISOString().slice(0, 10);
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
@@ -226,6 +346,13 @@ serve(async (req) => {
       lastAmount: number | null;
       hasCancellation: boolean;
       hasActive: boolean;
+      lastSnippet: string;
+      nextBilling: string | null;
+      cycle: 'monthly' | 'yearly' | 'weekly';
+      currency: string;
+      isTrial: boolean;
+      trialEnds: string | null;
+      startedAt: string | null;
     }
     const aggregates = new Map<string, Agg>();
     const limit = Math.min(messages.length, 100);
@@ -234,7 +361,7 @@ serve(async (req) => {
       const msg = messages[i];
       try {
         const r = await gmailFetch(
-          `https://gmail.googleapis.com/gmail/v1/users/me/messages/${msg.id}?format=metadata&metadataHeaders=Subject&metadataHeaders=From&metadataHeaders=Date`,
+          `https://gmail.googleapis.com/gmail/v1/users/me/messages/${msg.id}?format=full`,
           accessToken,
         );
         if (!r.ok) continue;
@@ -245,29 +372,57 @@ serve(async (req) => {
         const from = get('From');
         const dateStr = get('Date');
         const snippet = m.snippet || '';
+        const body = extractBodyText(m.payload);
+        const fullText = `${subject}\n${snippet}\n${body}`;
 
         const svc = matchService(subject, from);
         if (!svc) continue;
         // Subscription signal — must look like sub/renewal/membership/cancellation
-        const isSubSignal = ACTIVE_PATTERNS.some(p => p.test(subject) || p.test(snippet))
-          || CANCELLED_PATTERNS.some(p => p.test(subject) || p.test(snippet));
+        const isSubSignal = ACTIVE_PATTERNS.some(p => p.test(fullText))
+          || CANCELLED_PATTERNS.some(p => p.test(fullText));
         if (!isSubSignal) continue;
 
-        const status = detectStatus(subject, snippet);
+        const status = detectStatus(subject, `${snippet}\n${body}`);
         const ts = dateStr ? new Date(dateStr).getTime() : Date.now();
-        const amt = parseAmount(`${subject} ${snippet}`);
+        const amt = parseAmount(fullText);
+        const nextBilling = findNextBillingDate(fullText);
+        const cycle = findCycle(fullText);
+        const currency = findCurrency(fullText);
+        const isTrial = findTrial(fullText);
+        const trialEnds = isTrial
+          ? (fullText.match(/trial\s+ends?\s+on\s+([A-Za-z0-9,\-\/\s]{6,30})/i)?.[1]
+              ? parseLooseDate(fullText.match(/trial\s+ends?\s+on\s+([A-Za-z0-9,\-\/\s]{6,30})/i)![1])
+              : null)
+          : null;
+        const isStartSignal = /(welcome\s+to|trial\s+(started|begun)|subscription\s+(started|activated)|thanks\s+for\s+subscribing)/i.test(fullText);
 
         const ex = aggregates.get(svc.key);
         if (!ex) {
           aggregates.set(svc.key, {
             svc, count: 1, lastDate: ts, lastSubject: subject, lastFrom: from, lastAmount: amt,
             hasCancellation: status === 'cancelled', hasActive: status === 'active',
+            lastSnippet: snippet.slice(0, 280),
+            nextBilling,
+            cycle,
+            currency,
+            isTrial,
+            trialEnds,
+            startedAt: isStartSignal ? new Date(ts).toISOString().slice(0, 10) : null,
           });
         } else {
           ex.count++;
           if (ts > ex.lastDate) {
             ex.lastDate = ts; ex.lastSubject = subject; ex.lastFrom = from;
             if (amt) ex.lastAmount = amt;
+            ex.lastSnippet = snippet.slice(0, 280);
+            if (nextBilling) ex.nextBilling = nextBilling;
+            ex.cycle = cycle;
+            ex.currency = currency;
+            ex.isTrial = isTrial;
+            if (trialEnds) ex.trialEnds = trialEnds;
+          }
+          if (isStartSignal && (!ex.startedAt || new Date(ts).getTime() < new Date(ex.startedAt).getTime())) {
+            ex.startedAt = new Date(ts).toISOString().slice(0, 10);
           }
           if (status === 'cancelled') ex.hasCancellation = true;
           else ex.hasActive = true;
@@ -286,6 +441,8 @@ serve(async (req) => {
     const results: any[] = [];
     for (const [, a] of aggregates) {
       const email_status = a.hasCancellation && !a.hasActive ? 'cancelled' : 'active';
+      const lastDateISO = new Date(a.lastDate).toISOString().slice(0, 10);
+      const nextBilling = a.nextBilling || addCycle(lastDateISO, a.cycle);
       results.push({
         user_id: user.id,
         service_key: a.svc.key,
@@ -298,6 +455,13 @@ serve(async (req) => {
         last_email_date: new Date(a.lastDate).toISOString(),
         last_amount: a.lastAmount,
         email_count: a.count,
+        last_email_snippet: a.lastSnippet,
+        next_billing_date: nextBilling,
+        billing_cycle: a.cycle,
+        currency: a.currency,
+        is_trial: a.isTrial,
+        trial_ends_at: a.trialEnds,
+        started_at: a.startedAt,
       });
     }
 
