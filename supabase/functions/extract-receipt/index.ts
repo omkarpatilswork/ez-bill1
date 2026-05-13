@@ -157,9 +157,15 @@ Rules:
       extracted = JSON.parse(jsonStr);
     } catch {
       console.error("Failed to parse AI response:", content);
+      // AI refused or returned non-JSON (e.g. unreadable image). Return a soft
+      // fallback so the client can show a friendly message instead of crashing.
       return new Response(
-        JSON.stringify({ error: "Could not parse extraction result", raw: content }),
-        { status: 422, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({
+          error: "The image or document was not readable. Please try a clearer file or fill in details manually.",
+          fallback: true,
+          raw: content,
+        }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
