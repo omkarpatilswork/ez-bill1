@@ -134,6 +134,44 @@ export async function runBillImport(opts: {
     body_text?: string;
   }> = scanData?.emails || [];
 
+  const cancellations: Array<{
+    message_id: string; subject: string; from: string; date: string;
+    order_id?: string; merchant_hint?: string;
+  }> = scanData?.cancellations || [];
+
+  // Remove previously-imported expenses that match a cancellation email.
+  // Match by Amazon-style order id in description (we store it as "Invoice: <id>"),
+  // falling back to merchant hint + recent date window.
+  let cancelledRemoved = 0;
+  if (cancellations.length > 0) {
+    try {
+      const sinceISO = new Date(Date.now() - 90 * 86400000).toISOString().slice(0, 10);
+      const { data: recent } = await supabase
+        .from('expenses')
+        .select('id, merchant, description, expense_date')
+        .eq('user_id', userId)
+        .gte('expense_date', sinceISO);
+      const recentList = (recent || []) as any[];
+      const toDelete = new Set<string>();
+      for (const c of cancellations) {
+        const oid = (c.order_id || '').trim();
+        const hint = (c.merchant_hint || '').toLowerCase();
+        for (const r of recentList) {
+          const desc = String(r.description || '');
+          const merch = String(r.merchant || '').toLowerCase();
+          const matchById = oid && desc.includes(oid);
+          const matchByHint = !oid && hint && merch.includes(hint);
+          if (matchById || matchByHint) toDelete.add(r.id);
+        }
+      }
+      if (toDelete.size > 0) {
+        const ids = Array.from(toDelete);
+        const { error: delErr } = await supabase.from('expenses').delete().in('id', ids);
+        if (!delErr) cancelledRemoved = ids.length;
+      }
+    } catch { /* best-effort */ }
+  }
+
   if (emails.length === 0) {
     emit({ phase: 'done', current: 0, total: 0, message: 'No bills found.' });
     if (runId) {
@@ -141,7 +179,7 @@ export async function runBillImport(opts: {
         status: 'success', finished_at: new Date().toISOString(),
       } as any).eq('id', runId);
     }
-    return { saved: 0, skipped: 0, duplicates: 0, total: 0, scanned: 0 };
+    return { saved: 0, skipped: 0, duplicates: 0, total: 0, scanned: 0, cancelledRemoved } as any;
   }
 
   let saved = 0, skipped = 0, duplicates = 0, total = 0;
@@ -300,6 +338,7 @@ export async function runBillImport(opts: {
 
   emit({ phase: 'done', current: total, total, message: 'Sync complete.' });
   const result = { saved, skipped, duplicates, total, scanned: emails.length };
+  (result as any).cancelledRemoved = cancelledRemoved;
   if (runId) {
     await supabase.from('sync_runs' as any).update({
       status: 'success', finished_at: new Date().toISOString(),
