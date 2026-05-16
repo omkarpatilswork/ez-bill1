@@ -461,6 +461,167 @@ export default function Warranties() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={!!detail} onOpenChange={o => !o && setDetail(null)}>
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+          {detail && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <ShieldCheck className="h-5 w-5 text-primary" />
+                  {detail.product_name}
+                </DialogTitle>
+                <p className="text-xs text-muted-foreground">
+                  {[detail.brand, detail.model_number].filter(Boolean).join(' · ')}
+                </p>
+              </DialogHeader>
+
+              <div className="space-y-4 text-sm">
+                {/* Status row */}
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  {detail.purchase_date && (
+                    <div className="glass-card p-2 rounded-lg">
+                      <div className="text-muted-foreground">Purchased</div>
+                      <div className="font-medium">{format(parseISO(detail.purchase_date), 'd MMM yyyy')}</div>
+                    </div>
+                  )}
+                  {detail.expiry_date && (
+                    <div className="glass-card p-2 rounded-lg">
+                      <div className="text-muted-foreground">Expires</div>
+                      <div className="font-medium">{format(parseISO(detail.expiry_date), 'd MMM yyyy')}</div>
+                    </div>
+                  )}
+                  {detail.warranty_months && (
+                    <div className="glass-card p-2 rounded-lg">
+                      <div className="text-muted-foreground">Duration</div>
+                      <div className="font-medium">{detail.warranty_months} months</div>
+                    </div>
+                  )}
+                  {detail.serial_number && (
+                    <div className="glass-card p-2 rounded-lg col-span-2">
+                      <div className="text-muted-foreground">Serial</div>
+                      <div className="font-mono text-[11px] truncate">{detail.serial_number}</div>
+                    </div>
+                  )}
+                </div>
+
+                {detail.warranty_terms && (
+                  <div>
+                    <div className="text-xs text-muted-foreground mb-1">Warranty terms</div>
+                    <p className="text-sm">{detail.warranty_terms}</p>
+                  </div>
+                )}
+
+                {detail.coverage && (
+                  <div className="glass-card p-3 rounded-lg">
+                    <div className="flex items-center gap-2 text-xs font-medium text-emerald-400 mb-1">
+                      <CheckCircle2 className="h-3.5 w-3.5" /> What's covered
+                    </div>
+                    <p className="text-xs leading-relaxed">{detail.coverage}</p>
+                  </div>
+                )}
+
+                {detail.exclusions && (
+                  <div className="glass-card p-3 rounded-lg">
+                    <div className="flex items-center gap-2 text-xs font-medium text-destructive mb-1">
+                      <ShieldAlert className="h-3.5 w-3.5" /> Not covered
+                    </div>
+                    <p className="text-xs leading-relaxed">{detail.exclusions}</p>
+                  </div>
+                )}
+
+                {detail.required_documents && detail.required_documents.length > 0 && (
+                  <div>
+                    <div className="flex items-center gap-2 text-xs font-medium mb-2">
+                      <FileCheck className="h-3.5 w-3.5 text-gold" /> Keep ready
+                    </div>
+                    <ul className="space-y-1">
+                      {detail.required_documents.map((d, i) => (
+                        <li key={i} className="text-xs flex gap-2">
+                          <span className="text-gold">•</span>
+                          <span>{d}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {detail.claim_steps && detail.claim_steps.length > 0 && (
+                  <div>
+                    <div className="flex items-center gap-2 text-xs font-medium mb-2">
+                      <BookOpen className="h-3.5 w-3.5 text-primary" /> How to claim
+                    </div>
+                    <ol className="space-y-2">
+                      {detail.claim_steps.map((step, i) => (
+                        <li key={i} className="text-xs flex gap-2">
+                          <span className="flex-none h-5 w-5 rounded-full bg-primary/20 text-primary text-[10px] font-bold flex items-center justify-center">
+                            {i + 1}
+                          </span>
+                          <span className="leading-relaxed">{step}</span>
+                        </li>
+                      ))}
+                    </ol>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 gap-2 pt-2">
+                  {detail.claim_url && (
+                    <a href={detail.claim_url} target="_blank" rel="noreferrer"
+                      className="glass-card p-3 rounded-lg flex items-center justify-between hover:bg-primary/5 transition">
+                      <div className="flex items-center gap-2 text-sm font-medium">
+                        <ExternalLink className="h-4 w-4 text-primary" /> Start claim online
+                      </div>
+                      <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                    </a>
+                  )}
+                  {detail.support_phone && (
+                    <a href={`tel:${detail.support_phone.replace(/\s+/g, '')}`}
+                      className="glass-card p-3 rounded-lg flex items-center justify-between hover:bg-primary/5 transition">
+                      <div className="flex items-center gap-2 text-sm font-medium">
+                        <Phone className="h-4 w-4 text-primary" /> Call support
+                      </div>
+                      <span className="text-xs text-muted-foreground">{detail.support_phone}</span>
+                    </a>
+                  )}
+                  {detail.support_email && (
+                    <a href={`mailto:${detail.support_email}`}
+                      className="glass-card p-3 rounded-lg flex items-center justify-between hover:bg-primary/5 transition">
+                      <div className="flex items-center gap-2 text-sm font-medium">
+                        <Mail className="h-4 w-4 text-primary" /> Email support
+                      </div>
+                      <span className="text-xs text-muted-foreground truncate max-w-[160px]">{detail.support_email}</span>
+                    </a>
+                  )}
+                  {detail.support_url && (
+                    <a href={detail.support_url} target="_blank" rel="noreferrer"
+                      className="glass-card p-3 rounded-lg flex items-center justify-between hover:bg-primary/5 transition">
+                      <div className="flex items-center gap-2 text-sm font-medium">
+                        <ExternalLink className="h-4 w-4 text-primary" /> Brand support site
+                      </div>
+                      <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                    </a>
+                  )}
+                  {detail.qr_url && (
+                    <a href={detail.qr_url} target="_blank" rel="noreferrer"
+                      className="glass-card p-3 rounded-lg flex items-center justify-between hover:bg-primary/5 transition">
+                      <div className="flex items-center gap-2 text-sm font-medium">
+                        <QrCode className="h-4 w-4 text-gold" /> QR code link
+                      </div>
+                      <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                    </a>
+                  )}
+                </div>
+
+                {detail.notes && (
+                  <div className="text-xs text-muted-foreground border-t border-border/30 pt-3">
+                    {detail.notes}
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
