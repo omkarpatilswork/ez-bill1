@@ -214,7 +214,6 @@ export default function Warranties() {
       <SEO
         title="Warranties | EZ Bill"
         description="Track product warranties, expiry dates and warranty cards in one place."
-        canonical="/warranties"
       />
 
       <header className="flex items-start justify-between gap-3">
