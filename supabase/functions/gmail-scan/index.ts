@@ -213,6 +213,7 @@ async function processMessages(searchData: any, accessToken: string, userId: str
   const processedSet = new Set((processed || []).map((p: any) => p.gmail_message_id));
 
   const allEmails: any[] = [];
+  const cancellations: any[] = [];
 
   for (const msg of messages) {
     if (allEmails.length >= maxResults) break;
@@ -273,6 +274,24 @@ async function processMessages(searchData: any, accessToken: string, userId: str
       // bodies with NO attachment, so we must fall back to the body content.
       const bodyText = extractBodyText(msgData.payload);
 
+      // Cancellation / refund / return — do NOT import as a bill. Capture
+      // it so the client can remove the matching expense if it was imported.
+      if (isCancellation(subject, bodyText)) {
+        const orderId = extractOrderId(`${subject}\n${bodyText.slice(0, 1500)}`);
+        const fromLower = from.toLowerCase();
+        let merchantHint = "";
+        if (/amazon/i.test(fromLower) || /amazon/i.test(subject)) merchantHint = "Amazon";
+        else if (/flipkart/i.test(fromLower)) merchantHint = "Flipkart";
+        else if (/myntra/i.test(fromLower)) merchantHint = "Myntra";
+        else if (/swiggy/i.test(fromLower)) merchantHint = "Swiggy";
+        else if (/zomato/i.test(fromLower)) merchantHint = "Zomato";
+        cancellations.push({
+          message_id: msg.id, subject, from, date,
+          order_id: orderId, merchant_hint: merchantHint,
+        });
+        continue;
+      }
+
       // Skip emails that have neither attachment nor any usable body content.
       if (attachments.length === 0 && (!bodyText || bodyText.length < 40)) continue;
 
@@ -295,6 +314,7 @@ async function processMessages(searchData: any, accessToken: string, userId: str
 
   return new Response(JSON.stringify({
     emails: allEmails,
+    cancellations,
     total_found: messages.length,
     count: allEmails.length,
   }), {
