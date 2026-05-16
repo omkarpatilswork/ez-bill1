@@ -97,6 +97,9 @@ export default function Warranties() {
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const [extras, setExtras] = useState<any>({});
+  const [emailScanning, setEmailScanning] = useState(false);
+  const [detail, setDetail] = useState<Warranty | null>(null);
 
   const load = async () => {
     if (!user) return;
@@ -126,6 +129,17 @@ export default function Warranties() {
       if (data?.fallback) {
         toast({ title: 'Scan needs a clearer photo', description: data.error });
       }
+      setExtras({
+        support_phone: data?.support_phone || null,
+        support_email: data?.support_email || null,
+        claim_url: data?.claim_url || null,
+        coverage: data?.coverage || '',
+        exclusions: data?.exclusions || '',
+        required_documents: data?.required_documents || [],
+        claim_steps: data?.claim_steps || [],
+        warranty_terms: data?.warranty_terms || '',
+        raw_extracted: data || {},
+      });
       setForm({
         product_name: data?.product_name || '',
         brand: data?.brand || '',
@@ -151,7 +165,35 @@ export default function Warranties() {
   const openManual = () => {
     setForm(EMPTY_FORM);
     setPendingFile(null);
+    setExtras({});
     setDialogOpen(true);
+  };
+
+  const handleEmailScan = async () => {
+    setEmailScanning(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('gmail-warranty-scan', {
+        body: { max_results: 30, days: 365 },
+      });
+      if (error) throw error;
+      const saved = data?.saved_count || 0;
+      toast({
+        title: saved > 0 ? `Found ${saved} warranty${saved > 1 ? 'ies' : ''}` : 'No new warranties',
+        description: saved > 0
+          ? 'Imported from your Gmail with claim instructions.'
+          : 'We scanned your inbox but found nothing new.',
+      });
+      load();
+    } catch (e: any) {
+      const msg = e.message || '';
+      if (msg.includes('Gmail not connected')) {
+        toast({ title: 'Connect Gmail first', description: 'Go to Import Bills to connect Gmail.', variant: 'destructive' });
+      } else {
+        toast({ title: 'Email scan failed', description: msg, variant: 'destructive' });
+      }
+    } finally {
+      setEmailScanning(false);
+    }
   };
 
   const handleSave = async () => {
@@ -189,12 +231,14 @@ export default function Warranties() {
         support_url: form.support_url.trim() || null,
         image_path,
         source: pendingFile ? 'photo' : 'manual',
+        ...extras,
       };
       const { error } = await supabase.from('warranties' as any).insert(payload);
       if (error) throw error;
       toast({ title: 'Warranty saved' });
       setDialogOpen(false);
       setPendingFile(null);
+      setExtras({});
       setForm(EMPTY_FORM);
       load();
     } catch (e: any) {
