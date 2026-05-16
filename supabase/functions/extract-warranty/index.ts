@@ -24,6 +24,14 @@ const unreadableFallback = (raw = "") => jsonResponse({
   retailer: "",
   qr_url: null,
   support_url: null,
+  support_phone: null,
+  support_email: null,
+  claim_url: null,
+  coverage: "",
+  exclusions: "",
+  required_documents: [],
+  claim_steps: [],
+  warranty_terms: "",
   notes: "",
   error: "The image was not readable. Try a clearer photo or fill in the details manually.",
   fallback: true,
@@ -34,18 +42,19 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { file_base64, file_type } = await req.json();
-    if (!file_base64) return jsonResponse({ error: "file_base64 is required" }, 400);
+    const { file_base64, file_type, text_content, source_hint } = await req.json();
+    if (!file_base64 && !text_content) return jsonResponse({ error: "file_base64 or text_content is required" }, 400);
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
+    const isTextMode = !file_base64 && !!text_content;
     const mimeType = file_type || "image/png";
-    if (file_base64.length > 10 * 1024 * 1024) {
+    if (file_base64 && file_base64.length > 10 * 1024 * 1024) {
       return jsonResponse({ error: "Image too large. Please use one under 7MB." }, 400);
     }
 
-    const systemPrompt = `You are an OCR engine for product WARRANTY CARDS, warranty certificates, invoices used as warranty proof, and product boxes with warranty info. Extract structured data and return ONLY valid JSON with these fields:
+    const systemPrompt = `You are an OCR + knowledge engine for product WARRANTIES. The input may be a warranty card photo, warranty certificate, invoice used as warranty proof, product box with warranty info, OR an email body about a product warranty / purchase confirmation. Extract structured data AND fill in the BRAND'S standard claim guidance (well-known brands like Samsung, LG, Sony, Apple, Bosch, Dell, HP, Lenovo, OnePlus, Xiaomi, Realme, Vivo, Oppo, Haier, Whirlpool, IFB, Voltas, Daikin, Mi, boAt, JBL, etc.). Return ONLY valid JSON with these fields:
 
 {
   "product_name": "string - product/appliance name as printed",
@@ -58,8 +67,16 @@ serve(async (req) => {
   "warranty_months": "integer total warranty duration in months, or null",
   "retailer": "store/seller name or ''",
   "qr_url": "string - any URL encoded in a QR code / barcode visible on the card, or the website printed next to a QR (e.g. https://warranty.brand.com/register?sn=...). null if none visible.",
-  "support_url": "string - official brand support / warranty registration URL printed on the card, or null",
-  "notes": "string - short summary of any extra warranty terms printed (e.g. 'Covers manufacturing defects only', 'Extended warranty available'), or ''"
+  "support_url": "string - official brand support / warranty page URL (use the well-known one if not printed; e.g. https://www.samsung.com/in/support/), or null",
+  "support_phone": "string - brand's official customer-care phone number (India). Use the well-known toll-free number for the brand if not printed. null if truly unknown.",
+  "support_email": "string - brand's official support email, or null",
+  "claim_url": "string - direct URL to the warranty claim / service request form for this brand, or null",
+  "coverage": "string - 1-3 sentences describing what the warranty COVERS (manufacturing defects, parts vs labour, in-home service, etc.)",
+  "exclusions": "string - 1-2 sentences describing what is NOT covered (physical damage, liquid damage, unauthorized repair, consumables, etc.)",
+  "required_documents": ["array of short strings - documents/info the customer must keep ready to claim (e.g. 'Original invoice / purchase bill', 'Warranty card with serial number', 'Product serial / IMEI', 'Government photo ID')"],
+  "claim_steps": ["array of 4-7 short imperative-step strings explaining exactly how to claim this brand's warranty (e.g. 'Call <support_phone> or visit <claim_url>', 'Provide model number and serial number', 'Schedule a service technician visit or carry the product to the nearest authorised service centre', 'Get a service request / job-sheet number and track it online')"],
+  "warranty_terms": "string - 2-4 sentence summary of the warranty terms (duration, type — standard/extended, transferable or not, anything important the customer should know)",
+  "notes": "string - any extra notes printed (e.g. 'Extended warranty available'), or ''"
 }
 
 Rules:
@@ -67,7 +84,17 @@ Rules:
 - If only purchase_date + warranty_months are visible, compute expiry_date (purchase_date + warranty_months).
 - If only expiry_date + purchase_date are visible, compute warranty_months.
 - Use null for unknown numeric/date fields, '' for unknown strings.
+- For well-known brands, ALWAYS populate support_phone, support_url, claim_url, coverage, exclusions, required_documents and claim_steps from your knowledge of that brand's standard process — even if not printed on the card/email. Mark guessed phone numbers as null only if you are not confident.
+- Phone numbers should be in dialable format with country code where useful (e.g. "1800-5-7267864" or "+91 1800-5-7267864").
+- claim_steps should be specific and actionable, referencing the actual support channel (e.g. "Visit https://www.samsung.com/in/support/ and click Request Service" not "Contact support").
 - Return ONLY JSON, no markdown.`;
+
+    const userContent: any = isTextMode
+      ? `Extract warranty info from this email body. ${source_hint ? `Source hint: ${source_hint}. ` : ""}If it is a purchase / order confirmation for a product, infer the standard manufacturer warranty for that brand+category. Return only JSON.\n\n--- EMAIL BODY ---\n${String(text_content).slice(0, 12000)}`
+      : [
+          { type: "image_url", image_url: { url: `data:${mimeType};base64,${file_base64}` } },
+          { type: "text", text: "Extract warranty info. Read any QR code URL visible. Fill in brand claim guidance. Return only JSON." },
+        ];
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -76,10 +103,7 @@ Rules:
         model: "google/gemini-2.5-flash",
         messages: [
           { role: "system", content: systemPrompt },
-          { role: "user", content: [
-            { type: "image_url", image_url: { url: `data:${mimeType};base64,${file_base64}` } },
-            { type: "text", text: "Extract warranty info. Read any QR code URL visible. Return only JSON." },
-          ] },
+          { role: "user", content: userContent },
         ],
       }),
     });
