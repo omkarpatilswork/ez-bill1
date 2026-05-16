@@ -281,7 +281,7 @@ export default function Warranties() {
         </div>
       </header>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-3 gap-3">
         <label className="glass-card p-4 rounded-2xl flex flex-col items-center justify-center gap-2 cursor-pointer active:scale-[0.98] transition">
           <input
             type="file"
@@ -292,7 +292,7 @@ export default function Warranties() {
           />
           {scanning ? <Loader2 className="h-6 w-6 animate-spin text-primary" /> : <Camera className="h-6 w-6 text-primary" />}
           <span className="text-sm font-medium">Scan Card</span>
-          <span className="text-[11px] text-muted-foreground">Photo + QR</span>
+          <span className="text-[11px] text-muted-foreground text-center">Photo + QR</span>
         </label>
         <label className="glass-card p-4 rounded-2xl flex flex-col items-center justify-center gap-2 cursor-pointer active:scale-[0.98] transition">
           <input
@@ -303,8 +303,17 @@ export default function Warranties() {
           />
           <Upload className="h-6 w-6 text-gold" />
           <span className="text-sm font-medium">Upload File</span>
-          <span className="text-[11px] text-muted-foreground">From gallery</span>
+          <span className="text-[11px] text-muted-foreground text-center">From gallery</span>
         </label>
+        <button
+          onClick={handleEmailScan}
+          disabled={emailScanning}
+          className="glass-card p-4 rounded-2xl flex flex-col items-center justify-center gap-2 cursor-pointer active:scale-[0.98] transition disabled:opacity-60"
+        >
+          {emailScanning ? <Loader2 className="h-6 w-6 animate-spin text-info" /> : <Mail className="h-6 w-6 text-info" />}
+          <span className="text-sm font-medium">Scan Email</span>
+          <span className="text-[11px] text-muted-foreground text-center">From Gmail</span>
+        </button>
       </div>
 
       <Button variant="outline" className="w-full" onClick={openManual}>
@@ -332,13 +341,21 @@ export default function Warranties() {
               return (
                 <Card key={w.id} className="glass-card p-4">
                   <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0 flex-1">
+                    <button
+                      onClick={() => setDetail(w)}
+                      className="min-w-0 flex-1 text-left"
+                    >
                       <div className="flex items-center gap-2 flex-wrap">
                         <h3 className="font-semibold truncate">{w.product_name}</h3>
                         <Badge variant="outline" className={`text-[10px] ${status.color}`}>
                           <StatusIcon className="h-3 w-3 mr-1" />
                           {status.label}
                         </Badge>
+                        {(w.claim_steps && w.claim_steps.length > 0) && (
+                          <Badge variant="outline" className="text-[10px] border-primary/40 text-primary">
+                            <BookOpen className="h-3 w-3 mr-1" />Claim guide
+                          </Badge>
+                        )}
                       </div>
                       <p className="text-xs text-muted-foreground mt-0.5">
                         {[w.brand, w.model_number].filter(Boolean).join(' · ') || w.category}
@@ -363,22 +380,10 @@ export default function Warranties() {
                           </div>
                         )}
                       </div>
-                      <div className="flex flex-wrap gap-2 mt-3">
-                        {w.qr_url && (
-                          <a href={w.qr_url} target="_blank" rel="noreferrer"
-                            className="inline-flex items-center gap-1 text-xs text-primary hover:underline">
-                            <QrCode className="h-3 w-3" /> QR link
-                            <ExternalLink className="h-3 w-3" />
-                          </a>
-                        )}
-                        {w.support_url && (
-                          <a href={w.support_url} target="_blank" rel="noreferrer"
-                            className="inline-flex items-center gap-1 text-xs text-primary hover:underline">
-                            Brand support <ExternalLink className="h-3 w-3" />
-                          </a>
-                        )}
+                      <div className="flex items-center gap-1 mt-3 text-xs text-primary">
+                        View claim guide <ChevronRight className="h-3 w-3" />
                       </div>
-                    </div>
+                    </button>
                     <Button size="icon" variant="ghost" onClick={() => handleDelete(w)}>
                       <Trash2 className="h-4 w-4 text-muted-foreground" />
                     </Button>
