@@ -807,8 +807,16 @@ export type Database = {
         Row: {
           brand: string | null
           category: string | null
+          claim_steps: Json | null
+          claim_url: string | null
+          coverage: string | null
           created_at: string
+          email_date: string | null
+          email_from: string | null
+          email_subject: string | null
+          exclusions: string | null
           expiry_date: string | null
+          gmail_message_id: string | null
           id: string
           image_path: string | null
           model_number: string | null
@@ -817,19 +825,31 @@ export type Database = {
           purchase_date: string | null
           qr_url: string | null
           raw_extracted: Json | null
+          required_documents: Json | null
           retailer: string | null
           serial_number: string | null
           source: string
+          support_email: string | null
+          support_phone: string | null
           support_url: string | null
           updated_at: string
           user_id: string
           warranty_months: number | null
+          warranty_terms: string | null
         }
         Insert: {
           brand?: string | null
           category?: string | null
+          claim_steps?: Json | null
+          claim_url?: string | null
+          coverage?: string | null
           created_at?: string
+          email_date?: string | null
+          email_from?: string | null
+          email_subject?: string | null
+          exclusions?: string | null
           expiry_date?: string | null
+          gmail_message_id?: string | null
           id?: string
           image_path?: string | null
           model_number?: string | null
@@ -838,19 +858,31 @@ export type Database = {
           purchase_date?: string | null
           qr_url?: string | null
           raw_extracted?: Json | null
+          required_documents?: Json | null
           retailer?: string | null
           serial_number?: string | null
           source?: string
+          support_email?: string | null
+          support_phone?: string | null
           support_url?: string | null
           updated_at?: string
           user_id: string
           warranty_months?: number | null
+          warranty_terms?: string | null
         }
         Update: {
           brand?: string | null
           category?: string | null
+          claim_steps?: Json | null
+          claim_url?: string | null
+          coverage?: string | null
           created_at?: string
+          email_date?: string | null
+          email_from?: string | null
+          email_subject?: string | null
+          exclusions?: string | null
           expiry_date?: string | null
+          gmail_message_id?: string | null
           id?: string
           image_path?: string | null
           model_number?: string | null
@@ -859,13 +891,17 @@ export type Database = {
           purchase_date?: string | null
           qr_url?: string | null
           raw_extracted?: Json | null
+          required_documents?: Json | null
           retailer?: string | null
           serial_number?: string | null
           source?: string
+          support_email?: string | null
+          support_phone?: string | null
           support_url?: string | null
           updated_at?: string
           user_id?: string
           warranty_months?: number | null
+          warranty_terms?: string | null
         }
         Relationships: []
       }
