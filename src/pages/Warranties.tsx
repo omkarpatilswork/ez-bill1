@@ -14,7 +14,8 @@ import {
 } from '@/components/ui/dialog';
 import {
   ShieldCheck, Camera, Upload, Plus, ExternalLink, Trash2, Loader2,
-  Calendar, Package, AlertTriangle, CheckCircle2, QrCode,
+  Calendar, Package, AlertTriangle, CheckCircle2, QrCode, Mail, Phone,
+  FileCheck, ShieldAlert, BookOpen, ChevronRight,
 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import SEO from '@/components/SEO';
@@ -36,6 +37,14 @@ type Warranty = {
   image_path: string | null;
   source: string;
   created_at: string;
+  support_phone?: string | null;
+  support_email?: string | null;
+  claim_url?: string | null;
+  coverage?: string | null;
+  exclusions?: string | null;
+  required_documents?: string[] | null;
+  claim_steps?: string[] | null;
+  warranty_terms?: string | null;
 };
 
 type FormState = {
