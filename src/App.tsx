@@ -25,6 +25,7 @@ import PrivacyPolicy from "./pages/PrivacyPolicy";
 import MoneyLeaks from "./pages/MoneyLeaks";
 import Subscriptions from "./pages/Subscriptions";
 import FinancialDocs from "./pages/FinancialDocs";
+import Warranties from "./pages/Warranties";
 import Splits from "./pages/Splits";
 import SplitFriendDetail from "./pages/SplitFriendDetail";
 import Support from "./pages/Support";
@@ -59,6 +60,7 @@ const App = () => (
           <Route path="/money-leaks" element={<ProtectedRoute><AppLayout><MoneyLeaks /></AppLayout></ProtectedRoute>} />
           <Route path="/subscriptions" element={<ProtectedRoute><AppLayout><Subscriptions /></AppLayout></ProtectedRoute>} />
           <Route path="/financial-docs" element={<ProtectedRoute><AppLayout><FinancialDocs /></AppLayout></ProtectedRoute>} />
+          <Route path="/warranties" element={<ProtectedRoute><AppLayout><Warranties /></AppLayout></ProtectedRoute>} />
           <Route path="/splits" element={<ProtectedRoute><AppLayout><Splits /></AppLayout></ProtectedRoute>} />
           <Route path="/splits/friend/:friendKey" element={<ProtectedRoute><AppLayout><SplitFriendDetail /></AppLayout></ProtectedRoute>} />
           <Route path="/support" element={<ProtectedRoute><AppLayout><Support /></AppLayout></ProtectedRoute>} />

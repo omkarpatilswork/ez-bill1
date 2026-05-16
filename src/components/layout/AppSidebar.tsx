@@ -1,6 +1,6 @@
 import {
   LayoutDashboard, Receipt, PlusCircle,
-  PieChart, LogOut, MessageSquare, Mail, Droplets, Wallet,
+  PieChart, LogOut, MessageSquare, Mail, Droplets, Wallet, ShieldCheck,
 } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { NavLink } from '@/components/NavLink';
@@ -17,6 +17,7 @@ const menuItems = [
   { title: 'New Bill', url: '/expenses/new', icon: PlusCircle },
   { title: 'All Bills', url: '/expenses', icon: Receipt },
   { title: 'Financial Docs', url: '/financial-docs', icon: Wallet },
+  { title: 'Warranties', url: '/warranties', icon: ShieldCheck },
   { title: 'Analytics', url: '/analytics', icon: PieChart },
   { title: 'Money Leaks', url: '/money-leaks', icon: Droplets },
   { title: 'Ask AI', url: '/ask-ai', icon: MessageSquare },

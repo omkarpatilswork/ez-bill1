@@ -9,7 +9,7 @@ import {
   Receipt, PlusCircle, ArrowUpRight, TrendingUp, Search,
   Mail, Users as UsersIcon, Headphones, RefreshCw, User, Sparkles,
   Smartphone, Zap, ShieldCheck, X, Droplets, Heart, Scan, Bot,
-  ChevronRight, Upload, Camera, MessageCircle,
+  ChevronRight, Upload, Camera, MessageCircle, ShieldQuestion,
   Utensils, Fuel, ParkingCircle, ShoppingBag, Repeat, Plane, Car, Hotel,
   Pill, Gamepad2, GraduationCap, Briefcase, MoreHorizontal,
 } from 'lucide-react';
@@ -140,7 +140,7 @@ export default function Dashboard() {
     { label: 'Split', icon: UsersIcon, path: '/splits', color: 'text-primary' },
     { label: 'Subscriptions', icon: Repeat, path: '/subscriptions', color: 'text-gold' },
     { label: 'Support', icon: Headphones, path: '/support', color: 'text-info' },
-    { label: 'WhatsApp', icon: MessageCircle, path: '/email-bills?tab=upi', color: 'text-primary' },
+    { label: 'Warranty', icon: ShieldQuestion, path: '/warranties', color: 'text-primary' },
   ];
 
   const firstName =

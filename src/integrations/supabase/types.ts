@@ -803,6 +803,72 @@ export type Database = {
         }
         Relationships: []
       }
+      warranties: {
+        Row: {
+          brand: string | null
+          category: string | null
+          created_at: string
+          expiry_date: string | null
+          id: string
+          image_path: string | null
+          model_number: string | null
+          notes: string | null
+          product_name: string
+          purchase_date: string | null
+          qr_url: string | null
+          raw_extracted: Json | null
+          retailer: string | null
+          serial_number: string | null
+          source: string
+          support_url: string | null
+          updated_at: string
+          user_id: string
+          warranty_months: number | null
+        }
+        Insert: {
+          brand?: string | null
+          category?: string | null
+          created_at?: string
+          expiry_date?: string | null
+          id?: string
+          image_path?: string | null
+          model_number?: string | null
+          notes?: string | null
+          product_name?: string
+          purchase_date?: string | null
+          qr_url?: string | null
+          raw_extracted?: Json | null
+          retailer?: string | null
+          serial_number?: string | null
+          source?: string
+          support_url?: string | null
+          updated_at?: string
+          user_id: string
+          warranty_months?: number | null
+        }
+        Update: {
+          brand?: string | null
+          category?: string | null
+          created_at?: string
+          expiry_date?: string | null
+          id?: string
+          image_path?: string | null
+          model_number?: string | null
+          notes?: string | null
+          product_name?: string
+          purchase_date?: string | null
+          qr_url?: string | null
+          raw_extracted?: Json | null
+          retailer?: string | null
+          serial_number?: string | null
+          source?: string
+          support_url?: string | null
+          updated_at?: string
+          user_id?: string
+          warranty_months?: number | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       gmail_connections_safe: {
