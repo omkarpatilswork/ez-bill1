@@ -33,6 +33,30 @@ const NON_BILL_PATTERNS = [
   /folio\s*statement/i, /nav\s*statement/i,
 ];
 
+// Cancellation / refund / return emails — never import as bills. We also
+// surface them separately so the client can REMOVE already-imported
+// matching expenses (e.g. an Amazon order that was later cancelled).
+const CANCELLATION_PATTERNS = [
+  /cancel(l?ed|lation|ling)/i,
+  /order\s*(was\s*)?(cancelled|canceled)/i,
+  /refund(ed)?\s*(initiated|issued|processed|completed)?/i,
+  /return\s*(initiated|received|completed|approved)/i,
+];
+function isCancellation(subject: string, body: string = ""): boolean {
+  const subj = subject || "";
+  if (CANCELLATION_PATTERNS.some(p => p.test(subj))) return true;
+  // Body-only signal must be strong (avoid false positives in long bodies).
+  const head = body.slice(0, 800);
+  return /your\s*order\s*(has\s*been\s*|was\s*)?(cancelled|canceled)/i.test(head);
+}
+
+// Try to pull an Amazon-style order id out of subject/body for matching.
+function extractOrderId(text: string): string {
+  const m = text.match(/(?:order\s*(?:#|no\.?|number|id)?\s*[:#-]?\s*)((?:\d{3}-\d{7}-\d{7})|(?:[A-Z0-9]{6,}-?[A-Z0-9]{4,}))/i)
+    || text.match(/\b(\d{3}-\d{7}-\d{7})\b/);
+  return m ? m[1] : "";
+}
+
 // Sender-domain blocklist — emails from these are never bills (brokers, wallets, banks sending statements).
 const NON_BILL_SENDERS = [
   'groww', 'zerodha', 'upstox', 'angelone', 'angel one', 'angelbroking',
