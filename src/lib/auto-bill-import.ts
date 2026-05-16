@@ -46,6 +46,7 @@ export interface BillImportResult {
   duplicates: number;
   total: number;
   scanned: number;
+  cancelledRemoved?: number;
 }
 
 export type BillImportPhase = 'fetching' | 'dedupe' | 'parsing' | 'saving' | 'done';
