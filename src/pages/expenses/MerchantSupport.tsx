@@ -8,8 +8,12 @@ import {
   ArrowLeft, Phone, Globe, Mail, MapPin, Star, ExternalLink,
   Store, Clock, RotateCcw, Shield, ShieldCheck, ShieldAlert,
   AlertTriangle, Search, Package, Calendar, ChevronRight,
-  Headphones, HelpCircle, Truck, Tag, Info
+  Headphones, HelpCircle, Truck, Tag, Info, Bell, BellOff
 } from 'lucide-react';
+import {
+  getReminder, setReminder, removeReminder, ensureNotificationPermission,
+  reminderEndDate, reminderTriggerDate, type ReturnReminder,
+} from '@/lib/return-reminders';
 
 interface SupportData {
   merchant: {
@@ -122,6 +126,18 @@ export default function MerchantSupport() {
   const [loading, setLoading] = useState(true);
   const [enriching, setEnriching] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [reminder, setReminderState] = useState<ReturnReminder | null>(null);
+  const [notifyDays, setNotifyDays] = useState<number>(2);
+
+  // Load existing reminder for this bill
+  useEffect(() => {
+    if (!id) return;
+    const r = getReminder(id);
+    if (r) {
+      setReminderState(r);
+      setNotifyDays(r.notify_days_before);
+    }
+  }, [id]);
 
   // Step 1: Load bill data
   useEffect(() => {
@@ -274,6 +290,47 @@ export default function MerchantSupport() {
   const hasWebLinks = supportData && (supportData.website.official_url || supportData.website.support_url || supportData.website.help_center_url || supportData.website.track_order_url);
   const hasReturns = supportData && (supportData.returns_warranty.return_eligible !== null || supportData.returns_warranty.warranty_duration || supportData.returns_warranty.exchange_policy);
   const hasLocation = supportData && (supportData.location.address || supportData.location.google_maps_url);
+  const returnWindowDays = supportData?.returns_warranty.return_window_days ?? null;
+  const canSetReminder = !!(id && billContext?.purchase_date && returnWindowDays && returnWindowDays > 0);
+
+  async function handleToggleReminder() {
+    if (!id || !billContext || !returnWindowDays) return;
+    if (reminder) {
+      removeReminder(id);
+      setReminderState(null);
+      toast({ title: 'Reminder removed' });
+      return;
+    }
+    const perm = await ensureNotificationPermission();
+    const next: ReturnReminder = {
+      expense_id: id,
+      merchant: supportData?.merchant.normalized_name || billContext.merchant || 'Bill',
+      purchase_date: billContext.purchase_date,
+      return_window_days: returnWindowDays,
+      notify_days_before: Math.min(notifyDays, Math.max(returnWindowDays - 1, 1)),
+      created_at: new Date().toISOString(),
+    };
+    setReminder(next);
+    setReminderState(next);
+    const triggerOn = reminderTriggerDate(next).toLocaleDateString('en-IN', {
+      day: 'numeric', month: 'short', year: 'numeric',
+    });
+    toast({
+      title: 'Reminder set',
+      description: perm === 'granted'
+        ? `We'll notify you on ${triggerOn} before the return window ends.`
+        : `Saved. Allow notifications in your browser to be alerted on ${triggerOn}.`,
+    });
+  }
+
+  function handleChangeNotifyDays(v: number) {
+    setNotifyDays(v);
+    if (reminder && id) {
+      const updated = { ...reminder, notify_days_before: v };
+      setReminder(updated);
+      setReminderState(updated);
+    }
+  }
 
   return (
     <div className="max-w-2xl mx-auto space-y-4 pb-24 animate-fade-in">
@@ -520,6 +577,49 @@ export default function MerchantSupport() {
               className="flex items-center gap-2 text-xs text-primary hover:underline mt-1">
               View full return & warranty policy <ExternalLink className="h-3 w-3" />
             </a>
+          )}
+
+          {/* Return-window reminder toggle */}
+          {canSetReminder && (
+            <div className="rounded-xl border border-border/40 bg-secondary/20 p-3 space-y-3">
+              <div className="flex items-start gap-3">
+                <div className={`h-9 w-9 rounded-xl flex items-center justify-center shrink-0 ${reminder ? 'bg-amber-500/15' : 'bg-secondary/40'}`}>
+                  {reminder ? <Bell className="h-4 w-4 text-amber-400" /> : <BellOff className="h-4 w-4 text-muted-foreground" />}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-foreground">Notify before window ends</p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">
+                    {reminder
+                      ? `Alert on ${reminderTriggerDate(reminder).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })} — window closes ${reminderEndDate(reminder).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}.`
+                      : `Get a heads-up a few days before the ${returnWindowDays}-day return window closes.`}
+                  </p>
+                </div>
+                <Button
+                  size="sm"
+                  variant={reminder ? 'outline' : 'default'}
+                  className="h-8 text-xs shrink-0 active:scale-[0.97]"
+                  onClick={handleToggleReminder}
+                >
+                  {reminder ? 'Off' : 'Turn on'}
+                </Button>
+              </div>
+              <div className="flex items-center gap-2 flex-wrap pl-12">
+                <span className="text-[11px] text-muted-foreground">Remind me</span>
+                {[1, 2, 3, 7].filter(d => d < (returnWindowDays || 0)).map(d => (
+                  <button
+                    key={d}
+                    onClick={() => handleChangeNotifyDays(d)}
+                    className={`text-[11px] px-2 py-1 rounded-full border transition-colors ${
+                      notifyDays === d
+                        ? 'bg-primary/15 border-primary/40 text-primary'
+                        : 'bg-secondary/30 border-border/40 text-muted-foreground hover:text-foreground'
+                    }`}
+                  >
+                    {d}d before
+                  </button>
+                ))}
+              </div>
+            </div>
           )}
         </div>
       ) : !loading && (

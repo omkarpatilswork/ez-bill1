@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -30,10 +31,17 @@ import Splits from "./pages/Splits";
 import SplitFriendDetail from "./pages/SplitFriendDetail";
 import Support from "./pages/Support";
 import NotFound from "./pages/NotFound";
+import { checkDueReminders } from "@/lib/return-reminders";
 
 const queryClient = new QueryClient();
 
-const App = () => (
+const App = () => {
+  useEffect(() => {
+    checkDueReminders();
+    const i = setInterval(checkDueReminders, 6 * 60 * 60 * 1000);
+    return () => clearInterval(i);
+  }, []);
+  return (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider>
     <TooltipProvider>
@@ -70,6 +78,7 @@ const App = () => (
     </TooltipProvider>
     </ThemeProvider>
   </QueryClientProvider>
-);
+  );
+};
 
 export default App;
