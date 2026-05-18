@@ -8,8 +8,12 @@ import {
   ArrowLeft, Phone, Globe, Mail, MapPin, Star, ExternalLink,
   Store, Clock, RotateCcw, Shield, ShieldCheck, ShieldAlert,
   AlertTriangle, Search, Package, Calendar, ChevronRight,
-  Headphones, HelpCircle, Truck, Tag, Info
+  Headphones, HelpCircle, Truck, Tag, Info, Bell, BellOff
 } from 'lucide-react';
+import {
+  getReminder, setReminder, removeReminder, ensureNotificationPermission,
+  reminderEndDate, reminderTriggerDate, type ReturnReminder,
+} from '@/lib/return-reminders';
 
 interface SupportData {
   merchant: {
@@ -122,6 +126,18 @@ export default function MerchantSupport() {
   const [loading, setLoading] = useState(true);
   const [enriching, setEnriching] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [reminder, setReminderState] = useState<ReturnReminder | null>(null);
+  const [notifyDays, setNotifyDays] = useState<number>(2);
+
+  // Load existing reminder for this bill
+  useEffect(() => {
+    if (!id) return;
+    const r = getReminder(id);
+    if (r) {
+      setReminderState(r);
+      setNotifyDays(r.notify_days_before);
+    }
+  }, [id]);
 
   // Step 1: Load bill data
   useEffect(() => {
@@ -274,6 +290,47 @@ export default function MerchantSupport() {
   const hasWebLinks = supportData && (supportData.website.official_url || supportData.website.support_url || supportData.website.help_center_url || supportData.website.track_order_url);
   const hasReturns = supportData && (supportData.returns_warranty.return_eligible !== null || supportData.returns_warranty.warranty_duration || supportData.returns_warranty.exchange_policy);
   const hasLocation = supportData && (supportData.location.address || supportData.location.google_maps_url);
+  const returnWindowDays = supportData?.returns_warranty.return_window_days ?? null;
+  const canSetReminder = !!(id && billContext?.purchase_date && returnWindowDays && returnWindowDays > 0);
+
+  async function handleToggleReminder() {
+    if (!id || !billContext || !returnWindowDays) return;
+    if (reminder) {
+      removeReminder(id);
+      setReminderState(null);
+      toast({ title: 'Reminder removed' });
+      return;
+    }
+    const perm = await ensureNotificationPermission();
+    const next: ReturnReminder = {
+      expense_id: id,
+      merchant: supportData?.merchant.normalized_name || billContext.merchant || 'Bill',
+      purchase_date: billContext.purchase_date,
+      return_window_days: returnWindowDays,
+      notify_days_before: Math.min(notifyDays, Math.max(returnWindowDays - 1, 1)),
+      created_at: new Date().toISOString(),
+    };
+    setReminder(next);
+    setReminderState(next);
+    const triggerOn = reminderTriggerDate(next).toLocaleDateString('en-IN', {
+      day: 'numeric', month: 'short', year: 'numeric',
+    });
+    toast({
+      title: 'Reminder set',
+      description: perm === 'granted'
+        ? `We'll notify you on ${triggerOn} before the return window ends.`
+        : `Saved. Allow notifications in your browser to be alerted on ${triggerOn}.`,
+    });
+  }
+
+  function handleChangeNotifyDays(v: number) {
+    setNotifyDays(v);
+    if (reminder && id) {
+      const updated = { ...reminder, notify_days_before: v };
+      setReminder(updated);
+      setReminderState(updated);
+    }
+  }
 
   return (
     <div className="max-w-2xl mx-auto space-y-4 pb-24 animate-fade-in">
