@@ -7,6 +7,7 @@ import {
   ArrowLeft, ChevronRight, Users, Receipt, Plus, X,
   TrendingUp, TrendingDown, Activity, UserPlus, ArrowDownLeft, ArrowUpRight,
 } from 'lucide-react';
+import BillRow from '@/components/bills/BillRow';
 
 interface SplitRow {
   id: string;
@@ -348,32 +349,18 @@ export default function Splits() {
                 {recentExpenses.slice(0, 5).map(exp => {
                   const alreadySplit = splitExpenseIds.has(exp.id);
                   return (
-                    <button
+                    <BillRow
                       key={exp.id}
+                      expense={exp}
                       onClick={() => navigate(`/expenses/${exp.id}/split`)}
-                      className="w-full glass-card-hover rounded-xl p-3 flex items-center gap-3 text-left active:scale-[0.99] transition-transform"
-                    >
-                      <div className="h-9 w-9 rounded-lg flex items-center justify-center shrink-0"
-                        style={{ background: 'hsla(152, 45%, 25%, 0.18)' }}>
-                        <Receipt className="h-4 w-4 text-primary" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-foreground truncate">{exp.title}</p>
-                        <p className="text-[11px] text-muted-foreground truncate">
-                          {exp.merchant || '—'} · {new Date(exp.expense_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
-                        </p>
-                      </div>
-                      <div className="text-right shrink-0">
-                        <p className="text-sm font-bold text-foreground tabular-nums">
-                          ₹{Number(exp.amount).toLocaleString('en-IN', { maximumFractionDigits: 0 })}
-                        </p>
-                        {alreadySplit ? (
-                          <span className="text-[10px] text-success font-semibold">Split</span>
+                      rightBadge={
+                        alreadySplit ? (
+                          <span className="block text-[10px] text-success font-semibold mt-0.5">Split</span>
                         ) : (
-                          <span className="text-[10px] text-muted-foreground">Tap to split</span>
-                        )}
-                      </div>
-                    </button>
+                          <span className="block text-[10px] text-muted-foreground mt-0.5">Tap to split</span>
+                        )
+                      }
+                    />
                   );
                 })}
               </div>
@@ -483,28 +470,19 @@ export default function Splits() {
                 recentExpenses.map(exp => {
                   const alreadySplit = splitExpenseIds.has(exp.id);
                   return (
-                    <button key={exp.id}
+                    <BillRow
+                      key={exp.id}
+                      expense={exp}
                       onClick={() => {
                         setBillPickerOpen(false);
                         navigate(`/expenses/${exp.id}/split`);
                       }}
-                      className="w-full text-left glass-card-hover rounded-xl p-3"
-                    >
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="font-medium text-sm text-foreground truncate mr-2">{exp.title}</span>
-                        <span className="font-bold text-sm tabular-nums text-foreground">
-                          ₹{Number(exp.amount).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs text-muted-foreground truncate">
-                          {exp.merchant || '—'} · {new Date(exp.expense_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
-                        </span>
-                        {alreadySplit && (
-                          <span className="text-[10px] text-success font-semibold ml-2 shrink-0">Already split</span>
-                        )}
-                      </div>
-                    </button>
+                      rightBadge={
+                        alreadySplit ? (
+                          <span className="block text-[10px] text-success font-semibold mt-0.5">Already split</span>
+                        ) : null
+                      }
+                    />
                   );
                 })
               )}
