@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { smartCategoryFromMerchant } from '@/lib/smart-category';
 import { getCurrencySymbol } from '@/lib/countries';
+import BillRow from '@/components/bills/BillRow';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip,
   ResponsiveContainer, Cell,
@@ -177,19 +178,15 @@ export default function Dashboard() {
                 <p className="text-sm text-muted-foreground text-center py-8">No bills found</p>
               ) : (
                 allExpenses.slice().reverse().map(exp => (
-                  <button key={exp.id}
+                  <BillRow
+                    key={exp.id}
+                    expense={exp}
                     onClick={() => {
                       setBillSelectorFor(null);
                       if (billSelectorFor === 'split') navigate(`/expenses/${exp.id}/split`);
                       else navigate(`/expenses/${exp.id}/support`);
                     }}
-                    className="w-full text-left glass-card-hover rounded-xl p-3.5">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="font-medium text-sm text-foreground truncate mr-2">{exp.title}</span>
-                      <span className="font-bold text-sm tabular-nums text-foreground">₹{Number(exp.amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
-                    </div>
-                    <span className="text-xs text-muted-foreground">{exp.merchant || '—'} · {new Date(exp.expense_date).toLocaleDateString()}</span>
-                  </button>
+                  />
                 ))
               )}
             </div>
