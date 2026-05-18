@@ -578,6 +578,49 @@ export default function MerchantSupport() {
               View full return & warranty policy <ExternalLink className="h-3 w-3" />
             </a>
           )}
+
+          {/* Return-window reminder toggle */}
+          {canSetReminder && (
+            <div className="rounded-xl border border-border/40 bg-secondary/20 p-3 space-y-3">
+              <div className="flex items-start gap-3">
+                <div className={`h-9 w-9 rounded-xl flex items-center justify-center shrink-0 ${reminder ? 'bg-amber-500/15' : 'bg-secondary/40'}`}>
+                  {reminder ? <Bell className="h-4 w-4 text-amber-400" /> : <BellOff className="h-4 w-4 text-muted-foreground" />}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-foreground">Notify before window ends</p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">
+                    {reminder
+                      ? `Alert on ${reminderTriggerDate(reminder).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })} — window closes ${reminderEndDate(reminder).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}.`
+                      : `Get a heads-up a few days before the ${returnWindowDays}-day return window closes.`}
+                  </p>
+                </div>
+                <Button
+                  size="sm"
+                  variant={reminder ? 'outline' : 'default'}
+                  className="h-8 text-xs shrink-0 active:scale-[0.97]"
+                  onClick={handleToggleReminder}
+                >
+                  {reminder ? 'Off' : 'Turn on'}
+                </Button>
+              </div>
+              <div className="flex items-center gap-2 flex-wrap pl-12">
+                <span className="text-[11px] text-muted-foreground">Remind me</span>
+                {[1, 2, 3, 7].filter(d => d < (returnWindowDays || 0)).map(d => (
+                  <button
+                    key={d}
+                    onClick={() => handleChangeNotifyDays(d)}
+                    className={`text-[11px] px-2 py-1 rounded-full border transition-colors ${
+                      notifyDays === d
+                        ? 'bg-primary/15 border-primary/40 text-primary'
+                        : 'bg-secondary/30 border-border/40 text-muted-foreground hover:text-foreground'
+                    }`}
+                  >
+                    {d}d before
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       ) : !loading && (
         <div className="glass-card rounded-2xl p-5">
