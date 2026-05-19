@@ -378,9 +378,31 @@ serve(async (req) => {
     const { days = 180 } = await req.json().catch(() => ({}));
 
     // Broad query for subscription-related emails (no attachment requirement)
-    const query = `(subject:(subscription OR renewal OR renewed OR membership OR "payment received" OR "payment successful" OR "your plan" OR "auto-renew" OR cancellation OR cancelled OR "welcome to" OR "trial started" OR "free trial" OR "has been extended" OR "has been renewed" OR "next billing" OR "will renew") OR from:(netflix OR spotify OR hotstar OR primevideo OR youtube OR openai OR anthropic OR perplexity OR notion OR figma OR canva OR adobe OR github OR slack OR zoom OR linkedin OR sonyliv OR zee5 OR jiocinema OR gaana OR wynk OR dropbox OR microsoft OR apple OR airtel OR jio OR myvi OR vodafone OR actcorp OR cult OR curefit OR swiggy OR zomato OR flipkart OR playstation OR xbox OR midjourney OR duolingo OR coursera OR udemy OR masterclass OR audible OR nytimes OR medium)) newer_than:${days}d`;
+    const subjectTerms = [
+      'subscription', 'renewal', 'renewed', 'membership', '"payment received"', '"payment successful"',
+      '"your plan"', '"auto-renew"', '"auto renew"', 'cancellation', 'cancelled', '"welcome to"',
+      '"trial started"', '"free trial"', '"has been extended"', '"has been renewed"',
+      '"next billing"', '"will renew"', '"about to end"', '"about to expire"', '"expires soon"',
+      '"expiring soon"', '"ending soon"', '"upgraded to premium"', '"upgraded to pro"',
+      '"upgraded to plus"', '"welcome to premium"', 'congratulations', '"thanks for subscribing"',
+      '"thank you for subscribing"', '"thank you for your subscription"', '"plan activated"',
+      '"premium plan"', '"pro plan"', '"paid plan"', '"plan renewed"', '"plan upgraded"',
+      '"you now have access"', '"reminder: your"',
+    ].join(' OR ');
+    const senderTerms = [
+      'netflix', 'spotify', 'hotstar', 'primevideo', 'youtube', 'openai', 'anthropic', 'perplexity',
+      'notion', 'figma', 'canva', 'adobe', 'github', 'slack', 'zoom', 'linkedin', 'sonyliv', 'zee5',
+      'jiocinema', 'gaana', 'wynk', 'dropbox', 'microsoft', 'apple', 'airtel', 'jio', 'myvi',
+      'vodafone', 'actcorp', 'cult', 'curefit', 'swiggy', 'zomato', 'flipkart', 'playstation',
+      'xbox', 'midjourney', 'duolingo', 'coursera', 'udemy', 'masterclass', 'audible', 'nytimes',
+      'medium', 'substack', 'patreon', 'twitch', 'discord', 'evernote', 'grammarly', 'lastpass',
+      '1password', 'nordvpn', 'expressvpn', 'surfshark', 'protonmail', 'tidal', 'deezer',
+      'crunchyroll', 'paramountplus', 'peacocktv', 'hbomax', 'mubi', 'lynda', 'pluralsight',
+      'skillshare', 'wsj', 'economist', 'bloomberg', 'theken', 'morningbrew',
+    ].join(' OR ');
+    const query = `(subject:(${subjectTerms}) OR from:(${senderTerms})) newer_than:${days}d`;
 
-    const searchUrl = `https://gmail.googleapis.com/gmail/v1/users/me/messages?q=${encodeURIComponent(query)}&maxResults=200`;
+    const searchUrl = `https://gmail.googleapis.com/gmail/v1/users/me/messages?q=${encodeURIComponent(query)}&maxResults=300`;
     let searchRes = await gmailFetch(searchUrl, accessToken);
     if (!searchRes.ok && searchRes.status === 401) {
       accessToken = await refreshToken(supabase, user.id, connection, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET);
@@ -412,7 +434,7 @@ serve(async (req) => {
       startedAt: string | null;
     }
     const aggregates = new Map<string, Agg>();
-    const limit = Math.min(messages.length, 100);
+    const limit = Math.min(messages.length, 150);
 
     for (let i = 0; i < limit; i++) {
       const msg = messages[i];
@@ -432,12 +454,15 @@ serve(async (req) => {
         const body = extractBodyText(m.payload);
         const fullText = `${subject}\n${snippet}\n${body}`;
 
-        const svc = matchService(subject, from);
-        if (!svc) continue;
         // Subscription signal — must look like sub/renewal/membership/cancellation
         const isSubSignal = ACTIVE_PATTERNS.some(p => p.test(fullText))
           || CANCELLED_PATTERNS.some(p => p.test(fullText));
         if (!isSubSignal) continue;
+
+        // Try curated catalog first, then fall back to a generic per-sender service
+        let svc = matchService(subject, from);
+        if (!svc) svc = genericServiceFromSender(from, subject);
+        if (!svc) continue;
 
         const status = detectStatus(subject, `${snippet}\n${body}`);
         const ts = dateStr ? new Date(dateStr).getTime() : Date.now();
@@ -500,6 +525,8 @@ serve(async (req) => {
       const email_status = a.hasCancellation && !a.hasActive ? 'cancelled' : 'active';
       const lastDateISO = new Date(a.lastDate).toISOString().slice(0, 10);
       const nextBilling = a.nextBilling || addCycle(lastDateISO, a.cycle);
+      // Fill in typical INR rate when the email did not include an amount
+      const fallbackAmount = a.lastAmount ?? TYPICAL_MONTHLY_INR[a.svc.key] ?? null;
       results.push({
         user_id: user.id,
         service_key: a.svc.key,
@@ -510,7 +537,7 @@ serve(async (req) => {
         last_email_subject: a.lastSubject.slice(0, 300),
         last_email_from: a.lastFrom.slice(0, 200),
         last_email_date: new Date(a.lastDate).toISOString(),
-        last_amount: a.lastAmount,
+        last_amount: fallbackAmount,
         email_count: a.count,
         last_email_snippet: a.lastSnippet,
         next_billing_date: nextBilling,
