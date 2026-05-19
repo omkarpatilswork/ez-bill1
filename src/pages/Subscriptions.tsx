@@ -12,7 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
   ArrowLeft, Repeat, Loader2, ExternalLink, Calendar, Sparkles,
-  Plus, Mail, X, Check, Inbox, Link2, Trash2, Pencil,
+  Plus, Mail, X, Check, Inbox, Link2, Trash2, Pencil, FileText,
 } from 'lucide-react';
 import {
   POPULAR_SERVICES, getServiceByKey, matchService, type PopularService,
