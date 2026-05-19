@@ -542,6 +542,7 @@ function SubscriptionDialog({
   const [lastBilled, setLastBilled] = useState(new Date().toISOString().slice(0, 10));
   const [category, setCategory] = useState('Other');
   const [serviceKey, setServiceKey] = useState('');
+  const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly' | 'weekly'>('monthly');
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -552,9 +553,10 @@ function SubscriptionDialog({
       setLastBilled((editing.last_email_date || new Date().toISOString()).slice(0, 10));
       setCategory(editing.category || 'Other');
       setServiceKey(editing.service_key);
+      setBillingCycle((editing.billing_cycle as any) || 'monthly');
     } else {
       setName(''); setAmount(''); setLastBilled(new Date().toISOString().slice(0, 10));
-      setCategory('Other'); setServiceKey('');
+      setCategory('Other'); setServiceKey(''); setBillingCycle('monthly');
     }
   }, [open, editing]);
 
@@ -586,6 +588,7 @@ function SubscriptionDialog({
             last_email_date: new Date(lastBilled).toISOString(),
             user_confirmed_status: 'subscribed',
             email_status: 'active',
+            billing_cycle: billingCycle,
           })
           .eq('id', editing.id);
         if (error) throw error;
@@ -602,6 +605,7 @@ function SubscriptionDialog({
           last_amount: amt,
           last_email_date: new Date(lastBilled).toISOString(),
           email_count: 1,
+          billing_cycle: billingCycle,
         });
         if (error) throw error;
       }
