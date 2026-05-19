@@ -653,14 +653,32 @@ function SubscriptionDialog({
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label htmlFor="sub-amount">Amount (₹/mo)</Label>
+              <Label htmlFor="sub-amount">Amount (₹)</Label>
               <Input id="sub-amount" type="number" inputMode="decimal" placeholder="499"
                 value={amount} onChange={(e) => setAmount(e.target.value)} />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="sub-last">Last billed</Label>
-              <Input id="sub-last" type="date" value={lastBilled} onChange={(e) => setLastBilled(e.target.value)} />
+              <Label htmlFor="sub-cycle">Billing cycle</Label>
+              <select
+                id="sub-cycle" value={billingCycle}
+                onChange={(e) => setBillingCycle(e.target.value as any)}
+                className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+              >
+                <option value="monthly">Monthly</option>
+                <option value="yearly">Yearly</option>
+                <option value="weekly">Weekly</option>
+              </select>
             </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="sub-last">Last billed</Label>
+            <Input id="sub-last" type="date" value={lastBilled} onChange={(e) => setLastBilled(e.target.value)} />
+            {amount && billingCycle !== 'monthly' && (
+              <p className="text-[10px] text-muted-foreground">
+                ≈ ₹{Math.round(monthlyEquivalent(parseFloat(amount) || 0, billingCycle)).toLocaleString('en-IN')}/mo equivalent
+              </p>
+            )}
           </div>
 
           <div className="space-y-1.5">
