@@ -385,16 +385,19 @@ export default function Subscriptions() {
         <section className="space-y-2.5">
           <div className="flex items-center justify-between px-1">
             <h2 className="text-sm font-semibold text-foreground flex items-center gap-1.5">
-              <Mail className="h-4 w-4 text-primary" /> Found in your inbox
+              <Mail className="h-4 w-4 text-primary" /> Review queue
             </h2>
             <span className="text-[11px] text-muted-foreground">{pendingConfirm.length} to confirm</span>
           </div>
           <p className="text-[11px] text-muted-foreground px-1 -mt-1">
-            Tap to add these to your subscriptions, or dismiss.
+            We found these in your inbox. Confirm what's right, edit what's off, or mark as not a subscription.
           </p>
           <div className="space-y-2">
             {pendingConfirm.map(row => {
               const svc = getServiceByKey(row.service_key);
+              const monthly = row.last_amount
+                ? monthlyEquivalent(Number(row.last_amount), row.billing_cycle)
+                : null;
               return (
                 <div key={row.id} className="glass-card rounded-2xl p-3.5">
                   <div className="flex items-center gap-3">
@@ -405,27 +408,74 @@ export default function Subscriptions() {
                       <div className="flex items-center justify-between gap-2">
                         <span className="text-sm font-semibold text-foreground truncate">{row.service_name}</span>
                         {row.last_amount ? (
-                          <span className="text-sm font-bold tabular-nums text-foreground shrink-0">{fmtINR(row.last_amount)}</span>
+                          <span className="text-sm font-bold tabular-nums text-foreground shrink-0">
+                            {fmtMoney(row.last_amount, row.currency)}{cycleLabel(row.billing_cycle)}
+                          </span>
                         ) : null}
                       </div>
-                      <span className="text-[10px] text-muted-foreground">
-                        {row.category}{row.last_email_date ? ` · last ${fmtDate(row.last_email_date)}` : ''}
-                      </span>
+                      <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
+                        <span className="text-[10px] text-muted-foreground">{row.category}</span>
+                        {row.billing_cycle && row.billing_cycle !== 'monthly' && (
+                          <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full bg-secondary text-muted-foreground capitalize">
+                            {row.billing_cycle}
+                          </span>
+                        )}
+                        {monthly !== null && row.billing_cycle && row.billing_cycle !== 'monthly' && (
+                          <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full bg-primary/15 text-primary">
+                            ≈ {fmtMoney(monthly, row.currency)}/mo
+                          </span>
+                        )}
+                        {row.last_email_date && (
+                          <span className="text-[10px] text-muted-foreground">· {fmtDate(row.last_email_date)}</span>
+                        )}
+                      </div>
                     </div>
                   </div>
+
+                  {/* Email evidence */}
+                  {(row.last_email_subject || row.last_email_from || row.last_email_snippet) && (
+                    <div className="mt-3 rounded-xl border border-border/40 bg-background/30 p-2.5 space-y-1">
+                      <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-muted-foreground">
+                        <FileText className="h-3 w-3" /> Source email
+                        {row.email_count > 1 && (
+                          <span className="ml-auto normal-case tracking-normal">+{row.email_count - 1} more</span>
+                        )}
+                      </div>
+                      {row.last_email_subject && (
+                        <p className="text-[11px] font-medium text-foreground line-clamp-2">{row.last_email_subject}</p>
+                      )}
+                      {row.last_email_from && (
+                        <p className="text-[10px] text-muted-foreground truncate">from {row.last_email_from}</p>
+                      )}
+                      {row.last_email_snippet && (
+                        <p className="text-[10px] text-muted-foreground line-clamp-2 italic">"{row.last_email_snippet}"</p>
+                      )}
+                    </div>
+                  )}
+
                   <div className="flex gap-2 mt-3">
                     <Button size="sm" variant="outline" onClick={() => confirmStatus(row, 'subscribed')}
                       className="flex-1 rounded-xl bg-success/15 hover:bg-success/25 text-success border-success/30">
                       <Check className="h-3.5 w-3.5 mr-1.5" /> Add
                     </Button>
+                    <Button size="sm" variant="outline" onClick={() => setEditing(row)}
+                      className="rounded-xl">
+                      <Pencil className="h-3.5 w-3.5 mr-1.5" /> Edit
+                    </Button>
                     <Button size="sm" variant="outline" onClick={() => confirmStatus(row, 'unsubscribed')}
-                      className="flex-1 rounded-xl">
-                      <X className="h-3.5 w-3.5 mr-1.5" /> Dismiss
+                      className="rounded-xl">
+                      <X className="h-3.5 w-3.5 mr-1.5" /> Not a sub
                     </Button>
                   </div>
                 </div>
               );
             })}
+            <button
+              onClick={() => setAdding(true)}
+              className="w-full glass-card rounded-2xl p-3 text-xs text-muted-foreground hover:text-foreground border border-dashed border-border/50 flex items-center justify-center gap-1.5"
+            >
+              <Plus className="h-3.5 w-3.5" /> We missed one — add manually
+            </button>
           </div>
         </section>
       )}
