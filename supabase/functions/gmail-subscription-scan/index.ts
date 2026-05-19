@@ -94,11 +94,18 @@ const ACTIVE_PATTERNS = [
   /trial\s+(has\s+)?(started|begun|begins)/i, /free\s+trial/i,
   /your\s+(monthly|annual|yearly)\s+(plan|subscription)/i,
   /next\s+billing\s+date/i, /will\s+renew\s+on/i,
+  /congratulations[^.]*subscri/i, /upgraded\s+to\s+(premium|pro|plus|paid)/i,
+  /you'?ve\s+been\s+upgraded/i, /subscription\s+is\s+about\s+to\s+(end|expire|renew)/i,
+  /(expires|expiring|ending)\s+(soon|on|in)/i, /reminder\s*:\s*your\s+/i,
+  /successfully\s+(subscribed|upgraded|renewed)/i, /thank\s+you\s+for\s+(your\s+)?(purchase|subscription|upgrade)/i,
+  /(annual|monthly|yearly)\s+plan\s+(activated|started)/i, /pro\s+plan\s+(activated|started)/i,
+  /(paid|premium)\s+plan/i, /plan\s+(renewed|upgraded)/i, /you\s+(now\s+)?have\s+(access\s+to\s+)?(premium|pro|plus)/i,
 ];
 const CANCELLED_PATTERNS = [
   /cancell?ation/i, /cancell?ed/i, /your\s+subscription\s+(has\s+)?ended/i,
   /subscription\s+(has\s+been\s+)?cancell?ed/i, /no\s+longer\s+(a\s+)?member/i,
   /(we'?re\s+)?sorry\s+to\s+see\s+you\s+go/i, /membership\s+ended/i,
+  /downgrad(ed|e)\s+to\s+free/i, /refund(ed)?\s+for\s+your\s+subscription/i,
 ];
 
 function matchService(subject: string, from: string): ServiceDef | null {
@@ -110,6 +117,56 @@ function matchService(subject: string, from: string): ServiceDef | null {
   }
   return null;
 }
+
+/**
+ * Derive a generic service from the From header when not in the curated catalog.
+ * Example: "Foo Inc <billing@foo.com>" -> { key: 'generic:foo', name: 'Foo', category: 'Other' }
+ */
+function genericServiceFromSender(from: string, subject: string): ServiceDef | null {
+  if (!from) return null;
+  // Prefer the display name before <...>
+  const nameMatch = from.match(/^\s*"?([^"<]+?)"?\s*<[^>]+>/);
+  let displayName = nameMatch?.[1]?.trim() || '';
+  const emailMatch = from.match(/<([^>]+)>/) || from.match(/([^\s]+@[^\s]+)/);
+  const email = emailMatch?.[1] || '';
+  const domain = email.split('@')[1] || '';
+  // Strip common prefixes/subdomains
+  const root = domain
+    .replace(/^(mail|email|no-?reply|noreply|info|hello|support|billing|news|notifications|alerts|account|team|do-?not-?reply)\./i, '')
+    .split('.')
+    .slice(0, -1)
+    .join('.');
+  const brand = (displayName || root || domain).trim();
+  if (!brand || brand.length < 2) return null;
+  // Filter generic relays and ESPs
+  const ignore = /(mailgun|sendgrid|amazonses|ses\.|mailchimp|hubspot|postmark|sparkpost|mandrill|mailjet|google\b|gmail|outlook|yahoo|icloud|hotmail|sendinblue|brevo)/i;
+  if (ignore.test(domain) && !/subscription|renewal|premium|membership|plan/i.test(subject)) return null;
+  const pretty = brand
+    .replace(/\b(team|support|billing|noreply|no-reply|notifications|account)\b/gi, '')
+    .replace(/[_\-]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .split(' ')
+    .slice(0, 3)
+    .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+    .join(' ');
+  if (!pretty || pretty.length < 2) return null;
+  const key = 'generic:' + (root || domain || pretty).toLowerCase().replace(/[^a-z0-9]+/g, '_').slice(0, 40);
+  return { key, name: pretty, category: 'Other', senders: [domain], keywords: [] };
+}
+
+/** Rough typical monthly INR price for popular services — used when amount is missing. */
+const TYPICAL_MONTHLY_INR: Record<string, number> = {
+  netflix: 499, prime_video: 299, hotstar: 299, jiocinema: 99, sonyliv: 299, zee5: 99,
+  youtube_premium: 129, spotify: 119, apple_music: 99, gaana: 99, wynk: 99,
+  google_one: 130, icloud: 75, dropbox: 999, onedrive: 489,
+  notion: 800, figma: 1200, canva: 499, adobe: 1675, github: 350, slack: 650, zoom: 1300,
+  linkedin: 1700, chatgpt: 1700, claude: 1700, perplexity: 1700, midjourney: 850, copilot: 850,
+  airtel: 399, jio: 299, vi: 299, act: 999, hathway: 799, cultfit: 1000,
+  amazon_prime: 125, swiggy_one: 99, zomato_gold: 200, flipkart_plus: 99,
+  psn: 499, xbox: 489, duolingo: 600, coursera: 3500, udemy: 500, masterclass: 1500,
+  audible: 199, nytimes: 400, medium: 415,
+};
 
 function detectStatus(subject: string, snippet: string): 'active' | 'cancelled' {
   const text = `${subject} ${snippet}`;
