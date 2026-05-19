@@ -94,11 +94,18 @@ const ACTIVE_PATTERNS = [
   /trial\s+(has\s+)?(started|begun|begins)/i, /free\s+trial/i,
   /your\s+(monthly|annual|yearly)\s+(plan|subscription)/i,
   /next\s+billing\s+date/i, /will\s+renew\s+on/i,
+  /congratulations[^.]*subscri/i, /upgraded\s+to\s+(premium|pro|plus|paid)/i,
+  /you'?ve\s+been\s+upgraded/i, /subscription\s+is\s+about\s+to\s+(end|expire|renew)/i,
+  /(expires|expiring|ending)\s+(soon|on|in)/i, /reminder\s*:\s*your\s+/i,
+  /successfully\s+(subscribed|upgraded|renewed)/i, /thank\s+you\s+for\s+(your\s+)?(purchase|subscription|upgrade)/i,
+  /(annual|monthly|yearly)\s+plan\s+(activated|started)/i, /pro\s+plan\s+(activated|started)/i,
+  /(paid|premium)\s+plan/i, /plan\s+(renewed|upgraded)/i, /you\s+(now\s+)?have\s+(access\s+to\s+)?(premium|pro|plus)/i,
 ];
 const CANCELLED_PATTERNS = [
   /cancell?ation/i, /cancell?ed/i, /your\s+subscription\s+(has\s+)?ended/i,
   /subscription\s+(has\s+been\s+)?cancell?ed/i, /no\s+longer\s+(a\s+)?member/i,
   /(we'?re\s+)?sorry\s+to\s+see\s+you\s+go/i, /membership\s+ended/i,
+  /downgrad(ed|e)\s+to\s+free/i, /refund(ed)?\s+for\s+your\s+subscription/i,
 ];
 
 function matchService(subject: string, from: string): ServiceDef | null {
@@ -110,6 +117,56 @@ function matchService(subject: string, from: string): ServiceDef | null {
   }
   return null;
 }
+
+/**
+ * Derive a generic service from the From header when not in the curated catalog.
+ * Example: "Foo Inc <billing@foo.com>" -> { key: 'generic:foo', name: 'Foo', category: 'Other' }
+ */
+function genericServiceFromSender(from: string, subject: string): ServiceDef | null {
+  if (!from) return null;
+  // Prefer the display name before <...>
+  const nameMatch = from.match(/^\s*"?([^"<]+?)"?\s*<[^>]+>/);
+  let displayName = nameMatch?.[1]?.trim() || '';
+  const emailMatch = from.match(/<([^>]+)>/) || from.match(/([^\s]+@[^\s]+)/);
+  const email = emailMatch?.[1] || '';
+  const domain = email.split('@')[1] || '';
+  // Strip common prefixes/subdomains
+  const root = domain
+    .replace(/^(mail|email|no-?reply|noreply|info|hello|support|billing|news|notifications|alerts|account|team|do-?not-?reply)\./i, '')
+    .split('.')
+    .slice(0, -1)
+    .join('.');
+  const brand = (displayName || root || domain).trim();
+  if (!brand || brand.length < 2) return null;
+  // Filter generic relays and ESPs
+  const ignore = /(mailgun|sendgrid|amazonses|ses\.|mailchimp|hubspot|postmark|sparkpost|mandrill|mailjet|google\b|gmail|outlook|yahoo|icloud|hotmail|sendinblue|brevo)/i;
+  if (ignore.test(domain) && !/subscription|renewal|premium|membership|plan/i.test(subject)) return null;
+  const pretty = brand
+    .replace(/\b(team|support|billing|noreply|no-reply|notifications|account)\b/gi, '')
+    .replace(/[_\-]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .split(' ')
+    .slice(0, 3)
+    .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+    .join(' ');
+  if (!pretty || pretty.length < 2) return null;
+  const key = 'generic:' + (root || domain || pretty).toLowerCase().replace(/[^a-z0-9]+/g, '_').slice(0, 40);
+  return { key, name: pretty, category: 'Other', senders: [domain], keywords: [] };
+}
+
+/** Rough typical monthly INR price for popular services — used when amount is missing. */
+const TYPICAL_MONTHLY_INR: Record<string, number> = {
+  netflix: 499, prime_video: 299, hotstar: 299, jiocinema: 99, sonyliv: 299, zee5: 99,
+  youtube_premium: 129, spotify: 119, apple_music: 99, gaana: 99, wynk: 99,
+  google_one: 130, icloud: 75, dropbox: 999, onedrive: 489,
+  notion: 800, figma: 1200, canva: 499, adobe: 1675, github: 350, slack: 650, zoom: 1300,
+  linkedin: 1700, chatgpt: 1700, claude: 1700, perplexity: 1700, midjourney: 850, copilot: 850,
+  airtel: 399, jio: 299, vi: 299, act: 999, hathway: 799, cultfit: 1000,
+  amazon_prime: 125, swiggy_one: 99, zomato_gold: 200, flipkart_plus: 99,
+  psn: 499, xbox: 489, duolingo: 600, coursera: 3500, udemy: 500, masterclass: 1500,
+  audible: 199, nytimes: 400, medium: 415,
+};
 
 function detectStatus(subject: string, snippet: string): 'active' | 'cancelled' {
   const text = `${subject} ${snippet}`;
@@ -321,9 +378,31 @@ serve(async (req) => {
     const { days = 180 } = await req.json().catch(() => ({}));
 
     // Broad query for subscription-related emails (no attachment requirement)
-    const query = `(subject:(subscription OR renewal OR renewed OR membership OR "payment received" OR "payment successful" OR "your plan" OR "auto-renew" OR cancellation OR cancelled OR "welcome to" OR "trial started" OR "free trial" OR "has been extended" OR "has been renewed" OR "next billing" OR "will renew") OR from:(netflix OR spotify OR hotstar OR primevideo OR youtube OR openai OR anthropic OR perplexity OR notion OR figma OR canva OR adobe OR github OR slack OR zoom OR linkedin OR sonyliv OR zee5 OR jiocinema OR gaana OR wynk OR dropbox OR microsoft OR apple OR airtel OR jio OR myvi OR vodafone OR actcorp OR cult OR curefit OR swiggy OR zomato OR flipkart OR playstation OR xbox OR midjourney OR duolingo OR coursera OR udemy OR masterclass OR audible OR nytimes OR medium)) newer_than:${days}d`;
+    const subjectTerms = [
+      'subscription', 'renewal', 'renewed', 'membership', '"payment received"', '"payment successful"',
+      '"your plan"', '"auto-renew"', '"auto renew"', 'cancellation', 'cancelled', '"welcome to"',
+      '"trial started"', '"free trial"', '"has been extended"', '"has been renewed"',
+      '"next billing"', '"will renew"', '"about to end"', '"about to expire"', '"expires soon"',
+      '"expiring soon"', '"ending soon"', '"upgraded to premium"', '"upgraded to pro"',
+      '"upgraded to plus"', '"welcome to premium"', 'congratulations', '"thanks for subscribing"',
+      '"thank you for subscribing"', '"thank you for your subscription"', '"plan activated"',
+      '"premium plan"', '"pro plan"', '"paid plan"', '"plan renewed"', '"plan upgraded"',
+      '"you now have access"', '"reminder: your"',
+    ].join(' OR ');
+    const senderTerms = [
+      'netflix', 'spotify', 'hotstar', 'primevideo', 'youtube', 'openai', 'anthropic', 'perplexity',
+      'notion', 'figma', 'canva', 'adobe', 'github', 'slack', 'zoom', 'linkedin', 'sonyliv', 'zee5',
+      'jiocinema', 'gaana', 'wynk', 'dropbox', 'microsoft', 'apple', 'airtel', 'jio', 'myvi',
+      'vodafone', 'actcorp', 'cult', 'curefit', 'swiggy', 'zomato', 'flipkart', 'playstation',
+      'xbox', 'midjourney', 'duolingo', 'coursera', 'udemy', 'masterclass', 'audible', 'nytimes',
+      'medium', 'substack', 'patreon', 'twitch', 'discord', 'evernote', 'grammarly', 'lastpass',
+      '1password', 'nordvpn', 'expressvpn', 'surfshark', 'protonmail', 'tidal', 'deezer',
+      'crunchyroll', 'paramountplus', 'peacocktv', 'hbomax', 'mubi', 'lynda', 'pluralsight',
+      'skillshare', 'wsj', 'economist', 'bloomberg', 'theken', 'morningbrew',
+    ].join(' OR ');
+    const query = `(subject:(${subjectTerms}) OR from:(${senderTerms})) newer_than:${days}d`;
 
-    const searchUrl = `https://gmail.googleapis.com/gmail/v1/users/me/messages?q=${encodeURIComponent(query)}&maxResults=200`;
+    const searchUrl = `https://gmail.googleapis.com/gmail/v1/users/me/messages?q=${encodeURIComponent(query)}&maxResults=300`;
     let searchRes = await gmailFetch(searchUrl, accessToken);
     if (!searchRes.ok && searchRes.status === 401) {
       accessToken = await refreshToken(supabase, user.id, connection, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET);
@@ -355,7 +434,7 @@ serve(async (req) => {
       startedAt: string | null;
     }
     const aggregates = new Map<string, Agg>();
-    const limit = Math.min(messages.length, 100);
+    const limit = Math.min(messages.length, 150);
 
     for (let i = 0; i < limit; i++) {
       const msg = messages[i];
@@ -375,12 +454,15 @@ serve(async (req) => {
         const body = extractBodyText(m.payload);
         const fullText = `${subject}\n${snippet}\n${body}`;
 
-        const svc = matchService(subject, from);
-        if (!svc) continue;
         // Subscription signal — must look like sub/renewal/membership/cancellation
         const isSubSignal = ACTIVE_PATTERNS.some(p => p.test(fullText))
           || CANCELLED_PATTERNS.some(p => p.test(fullText));
         if (!isSubSignal) continue;
+
+        // Try curated catalog first, then fall back to a generic per-sender service
+        let svc = matchService(subject, from);
+        if (!svc) svc = genericServiceFromSender(from, subject);
+        if (!svc) continue;
 
         const status = detectStatus(subject, `${snippet}\n${body}`);
         const ts = dateStr ? new Date(dateStr).getTime() : Date.now();
@@ -443,6 +525,8 @@ serve(async (req) => {
       const email_status = a.hasCancellation && !a.hasActive ? 'cancelled' : 'active';
       const lastDateISO = new Date(a.lastDate).toISOString().slice(0, 10);
       const nextBilling = a.nextBilling || addCycle(lastDateISO, a.cycle);
+      // Fill in typical INR rate when the email did not include an amount
+      const fallbackAmount = a.lastAmount ?? TYPICAL_MONTHLY_INR[a.svc.key] ?? null;
       results.push({
         user_id: user.id,
         service_key: a.svc.key,
@@ -453,7 +537,7 @@ serve(async (req) => {
         last_email_subject: a.lastSubject.slice(0, 300),
         last_email_from: a.lastFrom.slice(0, 200),
         last_email_date: new Date(a.lastDate).toISOString(),
-        last_amount: a.lastAmount,
+        last_amount: fallbackAmount,
         email_count: a.count,
         last_email_snippet: a.lastSnippet,
         next_billing_date: nextBilling,
@@ -463,6 +547,58 @@ serve(async (req) => {
         trial_ends_at: a.trialEnds,
         started_at: a.startedAt,
       });
+    }
+
+    // AI enrichment: for any subscription where we still don't have an amount,
+    // ask Lovable AI to look up the typical monthly INR price for that service.
+    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+    const needsEnrichment = results.filter(r => r.last_amount == null);
+    if (LOVABLE_API_KEY && needsEnrichment.length > 0) {
+      try {
+        const list = needsEnrichment.map(r => ({
+          key: r.service_key,
+          name: r.service_name,
+          category: r.category,
+          cycle: r.billing_cycle,
+        }));
+        const prompt = `For each subscription service below, return its typical consumer monthly price in INR (Indian Rupees) for an individual plan. If the service bills yearly, divide by 12. Return ONLY valid JSON, no prose:\n{"prices":[{"key":"<key>","monthly_inr":<number>,"category":"<refined category like OTT/SaaS/Music/Cloud/AI/Telecom/Membership/Fitness/Gaming/Education/News/Other>"}]}\n\nServices:\n${JSON.stringify(list)}`;
+        const aiRes = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Lovable-API-Key': LOVABLE_API_KEY,
+          },
+          body: JSON.stringify({
+            model: 'google/gemini-3-flash-preview',
+            messages: [
+              { role: 'system', content: 'You are a pricing database. Output JSON only.' },
+              { role: 'user', content: prompt },
+            ],
+            response_format: { type: 'json_object' },
+          }),
+        });
+        if (aiRes.ok) {
+          const aiData = await aiRes.json();
+          const content = aiData.choices?.[0]?.message?.content || '{}';
+          const parsed = JSON.parse(content);
+          const prices: Array<{ key: string; monthly_inr: number; category?: string }> = parsed.prices || [];
+          const byKey = new Map(prices.map(p => [p.key, p]));
+          for (const r of results) {
+            const p = byKey.get(r.service_key);
+            if (p) {
+              if (r.last_amount == null && typeof p.monthly_inr === 'number' && p.monthly_inr > 0) {
+                r.last_amount = p.monthly_inr;
+                if (!r.currency) r.currency = 'INR';
+              }
+              if (p.category && r.category === 'Other') r.category = p.category;
+            }
+          }
+        } else {
+          console.warn('AI enrichment failed', aiRes.status, await aiRes.text());
+        }
+      } catch (e) {
+        console.warn('AI enrichment error', e);
+      }
     }
 
     // Upsert: preserve user_confirmed_status by NOT touching it on conflict.
