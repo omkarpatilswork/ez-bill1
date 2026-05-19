@@ -549,6 +549,58 @@ serve(async (req) => {
       });
     }
 
+    // AI enrichment: for any subscription where we still don't have an amount,
+    // ask Lovable AI to look up the typical monthly INR price for that service.
+    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+    const needsEnrichment = results.filter(r => r.last_amount == null);
+    if (LOVABLE_API_KEY && needsEnrichment.length > 0) {
+      try {
+        const list = needsEnrichment.map(r => ({
+          key: r.service_key,
+          name: r.service_name,
+          category: r.category,
+          cycle: r.billing_cycle,
+        }));
+        const prompt = `For each subscription service below, return its typical consumer monthly price in INR (Indian Rupees) for an individual plan. If the service bills yearly, divide by 12. Return ONLY valid JSON, no prose:\n{"prices":[{"key":"<key>","monthly_inr":<number>,"category":"<refined category like OTT/SaaS/Music/Cloud/AI/Telecom/Membership/Fitness/Gaming/Education/News/Other>"}]}\n\nServices:\n${JSON.stringify(list)}`;
+        const aiRes = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Lovable-API-Key': LOVABLE_API_KEY,
+          },
+          body: JSON.stringify({
+            model: 'google/gemini-3-flash-preview',
+            messages: [
+              { role: 'system', content: 'You are a pricing database. Output JSON only.' },
+              { role: 'user', content: prompt },
+            ],
+            response_format: { type: 'json_object' },
+          }),
+        });
+        if (aiRes.ok) {
+          const aiData = await aiRes.json();
+          const content = aiData.choices?.[0]?.message?.content || '{}';
+          const parsed = JSON.parse(content);
+          const prices: Array<{ key: string; monthly_inr: number; category?: string }> = parsed.prices || [];
+          const byKey = new Map(prices.map(p => [p.key, p]));
+          for (const r of results) {
+            const p = byKey.get(r.service_key);
+            if (p) {
+              if (r.last_amount == null && typeof p.monthly_inr === 'number' && p.monthly_inr > 0) {
+                r.last_amount = p.monthly_inr;
+                if (!r.currency) r.currency = 'INR';
+              }
+              if (p.category && r.category === 'Other') r.category = p.category;
+            }
+          }
+        } else {
+          console.warn('AI enrichment failed', aiRes.status, await aiRes.text());
+        }
+      } catch (e) {
+        console.warn('AI enrichment error', e);
+      }
+    }
+
     // Upsert: preserve user_confirmed_status by NOT touching it on conflict.
     if (results.length > 0) {
       // We need to upsert without overwriting user_confirmed_status.
