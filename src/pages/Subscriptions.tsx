@@ -39,6 +39,8 @@ interface SubRow {
   trial_ends_at?: string | null;
   started_at?: string | null;
   last_email_snippet?: string | null;
+  user_edited?: boolean | null;
+  pending_update?: Record<string, any> | null;
 }
 
 function cycleDays(cycle?: string | null): number {
@@ -210,6 +212,27 @@ export default function Subscriptions() {
     toast({ title: 'Removed', description: row.service_name });
   };
 
+  /* ------- pending update (inbox suggested a change) ------- */
+  const applyPending = async (row: SubRow) => {
+    const p = row.pending_update || {};
+    const patch: any = { pending_update: null, user_edited: true };
+    ['service_name', 'last_amount', 'billing_cycle', 'category', 'currency', 'next_billing_date'].forEach(k => {
+      if (p[k] !== undefined && p[k] !== null) patch[k] = p[k];
+    });
+    const { error } = await supabase.from('detected_subscriptions').update(patch).eq('id', row.id);
+    if (error) { toast({ title: 'Could not apply', description: error.message, variant: 'destructive' }); return; }
+    setRows(prev => prev.map(r => r.id === row.id ? { ...r, ...patch } as SubRow : r));
+    toast({ title: 'Applied inbox update', description: row.service_name });
+  };
+
+  const keepMine = async (row: SubRow) => {
+    const { error } = await supabase.from('detected_subscriptions')
+      .update({ pending_update: null }).eq('id', row.id);
+    if (error) { toast({ title: 'Could not dismiss', description: error.message, variant: 'destructive' }); return; }
+    setRows(prev => prev.map(r => r.id === row.id ? { ...r, pending_update: null } : r));
+    toast({ title: 'Kept your edits', description: row.service_name });
+  };
+
   /* ------- render ------- */
   if (loading) {
     return (
@@ -373,6 +396,50 @@ export default function Subscriptions() {
                       <Trash2 className="h-3 w-3" /> Remove
                     </button>
                   </div>
+                  {r.pending_update && Object.keys(r.pending_update).some(k => k !== 'suggested_at') && (
+                    <div className="mt-2.5 rounded-xl border border-gold/30 bg-gold/5 p-2.5">
+                      <div className="flex items-start gap-2">
+                        <Mail className="h-3.5 w-3.5 text-gold shrink-0 mt-0.5" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[11px] font-semibold text-gold">Inbox suggests an update</p>
+                          <div className="mt-1 space-y-0.5">
+                            {Object.entries(r.pending_update)
+                              .filter(([k]) => k !== 'suggested_at')
+                              .map(([k, v]) => {
+                                const curr = (r as any)[k];
+                                const fmt = (val: any) =>
+                                  k === 'last_amount'
+                                    ? fmtMoney(Number(val) || 0, r.currency)
+                                    : k === 'next_billing_date'
+                                    ? fmtDate(String(val))
+                                    : String(val ?? '—');
+                                return (
+                                  <p key={k} className="text-[10px] text-muted-foreground">
+                                    <span className="capitalize">{k.replace(/_/g, ' ')}</span>:{' '}
+                                    <span className="line-through">{fmt(curr)}</span>{' '}
+                                    <span className="text-foreground">→ {fmt(v)}</span>
+                                  </p>
+                                );
+                              })}
+                          </div>
+                          <div className="flex gap-1.5 mt-2">
+                            <button
+                              onClick={() => applyPending(r)}
+                              className="text-[10px] font-semibold px-2 py-1 rounded-lg bg-primary/90 hover:bg-primary text-primary-foreground flex items-center gap-1"
+                            >
+                              <Check className="h-3 w-3" /> Apply update
+                            </button>
+                            <button
+                              onClick={() => keepMine(r)}
+                              className="text-[10px] font-semibold px-2 py-1 rounded-lg bg-secondary hover:bg-secondary/80 text-foreground flex items-center gap-1"
+                            >
+                              <X className="h-3 w-3" /> Keep mine
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               );
             })}
@@ -589,6 +656,8 @@ function SubscriptionDialog({
             user_confirmed_status: 'subscribed',
             email_status: 'active',
             billing_cycle: billingCycle,
+            user_edited: true,
+            pending_update: null,
           })
           .eq('id', editing.id);
         if (error) throw error;
