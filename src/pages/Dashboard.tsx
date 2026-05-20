@@ -418,7 +418,7 @@ export default function Dashboard() {
       {/* ━━━ 4. RECENT BILLS — structured list ━━━ */}
       <div>
         <div className="flex items-center justify-between mb-2.5">
-          <h2 className="text-sm font-semibold text-foreground">Recent Bills</h2>
+          <h2 className="text-[11px] font-semibold text-muted-foreground uppercase tracking-[0.18em]">Recent Bills</h2>
           <Link to="/expenses" className="text-[11px] text-gold font-medium flex items-center gap-0.5">
             View All <ChevronRight className="h-3 w-3" />
           </Link>
