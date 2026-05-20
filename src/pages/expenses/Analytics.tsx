@@ -386,38 +386,106 @@ export default function Analytics() {
   }
 
   return (
-    <div className="space-y-4 sm:space-y-6 pb-20 animate-fade-in">
+    <div className="space-y-5 sm:space-y-6 pb-24 animate-fade-in">
       <SEO title="Insights" description="Analyze your spending with EZ Bill — category breakdowns, monthly trends, and merchant insights." path="/analytics" />
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-2">
-            <Activity className="h-6 w-6 text-primary" />
-            Insights
-          </h1>
-          <p className="text-muted-foreground mt-1 text-sm sm:text-base">Your spending story, beautifully decoded</p>
-        </div>
-        <div className="flex gap-2">
-          <Select value={displayCurrency} onValueChange={setDisplayCurrency}>
-            <SelectTrigger className="w-[100px] border-0 glass-card min-h-[44px]"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              {availableCurrencies.map(c => (<SelectItem key={c} value={c}>{getCurrencySymbol(c)} {c}</SelectItem>))}
-            </SelectContent>
-          </Select>
-          <Select value={timeRange} onValueChange={setTimeRange}>
-            <SelectTrigger className="w-[130px] border-0 glass-card min-h-[44px]"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Time</SelectItem>
-              <SelectItem value="30d">Last 30 Days</SelectItem>
-              <SelectItem value="90d">Last 90 Days</SelectItem>
-              <SelectItem value="6m">Last 6 Months</SelectItem>
-              <SelectItem value="1y">Last Year</SelectItem>
-            </SelectContent>
-          </Select>
+      {/* HERO — 2026 liquid glass */}
+      <div
+        className="relative overflow-hidden rounded-3xl border border-white/[0.06]"
+        style={{
+          background: 'linear-gradient(150deg, hsla(160, 14%, 12%, 0.85) 0%, hsla(160, 12%, 9%, 0.7) 60%, hsla(152, 30%, 14%, 0.55) 100%)',
+          backdropFilter: 'blur(40px)',
+          WebkitBackdropFilter: 'blur(40px)',
+          boxShadow: '0 1px 0 0 hsla(0, 0%, 100%, 0.06) inset, 0 30px 80px -40px hsla(152, 60%, 20%, 0.5)',
+        }}
+      >
+        {/* aurora orbs */}
+        <div className="pointer-events-none absolute -top-24 -left-16 h-72 w-72 rounded-full blur-3xl opacity-60"
+             style={{ background: 'radial-gradient(circle, hsla(152, 70%, 45%, 0.35), transparent 65%)' }} />
+        <div className="pointer-events-none absolute -bottom-32 -right-20 h-80 w-80 rounded-full blur-3xl opacity-50"
+             style={{ background: 'radial-gradient(circle, hsla(43, 85%, 55%, 0.28), transparent 65%)' }} />
+        {/* top hairline */}
+        <div className="pointer-events-none absolute inset-x-8 top-0 h-px"
+             style={{ background: 'linear-gradient(90deg, transparent, hsla(0,0%,100%,0.18), transparent)' }} />
+
+        <div className="relative p-5 sm:p-7">
+          {/* Top row: label + selectors */}
+          <div className="flex items-start justify-between gap-3 mb-5">
+            <div className="flex items-center gap-2">
+              <span className="relative flex h-2 w-2">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary/60" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
+              </span>
+              <span className="text-[10px] uppercase tracking-[0.22em] text-muted-foreground font-medium">Insights</span>
+            </div>
+            <div className="flex gap-2">
+              <Select value={displayCurrency} onValueChange={setDisplayCurrency}>
+                <SelectTrigger
+                  className="h-9 w-[88px] rounded-full border-0 text-xs font-medium"
+                  style={{ background: 'hsla(160, 12%, 14%, 0.6)', backdropFilter: 'blur(16px)' }}
+                ><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {availableCurrencies.map(c => (<SelectItem key={c} value={c}>{getCurrencySymbol(c)} {c}</SelectItem>))}
+                </SelectContent>
+              </Select>
+              <Select value={timeRange} onValueChange={setTimeRange}>
+                <SelectTrigger
+                  className="h-9 w-[120px] rounded-full border-0 text-xs font-medium"
+                  style={{ background: 'hsla(160, 12%, 14%, 0.6)', backdropFilter: 'blur(16px)' }}
+                ><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Time</SelectItem>
+                  <SelectItem value="30d">Last 30 Days</SelectItem>
+                  <SelectItem value="90d">Last 90 Days</SelectItem>
+                  <SelectItem value="6m">Last 6 Months</SelectItem>
+                  <SelectItem value="1y">Last Year</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {/* Hero amount */}
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-[10px] uppercase tracking-[0.22em] text-muted-foreground font-medium">Spending Pulse</span>
+                {timeRange !== 'all' && previousTotal > 0 && (
+                  <span
+                    className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium ${isGrowing ? 'text-destructive' : 'text-success'}`}
+                    style={{ background: isGrowing ? 'hsla(0, 75%, 60%, 0.12)' : 'hsla(152, 55%, 45%, 0.14)' }}
+                  >
+                    {isGrowing ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
+                    {Math.abs(growthPct).toFixed(0)}% vs prev
+                  </span>
+                )}
+              </div>
+              <p className="text-5xl sm:text-6xl font-light tracking-tight leading-none tabular-nums">
+                <span className="text-muted-foreground/60 font-extralight mr-1">{sym}</span>
+                {totalAmount.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
+              </p>
+              <p className="text-xs sm:text-sm text-muted-foreground mt-3">
+                across <span className="text-foreground font-medium tabular-nums">{filteredExpenses.length}</span> bills
+                {velocityStats.totalDays > 0 && (
+                  <> · <span className="text-foreground font-medium tabular-nums">{fmt(velocityStats.perDay)}</span>/day avg</>
+                )}
+              </p>
+            </div>
+            {velocityStats.projectedMonth > 0 && timeRange !== 'all' && (
+              <div
+                className="rounded-2xl px-4 py-3 text-right"
+                style={{ background: 'linear-gradient(135deg, hsla(43, 80%, 55%, 0.12), hsla(43, 80%, 55%, 0.04))', border: '1px solid hsla(43, 80%, 55%, 0.18)' }}
+              >
+                <p className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground font-medium mb-1">Projected /month</p>
+                <p className="text-xl font-semibold text-gold flex items-center justify-end gap-1.5 tabular-nums">
+                  <Target className="h-4 w-4" /> {fmt(velocityStats.projectedMonth)}
+                </p>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* HERO PULSE */}
+      {/* legacy hero removed */}
+      {false && (
       <Card className="glass-card border-0 rounded-2xl overflow-hidden relative">
         <div
           className="absolute inset-0 opacity-40 pointer-events-none"
@@ -454,34 +522,72 @@ export default function Analytics() {
           </div>
         </CardContent>
       </Card>
+      )}
 
       {/* Highlights */}
       {highlights.length > 0 && (
-        <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-          {highlights.map((h, i) => {
-            const toneStyle = h.tone === 'good'
-              ? 'text-success border-success/30 bg-success/5'
-              : h.tone === 'warn'
-              ? 'text-gold border-gold/30 bg-gold/5'
-              : 'text-info border-info/30 bg-info/5';
-            return (
-              <div key={i} className={`glass-card rounded-2xl p-4 border ${toneStyle}`}>
-                <div className="flex items-start gap-3">
-                  <div className="shrink-0 mt-0.5"><h.icon className="h-4 w-4" /></div>
-                  <p className="text-xs sm:text-sm font-medium leading-snug text-foreground">{h.text}</p>
+        <div className="space-y-2.5">
+          <p className="text-[10px] uppercase tracking-[0.22em] text-muted-foreground font-medium px-1">Highlights</p>
+          <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+            {highlights.map((h, i) => {
+              const tint = h.tone === 'good'
+                ? { ring: 'hsla(152, 55%, 45%, 0.22)', tile: 'hsla(152, 55%, 45%, 0.14)', ic: 'text-success' }
+                : h.tone === 'warn'
+                ? { ring: 'hsla(43, 80%, 55%, 0.22)', tile: 'hsla(43, 80%, 55%, 0.14)', ic: 'text-gold' }
+                : { ring: 'hsla(199, 70%, 50%, 0.22)', tile: 'hsla(199, 70%, 50%, 0.14)', ic: 'text-info' };
+              return (
+                <div
+                  key={i}
+                  className="rounded-2xl p-3.5 border transition active:scale-[0.985]"
+                  style={{
+                    background: 'linear-gradient(160deg, hsla(160, 12%, 14%, 0.7), hsla(160, 10%, 10%, 0.55))',
+                    borderColor: tint.ring,
+                    backdropFilter: 'blur(20px)',
+                  }}
+                >
+                  <div className="flex items-start gap-2.5">
+                    <div className={`shrink-0 h-8 w-8 rounded-xl flex items-center justify-center ${tint.ic}`} style={{ background: tint.tile }}>
+                      <h.icon className="h-4 w-4" />
+                    </div>
+                    <p className="text-xs sm:text-sm font-medium leading-snug text-foreground pt-1">{h.text}</p>
+                  </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
       )}
 
       {/* Stat Cards */}
-      <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-4">
-        <StatCard title="Avg / Bill" value={fmt(avgExpense)} icon={DollarSign} variant="primary" description={`${filteredExpenses.length} bills`} />
-        <StatCard title="Biggest Bill" value={biggestBill ? fmt(biggestBill.amount) : fmt(0)} icon={Trophy} variant="warning" description={biggestBill?.expense?.merchant?.slice(0, 18) || 'No data'} />
-        <StatCard title="Total Tax" value={fmt(taxDiscountStats.totalTax)} icon={Percent} variant="info" description={`${taxDiscountStats.billsWithTax} bills`} />
-        <StatCard title="You Saved" value={fmt(taxDiscountStats.totalDiscount)} icon={Tag} variant="success" description={`${taxDiscountStats.savingsRate.toFixed(1)}% rate`} />
+      <div className="space-y-2.5">
+        <p className="text-[10px] uppercase tracking-[0.22em] text-muted-foreground font-medium px-1">At a glance</p>
+        <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">
+          {([
+            { label: 'Avg / Bill', value: fmt(avgExpense), icon: DollarSign, sub: `${filteredExpenses.length} bills`, tint: { tile: 'hsla(152, 55%, 45%, 0.14)', ic: 'text-primary', ring: 'hsla(152, 55%, 45%, 0.18)' } },
+            { label: 'Biggest Bill', value: biggestBill ? fmt(biggestBill.amount) : fmt(0), icon: Trophy, sub: biggestBill?.expense?.merchant?.slice(0, 18) || 'No data', tint: { tile: 'hsla(43, 80%, 55%, 0.14)', ic: 'text-gold', ring: 'hsla(43, 80%, 55%, 0.18)' } },
+            { label: 'Total Tax', value: fmt(taxDiscountStats.totalTax), icon: Percent, sub: `${taxDiscountStats.billsWithTax} bills`, tint: { tile: 'hsla(199, 70%, 50%, 0.14)', ic: 'text-info', ring: 'hsla(199, 70%, 50%, 0.18)' } },
+            { label: 'You Saved', value: fmt(taxDiscountStats.totalDiscount), icon: Tag, sub: `${taxDiscountStats.savingsRate.toFixed(1)}% rate`, tint: { tile: 'hsla(152, 55%, 45%, 0.14)', ic: 'text-success', ring: 'hsla(152, 55%, 45%, 0.18)' } },
+          ] as const).map((s, i) => (
+            <div
+              key={i}
+              className="rounded-2xl p-3.5 border transition active:scale-[0.985]"
+              style={{
+                background: 'linear-gradient(160deg, hsla(160, 12%, 14%, 0.75), hsla(160, 10%, 10%, 0.55))',
+                borderColor: s.tint.ring,
+                backdropFilter: 'blur(20px)',
+              }}
+            >
+              <div className="flex items-start justify-between mb-2.5">
+                <p className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground font-medium">{s.label}</p>
+                <div className={`h-7 w-7 rounded-lg flex items-center justify-center ${s.tint.ic}`} style={{ background: s.tint.tile }}>
+                  <s.icon className="h-3.5 w-3.5" />
+                </div>
+              </div>
+              <p className="text-lg sm:text-xl font-semibold tabular-nums text-foreground leading-tight">{s.value}</p>
+              <p className="text-[11px] text-muted-foreground mt-1 truncate">{s.sub}</p>
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* Day-of-week Heatmap + Time of day */}
