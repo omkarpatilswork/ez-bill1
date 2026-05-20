@@ -486,7 +486,7 @@ export default function Analytics() {
 
       {/* legacy hero removed */}
       {false && (
-      <Card className="glass-card border-0 rounded-2xl overflow-hidden relative">
+      <Card className="border border-white/[0.05] rounded-2xl bg-gradient-to-br from-[hsla(160,12%,14%,0.75)] to-[hsla(160,10%,9%,0.55)] backdrop-blur-2xl shadow-[0_1px_0_0_hsla(0,0%,100%,0.05)_inset] overflow-hidden relative">
         <div
           className="absolute inset-0 opacity-40 pointer-events-none"
           style={{ background: 'radial-gradient(circle at 20% 0%, hsla(152,55%,40%,0.25), transparent 60%), radial-gradient(circle at 80% 100%, hsla(43,80%,50%,0.18), transparent 60%)' }}
@@ -592,7 +592,7 @@ export default function Analytics() {
 
       {/* Day-of-week Heatmap + Time of day */}
       <div className="grid gap-4 sm:gap-6 grid-cols-1 lg:grid-cols-2">
-        <Card className="glass-card border-0 rounded-2xl">
+        <Card className="border border-white/[0.05] rounded-2xl bg-gradient-to-br from-[hsla(160,12%,14%,0.75)] to-[hsla(160,10%,9%,0.55)] backdrop-blur-2xl shadow-[0_1px_0_0_hsla(0,0%,100%,0.05)_inset]">
           <CardHeader className="pb-2">
             <CardTitle className="text-base sm:text-lg flex items-center gap-2">
               <Calendar className="h-5 w-5 text-primary" /> Weekly Rhythm
@@ -624,7 +624,7 @@ export default function Analytics() {
           </CardContent>
         </Card>
 
-        <Card className="glass-card border-0 rounded-2xl">
+        <Card className="border border-white/[0.05] rounded-2xl bg-gradient-to-br from-[hsla(160,12%,14%,0.75)] to-[hsla(160,10%,9%,0.55)] backdrop-blur-2xl shadow-[0_1px_0_0_hsla(0,0%,100%,0.05)_inset]">
           <CardHeader className="pb-2">
             <CardTitle className="text-base sm:text-lg flex items-center gap-2">
               <Clock className="h-5 w-5 text-info" /> Time of Day
@@ -665,7 +665,7 @@ export default function Analytics() {
 
       {/* Currency Breakdown */}
       {currencyBreakdown.length > 1 && (
-        <Card className="glass-card border-0 rounded-2xl">
+        <Card className="border border-white/[0.05] rounded-2xl bg-gradient-to-br from-[hsla(160,12%,14%,0.75)] to-[hsla(160,10%,9%,0.55)] backdrop-blur-2xl shadow-[0_1px_0_0_hsla(0,0%,100%,0.05)_inset]">
           <CardHeader className="pb-2">
             <CardTitle className="text-base sm:text-lg flex items-center gap-2">
               <Coins className="h-5 w-5 text-primary" /> Multi-Currency Breakdown
@@ -706,7 +706,7 @@ export default function Analytics() {
       {(taxDiscountStats.totalTax > 0 || taxDiscountStats.totalDiscount > 0) && (
         <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
           {taxDiscountStats.totalTax > 0 && (
-            <Card className="glass-card border-0 rounded-2xl">
+            <Card className="border border-white/[0.05] rounded-2xl bg-gradient-to-br from-[hsla(160,12%,14%,0.75)] to-[hsla(160,10%,9%,0.55)] backdrop-blur-2xl shadow-[0_1px_0_0_hsla(0,0%,100%,0.05)_inset]">
               <CardHeader className="pb-2">
                 <CardTitle className="text-base sm:text-lg flex items-center gap-2">
                   <Percent className="h-5 w-5 text-info" /> Tax Summary
@@ -794,7 +794,7 @@ export default function Analytics() {
             </Card>
           )}
           {taxDiscountStats.totalDiscount > 0 && (
-            <Card className="glass-card border-0 rounded-2xl">
+            <Card className="border border-white/[0.05] rounded-2xl bg-gradient-to-br from-[hsla(160,12%,14%,0.75)] to-[hsla(160,10%,9%,0.55)] backdrop-blur-2xl shadow-[0_1px_0_0_hsla(0,0%,100%,0.05)_inset]">
               <CardHeader className="pb-2">
                 <CardTitle className="text-base sm:text-lg flex items-center gap-2">
                   <Tag className="h-5 w-5 text-success" /> Savings Snapshot
@@ -814,7 +814,7 @@ export default function Analytics() {
 
       {/* Charts Row 1 */}
       <div className="grid gap-4 sm:gap-6 grid-cols-1 lg:grid-cols-5">
-        <Card className="lg:col-span-3 glass-card border-0 rounded-2xl">
+        <Card className="lg:col-span-3 border border-white/[0.05] rounded-2xl bg-gradient-to-br from-[hsla(160,12%,14%,0.75)] to-[hsla(160,10%,9%,0.55)] backdrop-blur-2xl shadow-[0_1px_0_0_hsla(0,0%,100%,0.05)_inset]">
           <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between pb-2">
             <div>
               <CardTitle className="text-base sm:text-lg flex items-center gap-2"><Zap className="h-4 w-4 text-gold" /> Monthly Trend</CardTitle>
@@ -840,7 +840,7 @@ export default function Analytics() {
           </CardContent>
         </Card>
 
-        <Card className="lg:col-span-2 glass-card border-0 rounded-2xl">
+        <Card className="lg:col-span-2 border border-white/[0.05] rounded-2xl bg-gradient-to-br from-[hsla(160,12%,14%,0.75)] to-[hsla(160,10%,9%,0.55)] backdrop-blur-2xl shadow-[0_1px_0_0_hsla(0,0%,100%,0.05)_inset]">
           <CardHeader className="pb-2">
             <CardTitle className="text-base sm:text-lg">Spending by Category</CardTitle>
             <CardDescription>Where your money goes</CardDescription>
@@ -875,7 +875,7 @@ export default function Analytics() {
 
       {/* Charts Row 2 */}
       <div className="grid gap-4 sm:gap-6 grid-cols-1 lg:grid-cols-2">
-        <Card className="glass-card border-0 rounded-2xl">
+        <Card className="border border-white/[0.05] rounded-2xl bg-gradient-to-br from-[hsla(160,12%,14%,0.75)] to-[hsla(160,10%,9%,0.55)] backdrop-blur-2xl shadow-[0_1px_0_0_hsla(0,0%,100%,0.05)_inset]">
           <CardHeader className="pb-2">
             <CardTitle className="text-base sm:text-lg">Cumulative Spending</CardTitle>
             <CardDescription>Running total over time</CardDescription>
@@ -903,7 +903,7 @@ export default function Analytics() {
           </CardContent>
         </Card>
 
-        <Card className="glass-card border-0 rounded-2xl">
+        <Card className="border border-white/[0.05] rounded-2xl bg-gradient-to-br from-[hsla(160,12%,14%,0.75)] to-[hsla(160,10%,9%,0.55)] backdrop-blur-2xl shadow-[0_1px_0_0_hsla(0,0%,100%,0.05)_inset]">
           <CardHeader className="pb-2">
             <CardTitle className="text-base sm:text-lg flex items-center gap-2">
               <Flame className="h-4 w-4 text-gold" /> Top Merchants
