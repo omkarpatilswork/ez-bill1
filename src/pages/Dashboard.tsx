@@ -197,8 +197,10 @@ export default function Dashboard() {
       {/* Mobile Header */}
       <div className="flex items-center justify-between md:hidden">
         <div>
-          <h1 className="text-xl font-bold text-foreground">Hi, {firstName} 👋</h1>
-          <p className="text-xs text-muted-foreground">Your money control dashboard</p>
+          <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-[0.18em]">Welcome back</p>
+          <h1 className="text-[22px] font-semibold text-foreground tracking-tight leading-tight mt-0.5">
+            Hi, <span className="text-gold-gradient">{firstName}</span>
+          </h1>
         </div>
         <div className="flex items-center gap-2">
           {[
@@ -220,119 +222,203 @@ export default function Dashboard() {
         <p className="text-muted-foreground mt-1 text-sm">Your money control dashboard</p>
       </div>
 
-      {/* ━━━ 1. LAST 30 DAYS INSIGHTS CARD ━━━ */}
+      {/* ━━━ 1. HERO — LAST 30 DAYS (2026 redesign) ━━━ */}
       <button
         onClick={() => navigate('/analytics')}
-        className="w-full text-left glass-card rounded-2xl p-4 relative overflow-hidden transition-all active:scale-[0.98]"
+        className="group w-full text-left rounded-[28px] p-5 relative overflow-hidden transition-all active:scale-[0.985]"
+        style={{
+          background: 'linear-gradient(150deg, hsla(160, 14%, 13%, 0.7) 0%, hsla(160, 12%, 9%, 0.55) 60%, hsla(152, 30%, 12%, 0.55) 100%)',
+          backdropFilter: 'blur(40px) saturate(1.8)',
+          WebkitBackdropFilter: 'blur(40px) saturate(1.8)',
+          border: '1px solid hsla(0, 0%, 100%, 0.06)',
+          boxShadow:
+            'inset 0 1px 0 0 hsla(0,0%,100%,0.08), inset 0 -1px 0 0 hsla(0,0%,0%,0.2), 0 24px 60px -20px hsla(152, 45%, 20%, 0.5)',
+        }}
       >
-        <div className="liquid-shimmer absolute inset-0 z-0" />
+        {/* Ambient aurora orbs */}
+        <div
+          aria-hidden
+          className="absolute -top-16 -right-12 h-48 w-48 rounded-full blur-3xl opacity-60 pointer-events-none"
+          style={{ background: 'radial-gradient(circle, hsla(152, 70%, 45%, 0.35), transparent 70%)' }}
+        />
+        <div
+          aria-hidden
+          className="absolute -bottom-20 -left-10 h-44 w-44 rounded-full blur-3xl opacity-50 pointer-events-none"
+          style={{ background: 'radial-gradient(circle, hsla(43, 80%, 50%, 0.22), transparent 70%)' }}
+        />
+        {/* subtle top hairline highlight */}
+        <div aria-hidden className="absolute inset-x-6 top-0 h-px" style={{ background: 'linear-gradient(90deg, transparent, hsla(0,0%,100%,0.25), transparent)' }} />
+
         <div className="relative z-10">
-          <div className="flex items-center justify-between mb-1">
-            <div>
-              <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">Last 30 Days</p>
-              <p className="text-[11px] text-muted-foreground mt-0.5">Total Spent</p>
-            </div>
+          {/* Top row: label + meta chip */}
+          <div className="flex items-start justify-between">
             <div className="flex items-center gap-2">
-              <span className="text-[10px] text-muted-foreground glass-button px-2 py-0.5 rounded-full">{last30.length} bills</span>
-              <ArrowUpRight className="h-3.5 w-3.5 text-gold" />
+              <span className="inline-flex h-1.5 w-1.5 rounded-full bg-success animate-pulse" />
+              <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-[0.22em]">Last 30 days</p>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10px] font-medium text-foreground/70 px-2 py-0.5 rounded-full"
+                style={{ background: 'hsla(0,0%,100%,0.05)', border: '1px solid hsla(0,0%,100%,0.07)' }}>
+                {last30.length} bills
+              </span>
+              <div className="h-6 w-6 rounded-full flex items-center justify-center"
+                style={{ background: 'hsla(0,0%,100%,0.06)', border: '1px solid hsla(0,0%,100%,0.08)' }}>
+                <ArrowUpRight className="h-3 w-3 text-foreground/80" />
+              </div>
             </div>
           </div>
 
-          <div className="flex items-end justify-between mb-3">
-            <p className="text-2xl font-bold text-foreground tabular-nums">
-              ₹{totalLast30.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
-            </p>
+          {/* Amount */}
+          <div className="mt-3 flex items-baseline gap-2 flex-wrap">
+            <span className="text-[28px] leading-none font-light text-foreground/60 tabular-nums">₹</span>
+            <span className="text-[44px] leading-none font-semibold text-foreground tabular-nums tracking-tight">
+              {Math.round(totalLast30).toLocaleString('en-IN')}
+            </span>
             {pctChange !== null && (
-              <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
+              <span className={`ml-1 inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-1 rounded-full ${
                 pctChange > 0
-                  ? 'text-destructive bg-destructive/10'
-                  : 'text-success bg-success/10'
-              }`}>
-                {pctChange > 0 ? '↑' : '↓'} {Math.abs(pctChange)}% vs prev
+                  ? 'text-destructive'
+                  : 'text-success'
+              }`}
+                style={{
+                  background: pctChange > 0 ? 'hsla(0, 63%, 45%, 0.12)' : 'hsla(152, 55%, 40%, 0.14)',
+                  border: `1px solid ${pctChange > 0 ? 'hsla(0, 63%, 55%, 0.2)' : 'hsla(152, 55%, 50%, 0.2)'}`,
+                }}>
+                <span className="text-[11px] leading-none">{pctChange > 0 ? '↑' : '↓'}</span>
+                {Math.abs(pctChange)}%
               </span>
             )}
           </div>
+          <p className="text-[11px] text-muted-foreground mt-2">Total spent · vs previous 30 days</p>
 
+          {/* Stacked segmented spend bar */}
           {categoryData.length > 0 && (
-            <div className="space-y-1.5">
-              {categoryData.map(cat => (
-                <div key={cat.name} className="flex items-center gap-2">
-                  <span className="text-[10px] text-muted-foreground w-14 truncate">{cat.name}</span>
-                  <div className="flex-1 h-3 rounded-full overflow-hidden" style={{ background: 'hsla(160, 8%, 20%, 0.5)' }}>
+            <>
+              <div className="mt-5 h-2 w-full rounded-full overflow-hidden flex"
+                style={{ background: 'hsla(0,0%,100%,0.04)' }}>
+                {categoryData.map(cat => {
+                  const pct = (cat.amount / totalLast30) * 100;
+                  return (
                     <div
-                      className="h-full rounded-full transition-all duration-700"
-                      style={{
-                        width: `${(cat.amount / maxCatAmount) * 100}%`,
-                        background: cat.fill,
-                        opacity: 0.85,
-                      }}
+                      key={cat.name}
+                      className="h-full transition-all duration-700"
+                      style={{ width: `${pct}%`, background: cat.fill }}
                     />
-                  </div>
-                  <span className="text-[10px] text-muted-foreground tabular-nums w-12 text-right">₹{cat.amount.toLocaleString('en-IN')}</span>
-                </div>
-              ))}
-            </div>
+                  );
+                })}
+              </div>
+
+              {/* Category legend chips */}
+              <div className="mt-3.5 grid grid-cols-2 gap-x-3 gap-y-2">
+                {categoryData.slice(0, 4).map(cat => {
+                  const pct = Math.round((cat.amount / totalLast30) * 100);
+                  return (
+                    <div key={cat.name} className="flex items-center gap-2 min-w-0">
+                      <span className="h-2 w-2 rounded-full shrink-0" style={{ background: cat.fill, boxShadow: `0 0 8px ${cat.fill}` }} />
+                      <span className="text-[11px] text-foreground/85 truncate flex-1">{cat.name}</span>
+                      <span className="text-[10px] text-muted-foreground tabular-nums">{pct}%</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </>
           )}
         </div>
       </button>
 
-      {/* ━━━ 2. MONEY LEAKS CARD ━━━ */}
+      {/* ━━━ 2. MONEY LEAKS — refined glass row ━━━ */}
       <button
         onClick={() => navigate('/money-leaks')}
-        className="w-full rounded-xl p-3.5 text-left transition-all active:scale-[0.98] flex items-center gap-3"
+        className="w-full rounded-2xl p-3.5 text-left transition-all active:scale-[0.985] flex items-center gap-3 relative overflow-hidden"
         style={{
-          background: 'hsla(43, 60%, 20%, 0.12)',
-          border: '1px solid hsla(43, 80%, 50%, 0.12)',
+          background: 'linear-gradient(135deg, hsla(43, 50%, 18%, 0.35), hsla(160, 12%, 10%, 0.5))',
+          backdropFilter: 'blur(28px) saturate(1.5)',
+          WebkitBackdropFilter: 'blur(28px) saturate(1.5)',
+          border: '1px solid hsla(43, 80%, 50%, 0.18)',
+          boxShadow: 'inset 0 1px 0 0 hsla(0,0%,100%,0.05), 0 8px 28px -10px hsla(43, 80%, 40%, 0.25)',
         }}
       >
-        <div className="h-9 w-9 rounded-lg flex items-center justify-center shrink-0"
-          style={{ background: 'hsla(43, 80%, 50%, 0.12)' }}>
+        <div aria-hidden className="absolute -right-6 -top-6 h-20 w-20 rounded-full blur-2xl opacity-50 pointer-events-none"
+          style={{ background: 'hsla(43, 80%, 50%, 0.35)' }} />
+        <div className="h-10 w-10 rounded-xl flex items-center justify-center shrink-0 relative"
+          style={{
+            background: 'linear-gradient(135deg, hsla(43, 80%, 50%, 0.22), hsla(43, 80%, 40%, 0.08))',
+            border: '1px solid hsla(43, 80%, 50%, 0.25)',
+          }}>
           <Droplets className="h-4 w-4 text-gold" />
         </div>
-        <div className="flex-1 min-w-0">
+        <div className="flex-1 min-w-0 relative">
           <div className="flex items-center gap-2">
-            <p className="text-sm font-semibold text-foreground">Money Leaked</p>
+            <p className="text-[13px] font-semibold text-foreground">Money Leaked</p>
             {leakEstimate > 0 && (
-              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-gold/15 text-gold">Avoidable</span>
+              <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wider"
+                style={{ background: 'hsla(43, 80%, 50%, 0.18)', color: 'hsl(var(--gold))', border: '1px solid hsla(43, 80%, 50%, 0.3)' }}>
+                Avoidable
+              </span>
             )}
           </div>
-          <p className="text-xs text-muted-foreground mt-0.5 truncate">
+          <p className="text-[11px] text-muted-foreground mt-0.5 truncate">
             {leakEstimate > 0
-              ? `₹${leakEstimate.toLocaleString('en-IN')} — Your AI financial advisor found leaks`
-              : 'Your personal AI financial advisor — discover leaks'}
+              ? `₹${leakEstimate.toLocaleString('en-IN')} · AI financial advisor found leaks`
+              : 'Your personal AI financial advisor'}
           </p>
         </div>
-        <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
+        <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0 relative" />
       </button>
 
-      {/* ━━━ 3. QUICK ACTIONS ━━━ */}
+      {/* ━━━ 3. QUICK ACTIONS — premium squircle tiles ━━━ */}
       <div>
-        <h2 className="text-sm font-semibold text-foreground mb-2.5">Quick Actions</h2>
-        <div className="grid grid-cols-4 gap-2">
-          {quickActions.map((action) => (
-            <button
-              key={action.label}
-              onClick={() => navigate(action.path)}
-              className="flex flex-col items-center gap-1.5 py-2.5 rounded-xl transition-all active:scale-95"
-              style={{
-                background: 'hsla(160, 12%, 14%, 0.4)',
-                border: '1px solid hsla(160, 10%, 40%, 0.08)',
-              }}
-            >
-              <div className="h-9 w-9 rounded-lg flex items-center justify-center"
-                style={{ background: 'hsla(160, 12%, 18%, 0.5)' }}>
-                <action.icon className={`h-4 w-4 ${action.color}`} />
-              </div>
-              <span className="text-[10px] text-muted-foreground font-medium leading-tight text-center">{action.label}</span>
-            </button>
-          ))}
+        <div className="flex items-center justify-between mb-2.5">
+          <h2 className="text-[11px] font-semibold text-muted-foreground uppercase tracking-[0.18em]">Quick Actions</h2>
+        </div>
+        <div className="grid grid-cols-4 gap-2.5">
+          {quickActions.map((action) => {
+            const tintMap: Record<string, string> = {
+              'text-primary': 'hsla(152, 45%, 45%, 0.18)',
+              'text-gold': 'hsla(43, 80%, 50%, 0.18)',
+              'text-info': 'hsla(199, 70%, 45%, 0.18)',
+            };
+            const borderMap: Record<string, string> = {
+              'text-primary': 'hsla(152, 45%, 45%, 0.22)',
+              'text-gold': 'hsla(43, 80%, 50%, 0.22)',
+              'text-info': 'hsla(199, 70%, 45%, 0.22)',
+            };
+            const tint = tintMap[action.color] || tintMap['text-primary'];
+            const bord = borderMap[action.color] || borderMap['text-primary'];
+            return (
+              <button
+                key={action.label}
+                onClick={() => navigate(action.path)}
+                className="group flex flex-col items-center gap-2 pt-3 pb-2.5 rounded-2xl transition-all active:scale-95 relative overflow-hidden"
+                style={{
+                  background: 'linear-gradient(160deg, hsla(160, 12%, 14%, 0.55), hsla(160, 12%, 9%, 0.35))',
+                  backdropFilter: 'blur(20px) saturate(1.4)',
+                  WebkitBackdropFilter: 'blur(20px) saturate(1.4)',
+                  border: '1px solid hsla(0,0%,100%,0.05)',
+                  boxShadow: 'inset 0 1px 0 0 hsla(0,0%,100%,0.06)',
+                }}
+              >
+                <div className="h-10 w-10 rounded-xl flex items-center justify-center relative"
+                  style={{
+                    background: `linear-gradient(135deg, ${tint}, transparent)`,
+                    border: `1px solid ${bord}`,
+                  }}>
+                  <action.icon className={`h-[18px] w-[18px] ${action.color}`} />
+                </div>
+                <span className="text-[10px] text-foreground/85 font-medium leading-tight text-center">{action.label}</span>
+              </button>
+            );
+          })}
         </div>
       </div>
+
+      {/* Section divider label for recent bills */}
+      <div className="hidden" />
 
       {/* ━━━ 4. RECENT BILLS — structured list ━━━ */}
       <div>
         <div className="flex items-center justify-between mb-2.5">
-          <h2 className="text-sm font-semibold text-foreground">Recent Bills</h2>
+          <h2 className="text-[11px] font-semibold text-muted-foreground uppercase tracking-[0.18em]">Recent Bills</h2>
           <Link to="/expenses" className="text-[11px] text-gold font-medium flex items-center gap-0.5">
             View All <ChevronRight className="h-3 w-3" />
           </Link>
