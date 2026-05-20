@@ -157,6 +157,7 @@ export type Database = {
           last_email_snippet: string | null
           last_email_subject: string | null
           next_billing_date: string | null
+          pending_update: Json | null
           service_key: string
           service_name: string
           source: string
@@ -164,6 +165,7 @@ export type Database = {
           trial_ends_at: string | null
           updated_at: string
           user_confirmed_status: string | null
+          user_edited: boolean
           user_id: string
         }
         Insert: {
@@ -181,6 +183,7 @@ export type Database = {
           last_email_snippet?: string | null
           last_email_subject?: string | null
           next_billing_date?: string | null
+          pending_update?: Json | null
           service_key: string
           service_name: string
           source?: string
@@ -188,6 +191,7 @@ export type Database = {
           trial_ends_at?: string | null
           updated_at?: string
           user_confirmed_status?: string | null
+          user_edited?: boolean
           user_id: string
         }
         Update: {
@@ -205,6 +209,7 @@ export type Database = {
           last_email_snippet?: string | null
           last_email_subject?: string | null
           next_billing_date?: string | null
+          pending_update?: Json | null
           service_key?: string
           service_name?: string
           source?: string
@@ -212,6 +217,7 @@ export type Database = {
           trial_ends_at?: string | null
           updated_at?: string
           user_confirmed_status?: string | null
+          user_edited?: boolean
           user_id?: string
         }
         Relationships: []
