@@ -396,6 +396,50 @@ export default function Subscriptions() {
                       <Trash2 className="h-3 w-3" /> Remove
                     </button>
                   </div>
+                  {r.pending_update && Object.keys(r.pending_update).some(k => k !== 'suggested_at') && (
+                    <div className="mt-2.5 rounded-xl border border-gold/30 bg-gold/5 p-2.5">
+                      <div className="flex items-start gap-2">
+                        <Mail className="h-3.5 w-3.5 text-gold shrink-0 mt-0.5" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[11px] font-semibold text-gold">Inbox suggests an update</p>
+                          <div className="mt-1 space-y-0.5">
+                            {Object.entries(r.pending_update)
+                              .filter(([k]) => k !== 'suggested_at')
+                              .map(([k, v]) => {
+                                const curr = (r as any)[k];
+                                const fmt = (val: any) =>
+                                  k === 'last_amount'
+                                    ? fmtMoney(Number(val) || 0, r.currency)
+                                    : k === 'next_billing_date'
+                                    ? fmtDate(String(val))
+                                    : String(val ?? '—');
+                                return (
+                                  <p key={k} className="text-[10px] text-muted-foreground">
+                                    <span className="capitalize">{k.replace(/_/g, ' ')}</span>:{' '}
+                                    <span className="line-through">{fmt(curr)}</span>{' '}
+                                    <span className="text-foreground">→ {fmt(v)}</span>
+                                  </p>
+                                );
+                              })}
+                          </div>
+                          <div className="flex gap-1.5 mt-2">
+                            <button
+                              onClick={() => applyPending(r)}
+                              className="text-[10px] font-semibold px-2 py-1 rounded-lg bg-primary/90 hover:bg-primary text-primary-foreground flex items-center gap-1"
+                            >
+                              <Check className="h-3 w-3" /> Apply update
+                            </button>
+                            <button
+                              onClick={() => keepMine(r)}
+                              className="text-[10px] font-semibold px-2 py-1 rounded-lg bg-secondary hover:bg-secondary/80 text-foreground flex items-center gap-1"
+                            >
+                              <X className="h-3 w-3" /> Keep mine
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               );
             })}
