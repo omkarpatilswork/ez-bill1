@@ -260,47 +260,89 @@ export default function MyExpenses() {
   return (
     <div className="space-y-4 pb-20 animate-fade-in">
       <SEO title="All Bills" description="Browse, filter, and search all your imported and manually added bills in EZ Bill." path="/expenses" />
-      <div className="flex items-start justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">All Bills</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">
-            {filteredExpenses.length} bill{filteredExpenses.length !== 1 ? 's' : ''} · ₹{totalFiltered.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} total
+
+      {/* ━━━ HERO SUMMARY (2026 glass) ━━━ */}
+      <div
+        className="rounded-[28px] p-5 relative overflow-hidden"
+        style={{
+          background:
+            'linear-gradient(150deg, hsla(160, 14%, 13%, 0.7) 0%, hsla(160, 12%, 9%, 0.55) 60%, hsla(152, 30%, 12%, 0.55) 100%)',
+          backdropFilter: 'blur(40px) saturate(1.8)',
+          WebkitBackdropFilter: 'blur(40px) saturate(1.8)',
+          border: '1px solid hsla(0, 0%, 100%, 0.06)',
+          boxShadow:
+            'inset 0 1px 0 0 hsla(0,0%,100%,0.08), inset 0 -1px 0 0 hsla(0,0%,0%,0.2), 0 24px 60px -20px hsla(152, 45%, 20%, 0.5)',
+        }}
+      >
+        <div aria-hidden className="absolute -top-16 -right-12 h-48 w-48 rounded-full blur-3xl opacity-60 pointer-events-none"
+          style={{ background: 'radial-gradient(circle, hsla(152, 70%, 45%, 0.32), transparent 70%)' }} />
+        <div aria-hidden className="absolute -bottom-20 -left-10 h-44 w-44 rounded-full blur-3xl opacity-50 pointer-events-none"
+          style={{ background: 'radial-gradient(circle, hsla(43, 80%, 50%, 0.2), transparent 70%)' }} />
+        <div aria-hidden className="absolute inset-x-6 top-0 h-px"
+          style={{ background: 'linear-gradient(90deg, transparent, hsla(0,0%,100%,0.25), transparent)' }} />
+
+        <div className="relative z-10">
+          <div className="flex items-start justify-between">
+            <div className="flex items-center gap-2">
+              <span className="inline-flex h-1.5 w-1.5 rounded-full bg-success animate-pulse" />
+              <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-[0.22em]">All Bills</p>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="h-7 w-7 rounded-full flex items-center justify-center text-foreground/80 transition active:scale-95"
+                    style={{ background: 'hsla(0,0%,100%,0.06)', border: '1px solid hsla(0,0%,100%,0.08)' }}
+                    aria-label="Sort">
+                    <ArrowUpDown className="h-3.5 w-3.5" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="min-w-[180px] glass-card border-border/30">
+                  {SORT_OPTIONS.map(opt => (
+                    <DropdownMenuItem
+                      key={opt.key}
+                      onClick={() => setSortKey(opt.key)}
+                      className={sortKey === opt.key ? 'bg-primary/10 text-primary font-medium' : ''}
+                    >
+                      {opt.label}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+              {!selectMode ? (
+                <button onClick={() => setSelectMode(true)} aria-label="Select"
+                  className="h-7 w-7 rounded-full flex items-center justify-center text-foreground/80 transition active:scale-95"
+                  style={{ background: 'hsla(0,0%,100%,0.06)', border: '1px solid hsla(0,0%,100%,0.08)' }}>
+                  <CheckSquare className="h-3.5 w-3.5" />
+                </button>
+              ) : (
+                <button onClick={exitSelectMode} aria-label="Cancel"
+                  className="h-7 w-7 rounded-full flex items-center justify-center text-foreground/80 transition active:scale-95"
+                  style={{ background: 'hsla(0,0%,100%,0.06)', border: '1px solid hsla(0,0%,100%,0.08)' }}>
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              )}
+            </div>
+          </div>
+
+          <div className="mt-3 flex items-baseline gap-2 flex-wrap">
+            <span className="text-[28px] leading-none font-light text-foreground/60 tabular-nums">₹</span>
+            <span className="text-[44px] leading-none font-semibold text-foreground tabular-nums tracking-tight">
+              {Math.round(totalFiltered).toLocaleString('en-IN')}
+            </span>
+            <span className="ml-1 inline-flex items-center text-[10px] font-semibold px-2 py-1 rounded-full text-foreground/80"
+              style={{ background: 'hsla(0,0%,100%,0.05)', border: '1px solid hsla(0,0%,100%,0.08)' }}>
+              {filteredExpenses.length} bill{filteredExpenses.length !== 1 ? 's' : ''}
+            </span>
+          </div>
+          <p className="text-[11px] text-muted-foreground mt-2">
+            {categoryFilter === 'all' ? 'Total across all categories' : `Filtered · ${categoryFilter}`}
           </p>
-        </div>
-        <div className="flex items-center gap-1">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="text-muted-foreground h-8 w-8 p-0">
-                <ArrowUpDown className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="min-w-[180px] glass-card border-border/30">
-              {SORT_OPTIONS.map(opt => (
-                <DropdownMenuItem
-                  key={opt.key}
-                  onClick={() => setSortKey(opt.key)}
-                  className={sortKey === opt.key ? 'bg-primary/10 text-primary font-medium' : ''}
-                >
-                  {opt.label}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-          {!selectMode ? (
-            <Button variant="ghost" size="sm" onClick={() => setSelectMode(true)} className="text-muted-foreground h-8 px-2">
-              <CheckSquare className="h-4 w-4" />
-            </Button>
-          ) : (
-            <Button variant="ghost" size="sm" onClick={exitSelectMode} className="text-muted-foreground h-8 px-2">
-              <X className="h-4 w-4" />
-            </Button>
-          )}
         </div>
       </div>
 
       {selectMode && (
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={selectAll} className="text-xs glass-button border-0">
+          <Button variant="outline" size="sm" onClick={selectAll} className="text-xs glass-button border-0 rounded-full">
             {selectedIds.size === filteredExpenses.length ? 'Deselect All' : 'Select All'}
           </Button>
           <Button
@@ -308,7 +350,7 @@ export default function MyExpenses() {
             size="sm"
             disabled={selectedIds.size === 0}
             onClick={() => setShowDeleteConfirm(true)}
-            className="text-xs"
+            className="text-xs rounded-full"
           >
             <Trash2 className="h-3.5 w-3.5 mr-1" />
             Delete ({selectedIds.size})
@@ -322,7 +364,7 @@ export default function MyExpenses() {
           placeholder="Search bills, merchants, amounts..."
           value={searchQuery}
           onChange={e => setSearchQuery(e.target.value)}
-          className="pl-9 min-h-[44px] glass-card border-0 rounded-xl focus-visible:ring-primary/30"
+          className="pl-9 min-h-[44px] glass-card border-0 rounded-2xl focus-visible:ring-primary/30"
         />
       </div>
 
@@ -333,11 +375,23 @@ export default function MyExpenses() {
             <button
               key={cat.value}
               onClick={() => setCategoryFilter(cat.value)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all shrink-0 active:scale-95 ${
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all shrink-0 active:scale-95"
+              style={
                 active
-                  ? 'bg-primary text-primary-foreground shadow-md shadow-primary/20'
-                  : 'glass-button border-0 text-muted-foreground hover:text-foreground'
-              }`}
+                  ? {
+                      background: 'linear-gradient(135deg, hsla(152, 45%, 35%, 0.95), hsla(152, 45%, 28%, 0.95))',
+                      border: '1px solid hsla(152, 60%, 50%, 0.35)',
+                      color: 'hsl(var(--primary-foreground))',
+                      boxShadow: '0 6px 18px -6px hsla(152, 60%, 30%, 0.55), inset 0 1px 0 0 hsla(0,0%,100%,0.15)',
+                    }
+                  : {
+                      background: 'linear-gradient(160deg, hsla(160, 12%, 14%, 0.55), hsla(160, 12%, 9%, 0.35))',
+                      border: '1px solid hsla(0,0%,100%,0.06)',
+                      color: 'hsl(var(--muted-foreground))',
+                      backdropFilter: 'blur(16px) saturate(1.4)',
+                      WebkitBackdropFilter: 'blur(16px) saturate(1.4)',
+                    }
+              }
             >
               <cat.icon className="h-3.5 w-3.5" />
               {cat.label}
@@ -375,8 +429,14 @@ export default function MyExpenses() {
                     className="shrink-0"
                   />
                 )}
-                <div className={`h-11 w-11 rounded-xl flex items-center justify-center shrink-0 ${isSub ? 'bg-purple-500/10' : 'bg-primary/10'}`}>
-                  <CategoryIcon className={`h-5 w-5 ${isSub ? 'text-purple-500' : 'text-primary'}`} />
+                <div className="h-11 w-11 rounded-xl flex items-center justify-center shrink-0"
+                  style={{
+                    background: isSub
+                      ? 'linear-gradient(135deg, hsla(280, 50%, 55%, 0.22), transparent)'
+                      : 'linear-gradient(135deg, hsla(152, 45%, 45%, 0.22), transparent)',
+                    border: `1px solid ${isSub ? 'hsla(280, 50%, 55%, 0.25)' : 'hsla(152, 45%, 45%, 0.22)'}`,
+                  }}>
+                  <CategoryIcon className={`h-5 w-5 ${isSub ? 'text-purple-400' : 'text-primary'}`} />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-sm text-foreground truncate">
@@ -408,9 +468,20 @@ export default function MyExpenses() {
               <div
                 key={exp.id}
                 onClick={() => toggleSelect(exp.id)}
-                className={`block glass-card-hover rounded-xl p-3.5 cursor-pointer transition-all active:scale-[0.98] ${
+                className={`block rounded-2xl p-3.5 cursor-pointer transition-all active:scale-[0.985] ${
                   isSelected ? 'border-destructive/30 bg-destructive/5' : ''
                 }`}
+                style={
+                  isSelected
+                    ? undefined
+                    : {
+                        background: 'linear-gradient(160deg, hsla(160, 12%, 14%, 0.55), hsla(160, 12%, 9%, 0.35))',
+                        backdropFilter: 'blur(20px) saturate(1.4)',
+                        WebkitBackdropFilter: 'blur(20px) saturate(1.4)',
+                        border: '1px solid hsla(0,0%,100%,0.05)',
+                        boxShadow: 'inset 0 1px 0 0 hsla(0,0%,100%,0.05)',
+                      }
+                }
               >
                 {cardContent}
               </div>
@@ -418,7 +489,14 @@ export default function MyExpenses() {
               <Link
                 key={exp.id}
                 to={`/expenses/${exp.id}`}
-                className="block glass-card-hover rounded-xl p-3.5 transition-all active:scale-[0.98]"
+                className="block rounded-2xl p-3.5 transition-all active:scale-[0.985]"
+                style={{
+                  background: 'linear-gradient(160deg, hsla(160, 12%, 14%, 0.55), hsla(160, 12%, 9%, 0.35))',
+                  backdropFilter: 'blur(20px) saturate(1.4)',
+                  WebkitBackdropFilter: 'blur(20px) saturate(1.4)',
+                  border: '1px solid hsla(0,0%,100%,0.05)',
+                  boxShadow: 'inset 0 1px 0 0 hsla(0,0%,100%,0.05)',
+                }}
               >
                 {cardContent}
               </Link>
