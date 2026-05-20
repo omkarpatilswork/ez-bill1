@@ -591,6 +591,8 @@ function SubscriptionDialog({
             user_confirmed_status: 'subscribed',
             email_status: 'active',
             billing_cycle: billingCycle,
+            user_edited: true,
+            pending_update: null,
           })
           .eq('id', editing.id);
         if (error) throw error;
