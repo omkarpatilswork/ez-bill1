@@ -601,27 +601,64 @@ serve(async (req) => {
       }
     }
 
-    // Upsert: preserve user_confirmed_status by NOT touching it on conflict.
+    // Upsert with edit-protection:
+    //  - Preserve user_confirmed_status on conflict.
+    //  - If the row was user_edited, DO NOT overwrite user-owned fields.
+    //    Instead, stash inbox-suggested changes in pending_update for review.
     if (results.length > 0) {
-      // We need to upsert without overwriting user_confirmed_status.
-      // Strategy: fetch existing rows for these keys, then for each, update or insert.
       const keys = results.map(r => r.service_key);
       const { data: existing } = await supabase
         .from('detected_subscriptions')
-        .select('service_key, user_confirmed_status')
+        .select('service_key, user_confirmed_status, user_edited, service_name, last_amount, billing_cycle, category, currency, next_billing_date')
         .eq('user_id', user.id)
         .in('service_key', keys);
-      const existingMap = new Map((existing || []).map((e: any) => [e.service_key, e.user_confirmed_status]));
+      const existingMap = new Map((existing || []).map((e: any) => [e.service_key, e]));
+
+      // Fields the user can edit — protected when user_edited = true
+      const PROTECTED = ['service_name', 'last_amount', 'billing_cycle', 'category', 'currency', 'next_billing_date'] as const;
 
       for (const r of results) {
-        const payload: any = { ...r };
-        // upsert — keep existing user_confirmed_status (do not overwrite)
-        if (existingMap.has(r.service_key)) {
-          payload.user_confirmed_status = existingMap.get(r.service_key) ?? null;
+        const prev: any = existingMap.get(r.service_key);
+
+        if (prev && prev.user_edited) {
+          // Compute diff between incoming scan and current (user-edited) values
+          const diff: Record<string, unknown> = {};
+          for (const f of PROTECTED) {
+            const incoming = (r as any)[f];
+            const current = prev[f];
+            if (incoming != null && incoming !== '' && String(incoming) !== String(current ?? '')) {
+              diff[f] = incoming;
+            }
+          }
+          // Build a payload that updates ONLY non-protected metadata
+          const metaUpdate: any = {
+            user_id: user.id,
+            service_key: r.service_key,
+            email_status: r.email_status,
+            source: r.source,
+            last_email_subject: r.last_email_subject,
+            last_email_from: r.last_email_from,
+            last_email_date: r.last_email_date,
+            last_email_snippet: r.last_email_snippet,
+            email_count: r.email_count,
+            is_trial: r.is_trial,
+            trial_ends_at: r.trial_ends_at,
+            started_at: r.started_at,
+            user_confirmed_status: prev.user_confirmed_status ?? null,
+          };
+          if (Object.keys(diff).length > 0) {
+            metaUpdate.pending_update = { ...diff, suggested_at: new Date().toISOString() };
+          }
+          await supabase
+            .from('detected_subscriptions')
+            .update(metaUpdate)
+            .eq('user_id', user.id)
+            .eq('service_key', r.service_key);
         } else {
-          payload.user_confirmed_status = null;
+          const payload: any = { ...r, pending_update: null };
+          payload.user_confirmed_status = prev ? (prev.user_confirmed_status ?? null) : null;
+          await supabase.from('detected_subscriptions').upsert(payload, { onConflict: 'user_id,service_key' });
         }
-        await supabase.from('detected_subscriptions').upsert(payload, { onConflict: 'user_id,service_key' });
       }
     }
 
