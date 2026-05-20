@@ -212,6 +212,27 @@ export default function Subscriptions() {
     toast({ title: 'Removed', description: row.service_name });
   };
 
+  /* ------- pending update (inbox suggested a change) ------- */
+  const applyPending = async (row: SubRow) => {
+    const p = row.pending_update || {};
+    const patch: any = { pending_update: null, user_edited: true };
+    ['service_name', 'last_amount', 'billing_cycle', 'category', 'currency', 'next_billing_date'].forEach(k => {
+      if (p[k] !== undefined && p[k] !== null) patch[k] = p[k];
+    });
+    const { error } = await supabase.from('detected_subscriptions').update(patch).eq('id', row.id);
+    if (error) { toast({ title: 'Could not apply', description: error.message, variant: 'destructive' }); return; }
+    setRows(prev => prev.map(r => r.id === row.id ? { ...r, ...patch } as SubRow : r));
+    toast({ title: 'Applied inbox update', description: row.service_name });
+  };
+
+  const keepMine = async (row: SubRow) => {
+    const { error } = await supabase.from('detected_subscriptions')
+      .update({ pending_update: null }).eq('id', row.id);
+    if (error) { toast({ title: 'Could not dismiss', description: error.message, variant: 'destructive' }); return; }
+    setRows(prev => prev.map(r => r.id === row.id ? { ...r, pending_update: null } : r));
+    toast({ title: 'Kept your edits', description: row.service_name });
+  };
+
   /* ------- render ------- */
   if (loading) {
     return (
