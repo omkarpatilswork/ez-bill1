@@ -39,6 +39,8 @@ interface SubRow {
   trial_ends_at?: string | null;
   started_at?: string | null;
   last_email_snippet?: string | null;
+  user_edited?: boolean | null;
+  pending_update?: Record<string, any> | null;
 }
 
 function cycleDays(cycle?: string | null): number {
