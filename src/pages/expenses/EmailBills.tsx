@@ -58,6 +58,8 @@ const DATE_RANGE_OPTIONS = [
   { label: 'Last 30 days', value: 30 },
   { label: 'Last 60 days', value: 60 },
   { label: 'Last 90 days', value: 90 },
+  { label: 'Last 180 days', value: 180 },
+  { label: 'Last 1 year', value: 365 },
 ];
 
 const CATEGORY_ALIASES: Record<string, string[]> = {
@@ -677,9 +679,9 @@ export default function EmailBills() {
                     </SelectContent>
                   </Select>
                 </div>
-                <Button onClick={autoImportBills} disabled={isScanning} className="min-h-[44px] active:scale-[0.97]">
-                  {isScanning ? (
-                    <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> {importProgress.phase || 'Working...'} {importProgress.total > 0 ? `(${importProgress.current}/${importProgress.total})` : ''}</>
+                <Button onClick={() => runImportWithProgress(dateRange, { updateLastSync: false })} disabled={isSyncingNow || isScanning} className="min-h-[44px] active:scale-[0.97]">
+                  {isSyncingNow ? (
+                    <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Importing…</>
                   ) : (
                     <><ScanLine className="h-4 w-4 mr-2" /> Scan & Import All</>
                   )}

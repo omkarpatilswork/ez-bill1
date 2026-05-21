@@ -72,11 +72,13 @@ function extractBodyText(payload: any): string {
   return "";
 }
 
-// Warranty signal keywords for body-level filtering
+// Warranty signal keywords plus product-purchase evidence. Many retailers only
+// send an invoice/order email; the extractor can infer standard warranty from it.
 const WARRANTY_KEYWORDS = /(warrant(y|ies)|extended warranty|guarantee|amc\b|service contract|protection plan|coverage period|covered until|valid (until|till)|expires? on|register your product|product registration)/i;
+const PRODUCT_PURCHASE_KEYWORDS = /(invoice|receipt|tax invoice|order (placed|confirmed|delivered)|purchase|serial|imei|model|apple|iphone|ipad|macbook|airpods|samsung|lg|sony|oneplus|xiaomi|realme|vivo|oppo|dell|hp|lenovo|asus|acer|bosch|philips|haier|whirlpool|ifb|voltas|daikin|croma|vijay sales|reliance digital|amazon|flipkart)/i;
 function looksLikeWarranty(subject: string, body: string): boolean {
   const sample = `${subject}\n${body.slice(0, 4000)}`;
-  return WARRANTY_KEYWORDS.test(sample);
+  return WARRANTY_KEYWORDS.test(sample) || PRODUCT_PURCHASE_KEYWORDS.test(sample);
 }
 
 async function gmailFetch(url: string, accessToken: string) {
@@ -143,8 +145,8 @@ serve(async (req) => {
 
     const { max_results = 30, days = 365 } = await req.json().catch(() => ({}));
 
-    // Warranty-focused query — registrations, certificates, AMC, extended warranty, order confirmations for appliances/electronics
-    const query = `(subject:(warranty OR "warranty card" OR "warranty registration" OR "extended warranty" OR "product registration" OR "service contract" OR "protection plan" OR AMC OR guarantee) OR from:(samsung OR lg OR sony OR apple OR oneplus OR xiaomi OR mi.com OR realme OR vivo OR oppo OR boat OR jbl OR bose OR dell OR hp OR lenovo OR asus OR acer OR microsoft OR bosch OR philips OR haier OR whirlpool OR ifb OR voltas OR daikin OR bluestar OR godrej OR usha OR havells OR crompton OR bajaj OR prestige OR pigeon OR milton OR onida OR panasonic OR tcl OR vu OR mi-india OR canon OR nikon OR gopro OR garmin OR fitbit OR honor OR nothing)) newer_than:${days}d`;
+    // Warranty-focused query — includes explicit warranty emails AND product invoices/order receipts from electronics retailers.
+    const query = `(subject:(warranty OR "warranty card" OR "warranty registration" OR "extended warranty" OR "product registration" OR "service contract" OR "protection plan" OR AMC OR guarantee OR "tax invoice" OR invoice OR receipt OR "order delivered" OR "order confirmed") OR from:(amazon OR flipkart OR croma OR vijaysales OR "vijay sales" OR reliancedigital OR tatacliq OR samsung OR lg OR sony OR apple OR oneplus OR xiaomi OR mi.com OR realme OR vivo OR oppo OR boat OR jbl OR bose OR dell OR hp OR lenovo OR asus OR acer OR microsoft OR bosch OR philips OR haier OR whirlpool OR ifb OR voltas OR daikin OR bluestar OR godrej OR usha OR havells OR crompton OR bajaj OR prestige OR pigeon OR milton OR onida OR panasonic OR tcl OR vu OR mi-india OR canon OR nikon OR gopro OR garmin OR fitbit OR honor OR nothing)) newer_than:${days}d`;
 
     const fetchMax = Math.min(max_results * 3, 150);
     const searchUrl = `https://gmail.googleapis.com/gmail/v1/users/me/messages?q=${encodeURIComponent(query)}&maxResults=${fetchMax}`;

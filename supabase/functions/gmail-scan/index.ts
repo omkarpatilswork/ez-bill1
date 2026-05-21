@@ -25,7 +25,7 @@ const NON_BILL_PATTERNS = [
   /spends?\s*(summary|report|recap)/i,
   /transaction\s*(summary|history|report)/i,
   // Broker / stock-market activity (not bills)
-  /(order|trade)\s*(executed|placed|confirmation|update)/i,
+  /trade\s*(executed|placed|confirmation|update)/i,
   /(buy|sell)\s*order\s*(executed|placed|confirmed)?/i,
   /margin\s*(call|statement|shortfall)/i,
   /equity\s*(trade|order|statement)/i,
@@ -108,6 +108,58 @@ async function gmailFetch(url: string, accessToken: string) {
   return fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
 }
 
+const BILL_QUERY_TERMS = [
+  'invoice', 'receipt', 'bill', 'billed', 'billing', 'paid', 'payment', 'purchase', 'purchased',
+  '"tax invoice"', '"gst invoice"', '"e-invoice"', '"payment receipt"', '"payment successful"',
+  '"payment confirmation"', '"order confirmation"', '"order placed"', '"order confirmed"',
+  '"your order"', '"your receipt"', '"your invoice"', '"your bill"', '"thanks for your order"',
+  '"thank you for your order"', '"booking confirmation"', '"booking confirmed"', '"trip receipt"',
+  '"ride receipt"', '"subscription receipt"', '"renewal receipt"', '"apple receipt"', '"app store receipt"',
+  '"total paid"', '"amount paid"', '"grand total"', '"order total"', '"charged"', '"debited"',
+].join(' OR ');
+
+const BILL_SENDER_TERMS = [
+  'apple', 'email.apple.com', 'amazon', 'flipkart', 'myntra', 'ajio', 'meesho', 'nykaa', 'tatacliq',
+  'croma', 'reliance', 'vijaysales', 'swiggy', 'zomato', 'dominos', 'blinkit', 'zepto', 'bigbasket',
+  'jiomart', 'dmart', 'uber', 'ola', 'rapido', 'bookmyshow', 'district', 'insider', 'makemytrip',
+  'cleartrip', 'yatra', 'easemytrip', 'goibibo', 'irctc', 'airbnb', 'booking', 'agoda', 'indigo',
+  'airindia', 'spicejet', 'akasaair', 'netflix', 'hotstar', 'spotify', 'youtube', 'primevideo',
+  'disney', 'sony', 'zee5', 'jiocinema', 'adobe', 'microsoft', 'google', 'canva', 'notion', 'dropbox',
+  'github', 'openai', 'anthropic', 'perplexity', 'airtel', 'jio', 'vodafone', 'myvi', 'bsnl', 'actcorp',
+  'hathway', 'razorpay', 'paytm', 'phonepe', 'gpay', 'cred', 'mobikwik', 'hdfc', 'icici', 'sbi',
+  'axis', 'kotak', 'amex', 'onecard', 'lic', 'acko', 'policybazaar', 'digit', 'pharmeasy', 'netmeds',
+  '1mg', 'practo', 'cult', 'hpcl', 'bpcl', 'iocl', 'fastag', 'coursera', 'udemy', 'linkedin',
+].join(' OR ');
+
+async function searchGmailMessages(accessToken: string, queries: string[], perQuery: number, totalCap: number) {
+  const byId = new Map<string, any>();
+  for (const q of queries) {
+    let fetchedForQuery = 0;
+    let pageToken = '';
+    do {
+      const pageSize = Math.max(1, Math.min(100, perQuery - fetchedForQuery));
+      const url = new URL('https://gmail.googleapis.com/gmail/v1/users/me/messages');
+      url.searchParams.set('q', q);
+      url.searchParams.set('maxResults', String(pageSize));
+      if (pageToken) url.searchParams.set('pageToken', pageToken);
+      const res = await gmailFetch(url.toString(), accessToken);
+      if (!res.ok) {
+        const txt = await res.text();
+        throw new Error(`Gmail API error: ${res.status} ${txt}`);
+      }
+      const data = await res.json();
+      const page = data.messages || [];
+      for (const msg of page) {
+        if (!byId.has(msg.id)) byId.set(msg.id, msg);
+        if (byId.size >= totalCap) return { messages: Array.from(byId.values()) };
+      }
+      fetchedForQuery += page.length;
+      pageToken = data.nextPageToken || '';
+    } while (pageToken && fetchedForQuery < perQuery && byId.size < totalCap);
+  }
+  return { messages: Array.from(byId.values()) };
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -160,30 +212,27 @@ serve(async (req) => {
 
     const { max_results = 80, days = 30 } = await req.json().catch(() => ({}));
 
-    // Maximum-coverage query: broad subjects + huge sender list across food, travel, shopping,
-    // utilities, telecom, OTT, fintech, edtech, insurance, healthcare, fuel, ride-hailing, SaaS.
-    const subjectMatch = `subject:(invoice OR receipt OR bill OR payment OR "order confirmation" OR "order placed" OR purchase OR "tax invoice" OR "e-invoice" OR "GST invoice" OR "payment confirmation" OR "payment successful" OR "booking confirmation" OR "ticket" OR "your order" OR "your bill" OR "your invoice" OR "your receipt" OR "thanks for your order" OR "thank you for your" OR "renewal" OR "subscription" OR "due" OR "premium")`;
-    const senderMatch = `from:(swiggy OR zomato OR dominos OR mcdonalds OR kfc OR pizzahut OR starbucks OR dunzo OR blinkit OR zepto OR bigbasket OR jiomart OR dmart OR amazon OR flipkart OR myntra OR ajio OR meesho OR nykaa OR tatacliq OR croma OR reliance OR shoppersstop OR uber OR ola OR rapido OR bookmyshow OR insider OR makemytrip OR cleartrip OR yatra OR easemytrip OR goibibo OR irctc OR oyo OR airbnb OR booking OR agoda OR indigo OR vistara OR airindia OR spicejet OR akasaair OR netflix OR hotstar OR "disney" OR spotify OR "youtube premium" OR "prime video" OR sony OR zee5 OR voot OR jiocinema OR apple OR icloud OR adobe OR microsoft OR google OR canva OR notion OR dropbox OR github OR openai OR chatgpt OR claude OR perplexity OR airtel OR jio OR "vi " OR vodafone OR bsnl OR tataplay OR "tata sky" OR dish OR "act fibernet" OR hathway OR razorpay OR paytm OR phonepe OR gpay OR cred OR mobikwik OR "hdfc bank" OR "icici bank" OR "sbi card" OR "axis bank" OR kotak OR yesbank OR indusind OR rbl OR amex OR "american express" OR citi OR hsbc OR standardchartered OR onecard OR "tata neu" OR niyo OR fi OR jupiter OR slice OR uni OR lazypay OR simpl OR zestmoney OR bajajfinserv OR hdfclife OR "icici prudential" OR licindia OR maxlife OR sbilife OR "tata aig" OR "policybazaar" OR "acko" OR "digit" OR pharmeasy OR netmeds OR 1mg OR practo OR cult OR hpcl OR bpcl OR iocl OR "indian oil" OR "bharat petroleum" OR "hindustan petroleum" OR fastag OR paytmfastag OR upstox OR groww OR zerodha OR coursera OR udemy OR byjus OR unacademy OR vedantu OR linkedin)`;
-    // Exclude statements/trades — those go to financial-scan
-    const exclusions = `-subject:"statement of account" -subject:"account statement" -subject:"bank statement" -subject:"credit card statement" -subject:"contract note" -subject:"portfolio" -subject:"holdings" -subject:"P&L" -subject:"weekly report" -subject:"monthly statement" -subject:"trade confirmation" -subject:"order executed" -subject:"order placed" -subject:"trade executed" -subject:"sip investment" -subject:"sip installment" -subject:"folio statement" -subject:"transaction summary" -subject:"spending summary" -subject:"paytm statement" -subject:"phonepe statement" -subject:"gpay statement" -subject:"google pay statement" -from:groww -from:zerodha -from:upstox -from:angelone -from:angelbroking -from:5paisa -from:icicidirect -from:kotaksecurities -from:hdfcsec -from:sharekhan -from:motilaloswal -from:iifl -from:edelweiss -from:paytmmoney -from:dhan -from:fyers -from:kuvera -from:smallcase -from:indmoney -from:scripbox -from:cdslindia -from:nsdl -from:camsonline -from:kfintech -subject:unsubscribe -subject:newsletter`;
-    const query = `(has:attachment OR ${subjectMatch}) (${subjectMatch} OR ${senderMatch}) ${exclusions} newer_than:${days}d`;
+    // Layered search beats one giant Gmail query: it catches attachment invoices,
+    // body-only receipts (Amazon/Flipkart/Apple), subscriptions, and merchant emails.
+    const exclusions = `-subject:"statement of account" -subject:"account statement" -subject:"bank statement" -subject:"credit card statement" -subject:"contract note" -subject:"portfolio" -subject:"holdings" -subject:"P&L" -subject:"weekly report" -subject:"monthly statement" -subject:"trade confirmation" -subject:"order executed" -subject:"trade executed" -subject:"sip investment" -subject:"sip installment" -subject:"folio statement" -subject:"transaction summary" -subject:"spending summary" -subject:"paytm statement" -subject:"phonepe statement" -subject:"gpay statement" -subject:"google pay statement" -from:groww -from:zerodha -from:upstox -from:angelone -from:angelbroking -from:5paisa -from:icicidirect -from:kotaksecurities -from:hdfcsec -from:sharekhan -from:motilaloswal -from:iifl -from:edelweiss -from:paytmmoney -from:dhan -from:fyers -from:kuvera -from:smallcase -from:indmoney -from:scripbox -from:cdslindia -from:nsdl -from:camsonline -from:kfintech -subject:unsubscribe -subject:newsletter`;
+    const base = `${exclusions} newer_than:${days}d`;
+    const queries = [
+      `(subject:(${BILL_QUERY_TERMS}) OR {filename:pdf filename:jpg filename:jpeg filename:png}) ${base}`,
+      `(from:(${BILL_SENDER_TERMS}) (invoice OR receipt OR bill OR payment OR paid OR order OR purchase OR subscription OR renewal OR charged)) ${base}`,
+      `({from:apple from:amazon from:flipkart} OR subject:("Apple Receipt" OR "Your invoice from Apple" OR "Your Amazon.in order" OR "Your Flipkart order" OR "tax invoice")) ${base}`,
+      `(has:attachment (invoice OR receipt OR bill OR tax OR order OR purchase OR warranty OR guarantee)) ${base}`,
+    ];
 
-    // Fetch more results to compensate for filtering
-    const fetchMax = Math.min(max_results * 3, 200);
-    const searchUrl = `https://gmail.googleapis.com/gmail/v1/users/me/messages?q=${encodeURIComponent(query)}&maxResults=${fetchMax}`;
-
-    let searchRes = await gmailFetch(searchUrl, accessToken);
-
-    if (!searchRes.ok && searchRes.status === 401) {
+    const perQuery = Math.min(Math.max(max_results * 2, 80), 180);
+    const totalCap = Math.min(Math.max(max_results * 8, 240), 500);
+    let searchData: any;
+    try {
+      searchData = await searchGmailMessages(accessToken, queries, perQuery, totalCap);
+    } catch (err) {
+      if (!(err instanceof Error) || !err.message.includes('401')) throw err;
       accessToken = await refreshToken(supabase, user.id, connection, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET);
-      searchRes = await gmailFetch(searchUrl, accessToken);
-      if (!searchRes.ok) throw new Error("Gmail API error after refresh");
-    } else if (!searchRes.ok) {
-      const errText = await searchRes.text();
-      throw new Error(`Gmail API error: ${searchRes.status} ${errText}`);
+      searchData = await searchGmailMessages(accessToken, queries, perQuery, totalCap);
     }
-
-    const searchData = await searchRes.json();
     return await processMessages(searchData, accessToken, user.id, supabase, max_results);
   } catch (e) {
     console.error("gmail-scan error:", e);
@@ -374,7 +423,7 @@ function extractBodyText(payload: any): string {
 }
 
 // Quick check that a body-only email is bill-like (avoids spam, marketing, OTPs, etc.)
-const BILL_KEYWORDS = /(invoice|receipt|order (no|number|id|placed|confirmation|delivered|shipped)|your order|payment (received|successful|confirmation)|thanks for your order|booking (confirmation|confirmed)|ride (with|receipt|completed)|trip receipt|your bill|tax invoice|amount\s*(paid|charged)|total\s*(amount|paid|charged)|grand\s*total|subtotal|payable|₹\s*\d|rs\.?\s*\d|inr\s*\d)/i;
+const BILL_KEYWORDS = /(invoice|receipt|bill|billing|subscription|renewal|membership|order (no|number|id|placed|confirmation|confirmed|delivered|shipped|total)|your order|payment (received|successful|confirmation)|thanks for your order|thank you for your order|booking (confirmation|confirmed)|ride (with|receipt|completed)|trip receipt|your bill|tax invoice|gst invoice|apple receipt|app store|amount\s*(paid|charged)|total\s*(amount|paid|charged)|grand\s*total|subtotal|payable|charged\s*(₹|rs\.?|inr|\$)|₹\s*\d|rs\.?\s*\d|inr\s*\d|\$\s*\d)/i;
 function looksLikeBill(subject: string, from: string, body: string): boolean {
   const sample = `${subject}\n${from}\n${body.slice(0, 4000)}`;
   return BILL_KEYWORDS.test(sample);

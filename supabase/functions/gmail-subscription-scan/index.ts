@@ -27,6 +27,9 @@ const SERVICES: ServiceDef[] = [
   // OTT
   { key: 'netflix', name: 'Netflix', category: 'OTT', senders: ['netflix.com'], keywords: ['netflix'] },
   { key: 'prime_video', name: 'Amazon Prime Video', category: 'OTT', senders: ['primevideo.com', 'amazon.in', 'amazon.com'], keywords: ['prime video'] },
+  { key: 'apple_app_store', name: 'Apple App Store', category: 'Software', senders: ['apple.com', 'email.apple.com'], keywords: ['app store', 'apple receipt', 'itunes store', 'apple services'] },
+  { key: 'apple_tv', name: 'Apple TV+', category: 'OTT', senders: ['apple.com', 'email.apple.com'], keywords: ['apple tv+', 'apple tv'] },
+  { key: 'apple_arcade', name: 'Apple Arcade', category: 'Gaming', senders: ['apple.com', 'email.apple.com'], keywords: ['apple arcade'] },
   { key: 'hotstar', name: 'Disney+ Hotstar', category: 'OTT', senders: ['hotstar.com', 'disneyplus'], keywords: ['hotstar', 'disney+'] },
   { key: 'jiocinema', name: 'JioCinema', category: 'OTT', senders: ['jiocinema'], keywords: ['jiocinema', 'jio cinema'] },
   { key: 'sonyliv', name: 'Sony LIV', category: 'OTT', senders: ['sonyliv'], keywords: ['sony liv', 'sonyliv'] },
@@ -55,6 +58,8 @@ const SERVICES: ServiceDef[] = [
   { key: 'chatgpt', name: 'ChatGPT Plus', category: 'AI', senders: ['openai.com'], keywords: ['chatgpt', 'openai'] },
   { key: 'claude', name: 'Claude Pro', category: 'AI', senders: ['anthropic.com'], keywords: ['claude', 'anthropic'] },
   { key: 'perplexity', name: 'Perplexity Pro', category: 'AI', senders: ['perplexity.ai'], keywords: ['perplexity'] },
+  { key: 'cursor', name: 'Cursor', category: 'AI', senders: ['cursor.com'], keywords: ['cursor pro', 'cursor subscription'] },
+  { key: 'lovable', name: 'Lovable', category: 'AI', senders: ['lovable.dev'], keywords: ['lovable'] },
   { key: 'midjourney', name: 'Midjourney', category: 'AI', senders: ['midjourney'], keywords: ['midjourney'] },
   { key: 'copilot', name: 'GitHub Copilot', category: 'AI', senders: ['github.com'], keywords: ['copilot'] },
   // Telecom
@@ -88,7 +93,7 @@ const SERVICES: ServiceDef[] = [
 // Patterns suggesting subscription activity
 const ACTIVE_PATTERNS = [
   /subscription/i, /renewal/i, /renewed/i, /payment\s+(received|successful|confirmation)/i,
-  /invoice/i, /receipt/i, /your\s+plan/i, /membership/i, /auto-?renew/i,
+  /invoice/i, /receipt/i, /billed/i, /charged/i, /your\s+plan/i, /membership/i, /auto-?renew/i,
   /welcome\s+to/i, /thanks\s+for\s+subscribing/i, /billing/i,
   /(has\s+been\s+)?(extended|started|activated|charged)/i,
   /trial\s+(has\s+)?(started|begun|begins)/i, /free\s+trial/i,
@@ -100,6 +105,7 @@ const ACTIVE_PATTERNS = [
   /successfully\s+(subscribed|upgraded|renewed)/i, /thank\s+you\s+for\s+(your\s+)?(purchase|subscription|upgrade)/i,
   /(annual|monthly|yearly)\s+plan\s+(activated|started)/i, /pro\s+plan\s+(activated|started)/i,
   /(paid|premium)\s+plan/i, /plan\s+(renewed|upgraded)/i, /you\s+(now\s+)?have\s+(access\s+to\s+)?(premium|pro|plus)/i,
+  /app\s*store/i, /apple\s+(services|receipt|subscription)/i, /in-?app\s+purchase/i,
 ];
 const CANCELLED_PATTERNS = [
   /cancell?ation/i, /cancell?ed/i, /your\s+subscription\s+(has\s+)?ended/i,
@@ -157,11 +163,12 @@ function genericServiceFromSender(from: string, subject: string): ServiceDef | n
 
 /** Rough typical monthly INR price for popular services — used when amount is missing. */
 const TYPICAL_MONTHLY_INR: Record<string, number> = {
-  netflix: 499, prime_video: 299, hotstar: 299, jiocinema: 99, sonyliv: 299, zee5: 99,
+  netflix: 499, prime_video: 299, apple_app_store: 99, apple_tv: 99, apple_arcade: 99,
+  hotstar: 299, jiocinema: 99, sonyliv: 299, zee5: 99,
   youtube_premium: 129, spotify: 119, apple_music: 99, gaana: 99, wynk: 99,
   google_one: 130, icloud: 75, dropbox: 999, onedrive: 489,
   notion: 800, figma: 1200, canva: 499, adobe: 1675, github: 350, slack: 650, zoom: 1300,
-  linkedin: 1700, chatgpt: 1700, claude: 1700, perplexity: 1700, midjourney: 850, copilot: 850,
+  linkedin: 1700, chatgpt: 1700, claude: 1700, perplexity: 1700, cursor: 1700, lovable: 1700, midjourney: 850, copilot: 850,
   airtel: 399, jio: 299, vi: 299, act: 999, hathway: 799, cultfit: 1000,
   amazon_prime: 125, swiggy_one: 99, zomato_gold: 200, flipkart_plus: 99,
   psn: 499, xbox: 489, duolingo: 600, coursera: 3500, udemy: 500, masterclass: 1500,
@@ -318,6 +325,12 @@ function findCycle(text: string): 'monthly' | 'yearly' | 'weekly' {
   if (/(weekly|per\s*week|\/\s*week)/i.test(text)) return 'weekly';
   return 'monthly';
 }
+function normalizeMonthlyAmount(amount: number | null, cycle: 'monthly' | 'yearly' | 'weekly'): number | null {
+  if (amount == null || !isFinite(amount) || amount <= 0) return null;
+  if (cycle === 'yearly') return Math.round((amount / 12) * 100) / 100;
+  if (cycle === 'weekly') return Math.round((amount * 4.345) * 100) / 100;
+  return amount;
+}
 function findCurrency(text: string): string {
   if (/₹|\bINR\b|\brs\.?\b/i.test(text)) return 'INR';
   if (/\$|\bUSD\b/i.test(text)) return 'USD';
@@ -331,6 +344,56 @@ function addCycle(dateISO: string, cycle: 'monthly' | 'yearly' | 'weekly'): stri
   else if (cycle === 'yearly') d.setFullYear(d.getFullYear() + 1);
   else d.setMonth(d.getMonth() + 1);
   return d.toISOString().slice(0, 10);
+}
+
+const SUBSCRIPTION_QUERY_TERMS = [
+  'subscription', 'renewal', 'renewed', 'membership', 'premium', 'pro', 'plus', 'plan', 'billing',
+  'billed', 'charged', 'receipt', 'invoice', '"payment received"', '"payment successful"',
+  '"your plan"', '"auto-renew"', '"auto renew"', 'cancellation', 'cancelled', '"welcome to"',
+  '"free trial"', '"trial started"', '"next billing"', '"will renew"', '"renews on"',
+  '"about to expire"', '"expires soon"', '"app store"', '"apple receipt"', '"apple services"',
+  '"itunes store"', '"in-app purchase"', '"thank you for subscribing"', '"plan activated"',
+  '"you now have access"',
+].join(' OR ');
+
+const SUBSCRIPTION_SENDER_TERMS = [
+  'apple', 'email.apple.com', 'itunes', 'netflix', 'spotify', 'hotstar', 'primevideo', 'youtube',
+  'openai', 'anthropic', 'perplexity', 'cursor', 'lovable', 'notion', 'figma', 'canva', 'adobe',
+  'github', 'slack', 'zoom', 'linkedin', 'sonyliv', 'zee5', 'jiocinema', 'gaana', 'wynk', 'dropbox',
+  'microsoft', 'google', 'airtel', 'jio', 'myvi', 'vodafone', 'actcorp', 'hathway', 'cult', 'curefit',
+  'swiggy', 'zomato', 'amazon', 'flipkart', 'playstation', 'xbox', 'midjourney', 'duolingo',
+  'coursera', 'udemy', 'masterclass', 'audible', 'nytimes', 'medium', 'substack', 'patreon',
+  'twitch', 'discord', 'evernote', 'grammarly', '1password', 'lastpass', 'nordvpn', 'expressvpn',
+  'surfshark', 'proton', 'tidal', 'deezer', 'crunchyroll', 'mubi', 'skillshare', 'wsj', 'economist',
+].join(' OR ');
+
+async function searchSubscriptionMessages(accessToken: string, days: number) {
+  const queries = [
+    `(subject:(${SUBSCRIPTION_QUERY_TERMS}) OR from:(${SUBSCRIPTION_SENDER_TERMS})) newer_than:${days}d`,
+    `({from:apple from:email.apple.com} OR subject:("Apple Receipt" OR "Your invoice from Apple" OR "App Store" OR "Apple Services" OR "iTunes Store")) newer_than:${days}d`,
+    `(from:amazon OR from:flipkart OR from:google OR from:microsoft OR from:adobe) (subscription OR membership OR renewal OR plan OR receipt OR invoice OR charged) newer_than:${days}d`,
+  ];
+  const byId = new Map<string, any>();
+  for (const q of queries) {
+    let pageToken = '';
+    let fetched = 0;
+    do {
+      const url = new URL('https://gmail.googleapis.com/gmail/v1/users/me/messages');
+      url.searchParams.set('q', q);
+      url.searchParams.set('maxResults', '100');
+      if (pageToken) url.searchParams.set('pageToken', pageToken);
+      const res = await gmailFetch(url.toString(), accessToken);
+      if (!res.ok) {
+        const errText = await res.text();
+        throw new Error(`Gmail API error: ${res.status} ${errText}`);
+      }
+      const data = await res.json();
+      for (const msg of data.messages || []) byId.set(msg.id, msg);
+      fetched += (data.messages || []).length;
+      pageToken = data.nextPageToken || '';
+    } while (pageToken && fetched < 250 && byId.size < 500);
+  }
+  return Array.from(byId.values());
 }
 
 serve(async (req) => {
@@ -377,43 +440,14 @@ serve(async (req) => {
 
     const { days = 180 } = await req.json().catch(() => ({}));
 
-    // Broad query for subscription-related emails (no attachment requirement)
-    const subjectTerms = [
-      'subscription', 'renewal', 'renewed', 'membership', '"payment received"', '"payment successful"',
-      '"your plan"', '"auto-renew"', '"auto renew"', 'cancellation', 'cancelled', '"welcome to"',
-      '"trial started"', '"free trial"', '"has been extended"', '"has been renewed"',
-      '"next billing"', '"will renew"', '"about to end"', '"about to expire"', '"expires soon"',
-      '"expiring soon"', '"ending soon"', '"upgraded to premium"', '"upgraded to pro"',
-      '"upgraded to plus"', '"welcome to premium"', 'congratulations', '"thanks for subscribing"',
-      '"thank you for subscribing"', '"thank you for your subscription"', '"plan activated"',
-      '"premium plan"', '"pro plan"', '"paid plan"', '"plan renewed"', '"plan upgraded"',
-      '"you now have access"', '"reminder: your"',
-    ].join(' OR ');
-    const senderTerms = [
-      'netflix', 'spotify', 'hotstar', 'primevideo', 'youtube', 'openai', 'anthropic', 'perplexity',
-      'notion', 'figma', 'canva', 'adobe', 'github', 'slack', 'zoom', 'linkedin', 'sonyliv', 'zee5',
-      'jiocinema', 'gaana', 'wynk', 'dropbox', 'microsoft', 'apple', 'airtel', 'jio', 'myvi',
-      'vodafone', 'actcorp', 'cult', 'curefit', 'swiggy', 'zomato', 'flipkart', 'playstation',
-      'xbox', 'midjourney', 'duolingo', 'coursera', 'udemy', 'masterclass', 'audible', 'nytimes',
-      'medium', 'substack', 'patreon', 'twitch', 'discord', 'evernote', 'grammarly', 'lastpass',
-      '1password', 'nordvpn', 'expressvpn', 'surfshark', 'protonmail', 'tidal', 'deezer',
-      'crunchyroll', 'paramountplus', 'peacocktv', 'hbomax', 'mubi', 'lynda', 'pluralsight',
-      'skillshare', 'wsj', 'economist', 'bloomberg', 'theken', 'morningbrew',
-    ].join(' OR ');
-    const query = `(subject:(${subjectTerms}) OR from:(${senderTerms})) newer_than:${days}d`;
-
-    const searchUrl = `https://gmail.googleapis.com/gmail/v1/users/me/messages?q=${encodeURIComponent(query)}&maxResults=300`;
-    let searchRes = await gmailFetch(searchUrl, accessToken);
-    if (!searchRes.ok && searchRes.status === 401) {
+    let messages: any[] = [];
+    try {
+      messages = await searchSubscriptionMessages(accessToken, days);
+    } catch (err) {
+      if (!(err instanceof Error) || !err.message.includes('401')) throw err;
       accessToken = await refreshToken(supabase, user.id, connection, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET);
-      searchRes = await gmailFetch(searchUrl, accessToken);
+      messages = await searchSubscriptionMessages(accessToken, days);
     }
-    if (!searchRes.ok) {
-      const errText = await searchRes.text();
-      throw new Error(`Gmail API error: ${searchRes.status} ${errText}`);
-    }
-    const searchData = await searchRes.json();
-    const messages = searchData.messages || [];
 
     // Aggregate per service. Process up to 100 messages (metadata only — fast).
     interface Agg {
@@ -466,9 +500,10 @@ serve(async (req) => {
 
         const status = detectStatus(subject, `${snippet}\n${body}`);
         const ts = dateStr ? new Date(dateStr).getTime() : Date.now();
-        const amt = parseAmount(fullText);
+        const rawAmount = parseAmount(fullText);
         const nextBilling = findNextBillingDate(fullText);
         const cycle = findCycle(fullText);
+        const amt = normalizeMonthlyAmount(rawAmount, cycle);
         const currency = findCurrency(fullText);
         const isTrial = findTrial(fullText);
         const trialEnds = isTrial
@@ -541,7 +576,7 @@ serve(async (req) => {
         email_count: a.count,
         last_email_snippet: a.lastSnippet,
         next_billing_date: nextBilling,
-        billing_cycle: a.cycle,
+        billing_cycle: 'monthly',
         currency: a.currency,
         is_trial: a.isTrial,
         trial_ends_at: a.trialEnds,
@@ -566,7 +601,7 @@ serve(async (req) => {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Lovable-API-Key': LOVABLE_API_KEY,
+              Authorization: `Bearer ${LOVABLE_API_KEY}`,
           },
           body: JSON.stringify({
             model: 'google/gemini-3-flash-preview',
