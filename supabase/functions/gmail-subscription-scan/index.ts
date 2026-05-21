@@ -27,6 +27,9 @@ const SERVICES: ServiceDef[] = [
   // OTT
   { key: 'netflix', name: 'Netflix', category: 'OTT', senders: ['netflix.com'], keywords: ['netflix'] },
   { key: 'prime_video', name: 'Amazon Prime Video', category: 'OTT', senders: ['primevideo.com', 'amazon.in', 'amazon.com'], keywords: ['prime video'] },
+  { key: 'apple_app_store', name: 'Apple App Store', category: 'Software', senders: ['apple.com', 'email.apple.com'], keywords: ['app store', 'apple receipt', 'itunes store', 'apple services'] },
+  { key: 'apple_tv', name: 'Apple TV+', category: 'OTT', senders: ['apple.com', 'email.apple.com'], keywords: ['apple tv+', 'apple tv'] },
+  { key: 'apple_arcade', name: 'Apple Arcade', category: 'Gaming', senders: ['apple.com', 'email.apple.com'], keywords: ['apple arcade'] },
   { key: 'hotstar', name: 'Disney+ Hotstar', category: 'OTT', senders: ['hotstar.com', 'disneyplus'], keywords: ['hotstar', 'disney+'] },
   { key: 'jiocinema', name: 'JioCinema', category: 'OTT', senders: ['jiocinema'], keywords: ['jiocinema', 'jio cinema'] },
   { key: 'sonyliv', name: 'Sony LIV', category: 'OTT', senders: ['sonyliv'], keywords: ['sony liv', 'sonyliv'] },
@@ -55,6 +58,8 @@ const SERVICES: ServiceDef[] = [
   { key: 'chatgpt', name: 'ChatGPT Plus', category: 'AI', senders: ['openai.com'], keywords: ['chatgpt', 'openai'] },
   { key: 'claude', name: 'Claude Pro', category: 'AI', senders: ['anthropic.com'], keywords: ['claude', 'anthropic'] },
   { key: 'perplexity', name: 'Perplexity Pro', category: 'AI', senders: ['perplexity.ai'], keywords: ['perplexity'] },
+  { key: 'cursor', name: 'Cursor', category: 'AI', senders: ['cursor.com'], keywords: ['cursor pro', 'cursor subscription'] },
+  { key: 'lovable', name: 'Lovable', category: 'AI', senders: ['lovable.dev'], keywords: ['lovable'] },
   { key: 'midjourney', name: 'Midjourney', category: 'AI', senders: ['midjourney'], keywords: ['midjourney'] },
   { key: 'copilot', name: 'GitHub Copilot', category: 'AI', senders: ['github.com'], keywords: ['copilot'] },
   // Telecom
@@ -88,7 +93,7 @@ const SERVICES: ServiceDef[] = [
 // Patterns suggesting subscription activity
 const ACTIVE_PATTERNS = [
   /subscription/i, /renewal/i, /renewed/i, /payment\s+(received|successful|confirmation)/i,
-  /invoice/i, /receipt/i, /your\s+plan/i, /membership/i, /auto-?renew/i,
+  /invoice/i, /receipt/i, /billed/i, /charged/i, /your\s+plan/i, /membership/i, /auto-?renew/i,
   /welcome\s+to/i, /thanks\s+for\s+subscribing/i, /billing/i,
   /(has\s+been\s+)?(extended|started|activated|charged)/i,
   /trial\s+(has\s+)?(started|begun|begins)/i, /free\s+trial/i,
@@ -100,6 +105,7 @@ const ACTIVE_PATTERNS = [
   /successfully\s+(subscribed|upgraded|renewed)/i, /thank\s+you\s+for\s+(your\s+)?(purchase|subscription|upgrade)/i,
   /(annual|monthly|yearly)\s+plan\s+(activated|started)/i, /pro\s+plan\s+(activated|started)/i,
   /(paid|premium)\s+plan/i, /plan\s+(renewed|upgraded)/i, /you\s+(now\s+)?have\s+(access\s+to\s+)?(premium|pro|plus)/i,
+  /app\s*store/i, /apple\s+(services|receipt|subscription)/i, /in-?app\s+purchase/i,
 ];
 const CANCELLED_PATTERNS = [
   /cancell?ation/i, /cancell?ed/i, /your\s+subscription\s+(has\s+)?ended/i,
