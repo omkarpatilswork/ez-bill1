@@ -108,6 +108,58 @@ async function gmailFetch(url: string, accessToken: string) {
   return fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
 }
 
+const BILL_QUERY_TERMS = [
+  'invoice', 'receipt', 'bill', 'billed', 'billing', 'paid', 'payment', 'purchase', 'purchased',
+  '"tax invoice"', '"gst invoice"', '"e-invoice"', '"payment receipt"', '"payment successful"',
+  '"payment confirmation"', '"order confirmation"', '"order placed"', '"order confirmed"',
+  '"your order"', '"your receipt"', '"your invoice"', '"your bill"', '"thanks for your order"',
+  '"thank you for your order"', '"booking confirmation"', '"booking confirmed"', '"trip receipt"',
+  '"ride receipt"', '"subscription receipt"', '"renewal receipt"', '"apple receipt"', '"app store receipt"',
+  '"total paid"', '"amount paid"', '"grand total"', '"order total"', '"charged"', '"debited"',
+].join(' OR ');
+
+const BILL_SENDER_TERMS = [
+  'apple', 'email.apple.com', 'amazon', 'flipkart', 'myntra', 'ajio', 'meesho', 'nykaa', 'tatacliq',
+  'croma', 'reliance', 'vijaysales', 'swiggy', 'zomato', 'dominos', 'blinkit', 'zepto', 'bigbasket',
+  'jiomart', 'dmart', 'uber', 'ola', 'rapido', 'bookmyshow', 'district', 'insider', 'makemytrip',
+  'cleartrip', 'yatra', 'easemytrip', 'goibibo', 'irctc', 'airbnb', 'booking', 'agoda', 'indigo',
+  'airindia', 'spicejet', 'akasaair', 'netflix', 'hotstar', 'spotify', 'youtube', 'primevideo',
+  'disney', 'sony', 'zee5', 'jiocinema', 'adobe', 'microsoft', 'google', 'canva', 'notion', 'dropbox',
+  'github', 'openai', 'anthropic', 'perplexity', 'airtel', 'jio', 'vodafone', 'myvi', 'bsnl', 'actcorp',
+  'hathway', 'razorpay', 'paytm', 'phonepe', 'gpay', 'cred', 'mobikwik', 'hdfc', 'icici', 'sbi',
+  'axis', 'kotak', 'amex', 'onecard', 'lic', 'acko', 'policybazaar', 'digit', 'pharmeasy', 'netmeds',
+  '1mg', 'practo', 'cult', 'hpcl', 'bpcl', 'iocl', 'fastag', 'coursera', 'udemy', 'linkedin',
+].join(' OR ');
+
+async function searchGmailMessages(accessToken: string, queries: string[], perQuery: number, totalCap: number) {
+  const byId = new Map<string, any>();
+  for (const q of queries) {
+    let fetchedForQuery = 0;
+    let pageToken = '';
+    do {
+      const pageSize = Math.max(1, Math.min(100, perQuery - fetchedForQuery));
+      const url = new URL('https://gmail.googleapis.com/gmail/v1/users/me/messages');
+      url.searchParams.set('q', q);
+      url.searchParams.set('maxResults', String(pageSize));
+      if (pageToken) url.searchParams.set('pageToken', pageToken);
+      const res = await gmailFetch(url.toString(), accessToken);
+      if (!res.ok) {
+        const txt = await res.text();
+        throw new Error(`Gmail API error: ${res.status} ${txt}`);
+      }
+      const data = await res.json();
+      const page = data.messages || [];
+      for (const msg of page) {
+        if (!byId.has(msg.id)) byId.set(msg.id, msg);
+        if (byId.size >= totalCap) return { messages: Array.from(byId.values()) };
+      }
+      fetchedForQuery += page.length;
+      pageToken = data.nextPageToken || '';
+    } while (pageToken && fetchedForQuery < perQuery && byId.size < totalCap);
+  }
+  return { messages: Array.from(byId.values()) };
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
