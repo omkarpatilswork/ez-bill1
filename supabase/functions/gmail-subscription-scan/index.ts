@@ -346,6 +346,56 @@ function addCycle(dateISO: string, cycle: 'monthly' | 'yearly' | 'weekly'): stri
   return d.toISOString().slice(0, 10);
 }
 
+const SUBSCRIPTION_QUERY_TERMS = [
+  'subscription', 'renewal', 'renewed', 'membership', 'premium', 'pro', 'plus', 'plan', 'billing',
+  'billed', 'charged', 'receipt', 'invoice', '"payment received"', '"payment successful"',
+  '"your plan"', '"auto-renew"', '"auto renew"', 'cancellation', 'cancelled', '"welcome to"',
+  '"free trial"', '"trial started"', '"next billing"', '"will renew"', '"renews on"',
+  '"about to expire"', '"expires soon"', '"app store"', '"apple receipt"', '"apple services"',
+  '"itunes store"', '"in-app purchase"', '"thank you for subscribing"', '"plan activated"',
+  '"you now have access"',
+].join(' OR ');
+
+const SUBSCRIPTION_SENDER_TERMS = [
+  'apple', 'email.apple.com', 'itunes', 'netflix', 'spotify', 'hotstar', 'primevideo', 'youtube',
+  'openai', 'anthropic', 'perplexity', 'cursor', 'lovable', 'notion', 'figma', 'canva', 'adobe',
+  'github', 'slack', 'zoom', 'linkedin', 'sonyliv', 'zee5', 'jiocinema', 'gaana', 'wynk', 'dropbox',
+  'microsoft', 'google', 'airtel', 'jio', 'myvi', 'vodafone', 'actcorp', 'hathway', 'cult', 'curefit',
+  'swiggy', 'zomato', 'amazon', 'flipkart', 'playstation', 'xbox', 'midjourney', 'duolingo',
+  'coursera', 'udemy', 'masterclass', 'audible', 'nytimes', 'medium', 'substack', 'patreon',
+  'twitch', 'discord', 'evernote', 'grammarly', '1password', 'lastpass', 'nordvpn', 'expressvpn',
+  'surfshark', 'proton', 'tidal', 'deezer', 'crunchyroll', 'mubi', 'skillshare', 'wsj', 'economist',
+].join(' OR ');
+
+async function searchSubscriptionMessages(accessToken: string, days: number) {
+  const queries = [
+    `(subject:(${SUBSCRIPTION_QUERY_TERMS}) OR from:(${SUBSCRIPTION_SENDER_TERMS})) newer_than:${days}d`,
+    `({from:apple from:email.apple.com} OR subject:("Apple Receipt" OR "Your invoice from Apple" OR "App Store" OR "Apple Services" OR "iTunes Store")) newer_than:${days}d`,
+    `(from:amazon OR from:flipkart OR from:google OR from:microsoft OR from:adobe) (subscription OR membership OR renewal OR plan OR receipt OR invoice OR charged) newer_than:${days}d`,
+  ];
+  const byId = new Map<string, any>();
+  for (const q of queries) {
+    let pageToken = '';
+    let fetched = 0;
+    do {
+      const url = new URL('https://gmail.googleapis.com/gmail/v1/users/me/messages');
+      url.searchParams.set('q', q);
+      url.searchParams.set('maxResults', '100');
+      if (pageToken) url.searchParams.set('pageToken', pageToken);
+      const res = await gmailFetch(url.toString(), accessToken);
+      if (!res.ok) {
+        const errText = await res.text();
+        throw new Error(`Gmail API error: ${res.status} ${errText}`);
+      }
+      const data = await res.json();
+      for (const msg of data.messages || []) byId.set(msg.id, msg);
+      fetched += (data.messages || []).length;
+      pageToken = data.nextPageToken || '';
+    } while (pageToken && fetched < 250 && byId.size < 500);
+  }
+  return Array.from(byId.values());
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
