@@ -561,7 +561,7 @@ serve(async (req) => {
       const lastDateISO = new Date(a.lastDate).toISOString().slice(0, 10);
       const nextBilling = a.nextBilling || addCycle(lastDateISO, a.cycle);
       // Fill in typical INR rate when the email did not include an amount
-      const fallbackAmount = a.lastAmount ?? normalizeMonthlyAmount(TYPICAL_MONTHLY_INR[a.svc.key] ?? null, a.cycle);
+      const fallbackAmount = a.lastAmount ?? TYPICAL_MONTHLY_INR[a.svc.key] ?? null;
       results.push({
         user_id: user.id,
         service_key: a.svc.key,
