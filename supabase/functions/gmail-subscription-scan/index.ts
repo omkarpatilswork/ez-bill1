@@ -440,43 +440,14 @@ serve(async (req) => {
 
     const { days = 180 } = await req.json().catch(() => ({}));
 
-    // Broad query for subscription-related emails (no attachment requirement)
-    const subjectTerms = [
-      'subscription', 'renewal', 'renewed', 'membership', '"payment received"', '"payment successful"',
-      '"your plan"', '"auto-renew"', '"auto renew"', 'cancellation', 'cancelled', '"welcome to"',
-      '"trial started"', '"free trial"', '"has been extended"', '"has been renewed"',
-      '"next billing"', '"will renew"', '"about to end"', '"about to expire"', '"expires soon"',
-      '"expiring soon"', '"ending soon"', '"upgraded to premium"', '"upgraded to pro"',
-      '"upgraded to plus"', '"welcome to premium"', 'congratulations', '"thanks for subscribing"',
-      '"thank you for subscribing"', '"thank you for your subscription"', '"plan activated"',
-      '"premium plan"', '"pro plan"', '"paid plan"', '"plan renewed"', '"plan upgraded"',
-      '"you now have access"', '"reminder: your"',
-    ].join(' OR ');
-    const senderTerms = [
-      'netflix', 'spotify', 'hotstar', 'primevideo', 'youtube', 'openai', 'anthropic', 'perplexity',
-      'notion', 'figma', 'canva', 'adobe', 'github', 'slack', 'zoom', 'linkedin', 'sonyliv', 'zee5',
-      'jiocinema', 'gaana', 'wynk', 'dropbox', 'microsoft', 'apple', 'airtel', 'jio', 'myvi',
-      'vodafone', 'actcorp', 'cult', 'curefit', 'swiggy', 'zomato', 'flipkart', 'playstation',
-      'xbox', 'midjourney', 'duolingo', 'coursera', 'udemy', 'masterclass', 'audible', 'nytimes',
-      'medium', 'substack', 'patreon', 'twitch', 'discord', 'evernote', 'grammarly', 'lastpass',
-      '1password', 'nordvpn', 'expressvpn', 'surfshark', 'protonmail', 'tidal', 'deezer',
-      'crunchyroll', 'paramountplus', 'peacocktv', 'hbomax', 'mubi', 'lynda', 'pluralsight',
-      'skillshare', 'wsj', 'economist', 'bloomberg', 'theken', 'morningbrew',
-    ].join(' OR ');
-    const query = `(subject:(${subjectTerms}) OR from:(${senderTerms})) newer_than:${days}d`;
-
-    const searchUrl = `https://gmail.googleapis.com/gmail/v1/users/me/messages?q=${encodeURIComponent(query)}&maxResults=300`;
-    let searchRes = await gmailFetch(searchUrl, accessToken);
-    if (!searchRes.ok && searchRes.status === 401) {
+    let messages: any[] = [];
+    try {
+      messages = await searchSubscriptionMessages(accessToken, days);
+    } catch (err) {
+      if (!(err instanceof Error) || !err.message.includes('401')) throw err;
       accessToken = await refreshToken(supabase, user.id, connection, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET);
-      searchRes = await gmailFetch(searchUrl, accessToken);
+      messages = await searchSubscriptionMessages(accessToken, days);
     }
-    if (!searchRes.ok) {
-      const errText = await searchRes.text();
-      throw new Error(`Gmail API error: ${searchRes.status} ${errText}`);
-    }
-    const searchData = await searchRes.json();
-    const messages = searchData.messages || [];
 
     // Aggregate per service. Process up to 100 messages (metadata only — fast).
     interface Agg {
