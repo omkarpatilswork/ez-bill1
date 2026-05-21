@@ -601,7 +601,7 @@ serve(async (req) => {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Lovable-API-Key': LOVABLE_API_KEY,
+              Authorization: `Bearer ${LOVABLE_API_KEY}`,
           },
           body: JSON.stringify({
             model: 'google/gemini-3-flash-preview',
