@@ -163,11 +163,12 @@ function genericServiceFromSender(from: string, subject: string): ServiceDef | n
 
 /** Rough typical monthly INR price for popular services — used when amount is missing. */
 const TYPICAL_MONTHLY_INR: Record<string, number> = {
-  netflix: 499, prime_video: 299, hotstar: 299, jiocinema: 99, sonyliv: 299, zee5: 99,
+  netflix: 499, prime_video: 299, apple_app_store: 99, apple_tv: 99, apple_arcade: 99,
+  hotstar: 299, jiocinema: 99, sonyliv: 299, zee5: 99,
   youtube_premium: 129, spotify: 119, apple_music: 99, gaana: 99, wynk: 99,
   google_one: 130, icloud: 75, dropbox: 999, onedrive: 489,
   notion: 800, figma: 1200, canva: 499, adobe: 1675, github: 350, slack: 650, zoom: 1300,
-  linkedin: 1700, chatgpt: 1700, claude: 1700, perplexity: 1700, midjourney: 850, copilot: 850,
+  linkedin: 1700, chatgpt: 1700, claude: 1700, perplexity: 1700, cursor: 1700, lovable: 1700, midjourney: 850, copilot: 850,
   airtel: 399, jio: 299, vi: 299, act: 999, hathway: 799, cultfit: 1000,
   amazon_prime: 125, swiggy_one: 99, zomato_gold: 200, flipkart_plus: 99,
   psn: 499, xbox: 489, duolingo: 600, coursera: 3500, udemy: 500, masterclass: 1500,
@@ -323,6 +324,12 @@ function findCycle(text: string): 'monthly' | 'yearly' | 'weekly' {
   if (/(annual|yearly|per\s*year|\/\s*year|\/\s*yr|12\s*months)/i.test(text)) return 'yearly';
   if (/(weekly|per\s*week|\/\s*week)/i.test(text)) return 'weekly';
   return 'monthly';
+}
+function normalizeMonthlyAmount(amount: number | null, cycle: 'monthly' | 'yearly' | 'weekly'): number | null {
+  if (amount == null || !isFinite(amount) || amount <= 0) return null;
+  if (cycle === 'yearly') return Math.round((amount / 12) * 100) / 100;
+  if (cycle === 'weekly') return Math.round((amount * 4.345) * 100) / 100;
+  return amount;
 }
 function findCurrency(text: string): string {
   if (/₹|\bINR\b|\brs\.?\b/i.test(text)) return 'INR';
