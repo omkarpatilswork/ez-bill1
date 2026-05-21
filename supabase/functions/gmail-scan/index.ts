@@ -25,7 +25,7 @@ const NON_BILL_PATTERNS = [
   /spends?\s*(summary|report|recap)/i,
   /transaction\s*(summary|history|report)/i,
   // Broker / stock-market activity (not bills)
-  /(order|trade)\s*(executed|placed|confirmation|update)/i,
+  /trade\s*(executed|placed|confirmation|update)/i,
   /(buy|sell)\s*order\s*(executed|placed|confirmed)?/i,
   /margin\s*(call|statement|shortfall)/i,
   /equity\s*(trade|order|statement)/i,
@@ -214,7 +214,7 @@ serve(async (req) => {
 
     // Layered search beats one giant Gmail query: it catches attachment invoices,
     // body-only receipts (Amazon/Flipkart/Apple), subscriptions, and merchant emails.
-    const exclusions = `-subject:"statement of account" -subject:"account statement" -subject:"bank statement" -subject:"credit card statement" -subject:"contract note" -subject:"portfolio" -subject:"holdings" -subject:"P&L" -subject:"weekly report" -subject:"monthly statement" -subject:"trade confirmation" -subject:"order executed" -subject:"order placed" -subject:"trade executed" -subject:"sip investment" -subject:"sip installment" -subject:"folio statement" -subject:"transaction summary" -subject:"spending summary" -subject:"paytm statement" -subject:"phonepe statement" -subject:"gpay statement" -subject:"google pay statement" -from:groww -from:zerodha -from:upstox -from:angelone -from:angelbroking -from:5paisa -from:icicidirect -from:kotaksecurities -from:hdfcsec -from:sharekhan -from:motilaloswal -from:iifl -from:edelweiss -from:paytmmoney -from:dhan -from:fyers -from:kuvera -from:smallcase -from:indmoney -from:scripbox -from:cdslindia -from:nsdl -from:camsonline -from:kfintech -subject:unsubscribe -subject:newsletter`;
+    const exclusions = `-subject:"statement of account" -subject:"account statement" -subject:"bank statement" -subject:"credit card statement" -subject:"contract note" -subject:"portfolio" -subject:"holdings" -subject:"P&L" -subject:"weekly report" -subject:"monthly statement" -subject:"trade confirmation" -subject:"order executed" -subject:"trade executed" -subject:"sip investment" -subject:"sip installment" -subject:"folio statement" -subject:"transaction summary" -subject:"spending summary" -subject:"paytm statement" -subject:"phonepe statement" -subject:"gpay statement" -subject:"google pay statement" -from:groww -from:zerodha -from:upstox -from:angelone -from:angelbroking -from:5paisa -from:icicidirect -from:kotaksecurities -from:hdfcsec -from:sharekhan -from:motilaloswal -from:iifl -from:edelweiss -from:paytmmoney -from:dhan -from:fyers -from:kuvera -from:smallcase -from:indmoney -from:scripbox -from:cdslindia -from:nsdl -from:camsonline -from:kfintech -subject:unsubscribe -subject:newsletter`;
     const base = `${exclusions} newer_than:${days}d`;
     const queries = [
       `(subject:(${BILL_QUERY_TERMS}) OR {filename:pdf filename:jpg filename:jpeg filename:png}) ${base}`,
@@ -423,7 +423,7 @@ function extractBodyText(payload: any): string {
 }
 
 // Quick check that a body-only email is bill-like (avoids spam, marketing, OTPs, etc.)
-const BILL_KEYWORDS = /(invoice|receipt|order (no|number|id|placed|confirmation|delivered|shipped)|your order|payment (received|successful|confirmation)|thanks for your order|booking (confirmation|confirmed)|ride (with|receipt|completed)|trip receipt|your bill|tax invoice|amount\s*(paid|charged)|total\s*(amount|paid|charged)|grand\s*total|subtotal|payable|₹\s*\d|rs\.?\s*\d|inr\s*\d)/i;
+const BILL_KEYWORDS = /(invoice|receipt|bill|billing|subscription|renewal|membership|order (no|number|id|placed|confirmation|confirmed|delivered|shipped|total)|your order|payment (received|successful|confirmation)|thanks for your order|thank you for your order|booking (confirmation|confirmed)|ride (with|receipt|completed)|trip receipt|your bill|tax invoice|gst invoice|apple receipt|app store|amount\s*(paid|charged)|total\s*(amount|paid|charged)|grand\s*total|subtotal|payable|charged\s*(₹|rs\.?|inr|\$)|₹\s*\d|rs\.?\s*\d|inr\s*\d|\$\s*\d)/i;
 function looksLikeBill(subject: string, from: string, body: string): boolean {
   const sample = `${subject}\n${from}\n${body.slice(0, 4000)}`;
   return BILL_KEYWORDS.test(sample);
