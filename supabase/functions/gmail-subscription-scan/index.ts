@@ -500,9 +500,10 @@ serve(async (req) => {
 
         const status = detectStatus(subject, `${snippet}\n${body}`);
         const ts = dateStr ? new Date(dateStr).getTime() : Date.now();
-        const amt = parseAmount(fullText);
+        const rawAmount = parseAmount(fullText);
         const nextBilling = findNextBillingDate(fullText);
         const cycle = findCycle(fullText);
+        const amt = normalizeMonthlyAmount(rawAmount, cycle);
         const currency = findCurrency(fullText);
         const isTrial = findTrial(fullText);
         const trialEnds = isTrial
@@ -560,7 +561,7 @@ serve(async (req) => {
       const lastDateISO = new Date(a.lastDate).toISOString().slice(0, 10);
       const nextBilling = a.nextBilling || addCycle(lastDateISO, a.cycle);
       // Fill in typical INR rate when the email did not include an amount
-      const fallbackAmount = a.lastAmount ?? TYPICAL_MONTHLY_INR[a.svc.key] ?? null;
+      const fallbackAmount = a.lastAmount ?? normalizeMonthlyAmount(TYPICAL_MONTHLY_INR[a.svc.key] ?? null, a.cycle);
       results.push({
         user_id: user.id,
         service_key: a.svc.key,
@@ -575,7 +576,7 @@ serve(async (req) => {
         email_count: a.count,
         last_email_snippet: a.lastSnippet,
         next_billing_date: nextBilling,
-        billing_cycle: a.cycle,
+        billing_cycle: 'monthly',
         currency: a.currency,
         is_trial: a.isTrial,
         trial_ends_at: a.trialEnds,
