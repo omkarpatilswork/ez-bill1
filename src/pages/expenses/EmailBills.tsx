@@ -10,16 +10,14 @@ import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import {
   Mail, Link2, Unlink, Loader2, Download,
   CheckCircle2, AlertCircle, ScanLine,
   Smartphone, Send, IndianRupee, Clock, CreditCard, Filter,
-  Trash2, RefreshCw,
+  Trash2, RefreshCw, Sparkles, ShieldCheck,
 } from 'lucide-react';
 import type { ExpenseCategory } from '@/lib/types';
-import { AutoSync } from '@/lib/auto-bill-import';
 import { runBillImport, SyncLockedError, type BillImportPhase } from '@/lib/auto-bill-import';
 import { SyncProgressSteps } from '@/components/email-bills/SyncProgressSteps';
 import { SyncHistoryPanel } from '@/components/email-bills/SyncHistoryPanel';
@@ -120,7 +118,7 @@ export default function EmailBills() {
   const [dateRange, setDateRange] = useState(30);
 
   const [importProgress, setImportProgress] = useState({ phase: '', current: 0, total: 0 });
-  const [importResult, setImportResult] = useState<{ saved: number; skipped: number; duplicates: number; total: number } | null>(null);
+  const [importResult, setImportResult] = useState<{ saved: number; skipped: number; duplicates: number; total: number; subscriptions?: number; warranties?: number } | null>(null);
 
   const [smsText, setSmsText] = useState('');
   const [isParsing, setIsParsing] = useState(false);
@@ -130,8 +128,6 @@ export default function EmailBills() {
   const [showNativeScan] = useState(() => isNativeApp() && isAndroid());
   const isNative = isNativeApp();
 
-  const [autoSyncEnabled, setAutoSyncEnabled] = useState(false);
-  const [autoSyncLastSync, setAutoSyncLastSync] = useState<string | null>(null);
   const [isSyncingNow, setIsSyncingNow] = useState(false);
   const [historyRefreshKey, setHistoryRefreshKey] = useState(0);
   const [syncProgress, setSyncProgress] = useState<{
@@ -141,70 +137,67 @@ export default function EmailBills() {
     message: string;
   }>({ phase: 'idle', current: 0, total: 0, message: '' });
 
-  useEffect(() => {
-    if (!user) return;
-    setAutoSyncEnabled(AutoSync.isEnabled(user.id));
-    setAutoSyncLastSync(AutoSync.getLastSync(user.id));
-  }, [user]);
-
-  const handleToggleAutoSync = (checked: boolean) => {
-    if (!user) return;
-    AutoSync.setEnabled(user.id, checked);
-    setAutoSyncEnabled(checked);
-    setAutoSyncLastSync(AutoSync.getLastSync(user.id));
-    toast({
-      title: checked ? 'Auto-sync enabled' : 'Auto-sync disabled',
-      description: checked
-        ? 'Bills will sync automatically once a day when you open the app.'
-        : 'You can still import bills manually anytime.',
-    });
-  };
-
-  const syncNow = async () => {
-    if (!user) return;
-    await runImportWithProgress(AutoSync.computeSyncDays(user.id), { updateLastSync: true });
-  };
-
-  const importLast30 = async () => {
-    if (!user) return;
-    await runImportWithProgress(30, { updateLastSync: false });
-  };
-
-  const runImportWithProgress = async (days: number, opts: { updateLastSync: boolean }) => {
+  const runImportWithProgress = async (days: number) => {
     if (!user) return;
     setIsSyncingNow(true);
-    setSyncProgress({ phase: 'fetching', current: 0, total: 0, message: `Starting import (last ${days} day${days === 1 ? '' : 's'})…` });
+    setImportResult(null);
+    setSyncProgress({ phase: 'fetching', current: 0, total: 0, message: `Starting scan (last ${days} day${days === 1 ? '' : 's'})…` });
     toast({
-      title: opts.updateLastSync ? 'Syncing bills…' : 'Importing bills…',
-      description: `Fetching from the last ${days} day${days === 1 ? '' : 's'}.`,
+      title: 'Scanning Gmail…',
+      description: `Fetching bills, subscriptions, and warranties from the last ${days} day${days === 1 ? '' : 's'}.`,
     });
     try {
       const result = await runBillImport({
         userId: user.id,
         days,
         categories,
+        kind: 'sync_now',
         onProgress: (p) => setSyncProgress({ phase: p.phase, current: p.current, total: p.total, message: p.message || '' }),
       });
-      if (opts.updateLastSync) {
-        AutoSync.setLastRunToday(user.id);
-        AutoSync.setLastSync(user.id, new Date().toISOString().slice(0, 10));
-        setAutoSyncLastSync(AutoSync.getLastSync(user.id));
+
+      // Also scan subscriptions and warranties in the same manual run.
+      let subscriptions = 0;
+      let warranties = 0;
+      try {
+        setSyncProgress({ phase: 'parsing', current: 0, total: 0, message: 'Scanning subscriptions…' });
+        const { data: subData } = await supabase.functions.invoke('gmail-subscription-scan', {
+          body: { days, max_results: 50 },
+        });
+        subscriptions = subData?.saved_count ?? subData?.saved?.length ?? 0;
+      } catch (e) {
+        console.warn('subscription scan failed', e);
       }
-      setImportResult({ saved: result.saved, skipped: result.skipped, duplicates: result.duplicates, total: result.total });
+      try {
+        setSyncProgress({ phase: 'parsing', current: 0, total: 0, message: 'Scanning warranties…' });
+        const { data: warData } = await supabase.functions.invoke('gmail-warranty-scan', {
+          body: { days, max_results: 30 },
+        });
+        warranties = warData?.saved_count ?? warData?.saved?.length ?? 0;
+      } catch (e) {
+        console.warn('warranty scan failed', e);
+      }
+
+      setImportResult({
+        saved: result.saved,
+        skipped: result.skipped,
+        duplicates: result.duplicates,
+        total: result.total,
+        subscriptions,
+        warranties,
+      });
+      setSyncProgress({ phase: 'done', current: 1, total: 1, message: 'Scan complete.' });
       toast({
-        title: 'Import complete',
-        description: result.saved > 0
-          ? `Imported ${result.saved} new bill(s).${result.duplicates ? ` ${result.duplicates} duplicate(s) skipped.` : ''}`
-          : (result.scanned === 0 ? 'No new bills found.' : 'Everything is up to date.'),
+        title: 'Scan complete',
+        description: `${result.saved} bill${result.saved === 1 ? '' : 's'} · ${subscriptions} subscription${subscriptions === 1 ? '' : 's'} · ${warranties} warrant${warranties === 1 ? 'y' : 'ies'} imported.`,
       });
     } catch (err: any) {
       if (err instanceof SyncLockedError) {
         toast({
           title: 'Sync already running',
-          description: 'A bill sync is currently in progress. Please wait for it to finish.',
+          description: 'A scan is currently in progress. Please wait for it to finish.',
         });
       } else {
-        toast({ title: 'Import failed', description: err.message, variant: 'destructive' });
+        toast({ title: 'Scan failed', description: err.message, variant: 'destructive' });
       }
       setSyncProgress({ phase: 'idle', current: 0, total: 0, message: '' });
     } finally {
