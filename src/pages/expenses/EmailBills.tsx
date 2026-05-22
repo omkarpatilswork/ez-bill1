@@ -601,62 +601,17 @@ export default function EmailBills() {
           {/* Scan Controls */}
           {isConnected && (
             <div className="glass-card rounded-2xl p-5 space-y-4">
-              {/* Auto-Sync consent */}
-              <div className="flex items-start justify-between gap-3 pb-4 border-b border-border/30">
-                <div className="flex items-start gap-3 min-w-0">
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/15 text-primary">
-                    <RefreshCw className="h-4 w-4" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="font-semibold text-sm text-foreground">Enable automatic sync</p>
-                    <p className="text-xs text-muted-foreground">
-                      When on, EZ Bill checks your inbox in the background once a day and imports any new bills it finds — no need to open this page.
-                      {autoSyncEnabled && autoSyncLastSync && (
-                        <> Last synced: <span className="text-foreground">{autoSyncLastSync}</span>.</>
-                      )}
-                    </p>
-                  </div>
+              <div className="flex items-start gap-3">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/15 text-primary">
+                  <ScanLine className="h-4 w-4" />
                 </div>
-                <Switch checked={autoSyncEnabled} onCheckedChange={handleToggleAutoSync} />
+                <div className="min-w-0">
+                  <p className="font-semibold text-sm text-foreground">Manual scan & import</p>
+                  <p className="text-xs text-muted-foreground">
+                    One tap scans your Gmail for bills, subscriptions, and warranties — all together. Auto-sync is off to keep AI usage minimal.
+                  </p>
+                </div>
               </div>
-
-              <Button
-                onClick={syncNow}
-                disabled={isSyncingNow || isScanning}
-                variant="outline"
-                className="w-full min-h-[44px] glass-button border-0 active:scale-[0.97]"
-              >
-                {isSyncingNow ? (
-                  <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Syncing now…</>
-                ) : (
-                  <><RefreshCw className="h-4 w-4 mr-2" /> Sync now</>
-                )}
-              </Button>
-
-              <Button
-                onClick={importLast30}
-                disabled={isSyncingNow || isScanning}
-                className="w-full min-h-[44px] active:scale-[0.97]"
-              >
-                {isSyncingNow ? (
-                  <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Importing…</>
-                ) : (
-                  <><Download className="h-4 w-4 mr-2" /> Import recent bills</>
-                )}
-              </Button>
-
-              <p className="text-[11px] text-muted-foreground text-center -mt-1">
-                If a background sync is already running, your new run will be skipped to avoid duplicate work.
-              </p>
-
-              {(isSyncingNow || syncProgress.phase !== 'idle') && (
-                <SyncProgressSteps
-                  phase={syncProgress.phase}
-                  current={syncProgress.current}
-                  total={syncProgress.total}
-                  message={syncProgress.message}
-                />
-              )}
 
               <div className="flex flex-col sm:flex-row gap-3">
                 <div className="flex items-center gap-2 flex-1">
@@ -672,14 +627,38 @@ export default function EmailBills() {
                     </SelectContent>
                   </Select>
                 </div>
-                <Button onClick={() => runImportWithProgress(dateRange, { updateLastSync: false })} disabled={isSyncingNow || isScanning} className="min-h-[44px] active:scale-[0.97]">
+                <Button onClick={() => runImportWithProgress(dateRange)} disabled={isSyncingNow || isScanning} className="min-h-[44px] active:scale-[0.97]">
                   {isSyncingNow ? (
-                    <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Importing…</>
+                    <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Scanning…</>
                   ) : (
                     <><ScanLine className="h-4 w-4 mr-2" /> Scan & Import All</>
                   )}
                 </Button>
               </div>
+
+              <div className="grid grid-cols-3 gap-2 pt-1">
+                <div className="rounded-xl bg-secondary/20 border border-border/30 p-2.5 flex items-center gap-2">
+                  <Download className="h-3.5 w-3.5 text-primary shrink-0" />
+                  <span className="text-[11px] text-muted-foreground">Bills</span>
+                </div>
+                <div className="rounded-xl bg-secondary/20 border border-border/30 p-2.5 flex items-center gap-2">
+                  <Sparkles className="h-3.5 w-3.5 text-gold shrink-0" />
+                  <span className="text-[11px] text-muted-foreground">Subscriptions</span>
+                </div>
+                <div className="rounded-xl bg-secondary/20 border border-border/30 p-2.5 flex items-center gap-2">
+                  <ShieldCheck className="h-3.5 w-3.5 text-success shrink-0" />
+                  <span className="text-[11px] text-muted-foreground">Warranties</span>
+                </div>
+              </div>
+
+              {(isSyncingNow || syncProgress.phase !== 'idle') && (
+                <SyncProgressSteps
+                  phase={syncProgress.phase}
+                  current={syncProgress.current}
+                  total={syncProgress.total}
+                  message={syncProgress.message}
+                />
+              )}
 
               {isScanning && importProgress.total > 0 && (
                 <div className="space-y-2">
