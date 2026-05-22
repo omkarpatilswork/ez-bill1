@@ -26,9 +26,10 @@ interface SyncRun {
 }
 
 const KIND_LABEL: Record<string, string> = {
-  auto: 'Auto-sync',
-  sync_now: 'Sync now',
-  manual_30: 'Manual import',
+  auto: 'Manual sync',
+  sync_now: 'Manual sync',
+  manual_30: 'Manual sync',
+  manual_all: 'Manual sync',
 };
 
 function fmtDate(iso: string) {
