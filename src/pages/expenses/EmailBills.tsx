@@ -10,16 +10,14 @@ import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import {
   Mail, Link2, Unlink, Loader2, Download,
   CheckCircle2, AlertCircle, ScanLine,
   Smartphone, Send, IndianRupee, Clock, CreditCard, Filter,
-  Trash2, RefreshCw,
+  Trash2, RefreshCw, Sparkles, ShieldCheck,
 } from 'lucide-react';
 import type { ExpenseCategory } from '@/lib/types';
-import { AutoSync } from '@/lib/auto-bill-import';
 import { runBillImport, SyncLockedError, type BillImportPhase } from '@/lib/auto-bill-import';
 import { SyncProgressSteps } from '@/components/email-bills/SyncProgressSteps';
 import { SyncHistoryPanel } from '@/components/email-bills/SyncHistoryPanel';
@@ -120,7 +118,7 @@ export default function EmailBills() {
   const [dateRange, setDateRange] = useState(30);
 
   const [importProgress, setImportProgress] = useState({ phase: '', current: 0, total: 0 });
-  const [importResult, setImportResult] = useState<{ saved: number; skipped: number; duplicates: number; total: number } | null>(null);
+  const [importResult, setImportResult] = useState<{ saved: number; skipped: number; duplicates: number; total: number; subscriptions?: number; warranties?: number } | null>(null);
 
   const [smsText, setSmsText] = useState('');
   const [isParsing, setIsParsing] = useState(false);
@@ -130,8 +128,6 @@ export default function EmailBills() {
   const [showNativeScan] = useState(() => isNativeApp() && isAndroid());
   const isNative = isNativeApp();
 
-  const [autoSyncEnabled, setAutoSyncEnabled] = useState(false);
-  const [autoSyncLastSync, setAutoSyncLastSync] = useState<string | null>(null);
   const [isSyncingNow, setIsSyncingNow] = useState(false);
   const [historyRefreshKey, setHistoryRefreshKey] = useState(0);
   const [syncProgress, setSyncProgress] = useState<{
@@ -141,70 +137,67 @@ export default function EmailBills() {
     message: string;
   }>({ phase: 'idle', current: 0, total: 0, message: '' });
 
-  useEffect(() => {
-    if (!user) return;
-    setAutoSyncEnabled(AutoSync.isEnabled(user.id));
-    setAutoSyncLastSync(AutoSync.getLastSync(user.id));
-  }, [user]);
-
-  const handleToggleAutoSync = (checked: boolean) => {
-    if (!user) return;
-    AutoSync.setEnabled(user.id, checked);
-    setAutoSyncEnabled(checked);
-    setAutoSyncLastSync(AutoSync.getLastSync(user.id));
-    toast({
-      title: checked ? 'Auto-sync enabled' : 'Auto-sync disabled',
-      description: checked
-        ? 'Bills will sync automatically once a day when you open the app.'
-        : 'You can still import bills manually anytime.',
-    });
-  };
-
-  const syncNow = async () => {
-    if (!user) return;
-    await runImportWithProgress(AutoSync.computeSyncDays(user.id), { updateLastSync: true });
-  };
-
-  const importLast30 = async () => {
-    if (!user) return;
-    await runImportWithProgress(30, { updateLastSync: false });
-  };
-
-  const runImportWithProgress = async (days: number, opts: { updateLastSync: boolean }) => {
+  const runImportWithProgress = async (days: number) => {
     if (!user) return;
     setIsSyncingNow(true);
-    setSyncProgress({ phase: 'fetching', current: 0, total: 0, message: `Starting import (last ${days} day${days === 1 ? '' : 's'})…` });
+    setImportResult(null);
+    setSyncProgress({ phase: 'fetching', current: 0, total: 0, message: `Starting scan (last ${days} day${days === 1 ? '' : 's'})…` });
     toast({
-      title: opts.updateLastSync ? 'Syncing bills…' : 'Importing bills…',
-      description: `Fetching from the last ${days} day${days === 1 ? '' : 's'}.`,
+      title: 'Scanning Gmail…',
+      description: `Fetching bills, subscriptions, and warranties from the last ${days} day${days === 1 ? '' : 's'}.`,
     });
     try {
       const result = await runBillImport({
         userId: user.id,
         days,
         categories,
+        kind: 'sync_now',
         onProgress: (p) => setSyncProgress({ phase: p.phase, current: p.current, total: p.total, message: p.message || '' }),
       });
-      if (opts.updateLastSync) {
-        AutoSync.setLastRunToday(user.id);
-        AutoSync.setLastSync(user.id, new Date().toISOString().slice(0, 10));
-        setAutoSyncLastSync(AutoSync.getLastSync(user.id));
+
+      // Also scan subscriptions and warranties in the same manual run.
+      let subscriptions = 0;
+      let warranties = 0;
+      try {
+        setSyncProgress({ phase: 'parsing', current: 0, total: 0, message: 'Scanning subscriptions…' });
+        const { data: subData } = await supabase.functions.invoke('gmail-subscription-scan', {
+          body: { days, max_results: 50 },
+        });
+        subscriptions = subData?.saved_count ?? subData?.saved?.length ?? 0;
+      } catch (e) {
+        console.warn('subscription scan failed', e);
       }
-      setImportResult({ saved: result.saved, skipped: result.skipped, duplicates: result.duplicates, total: result.total });
+      try {
+        setSyncProgress({ phase: 'parsing', current: 0, total: 0, message: 'Scanning warranties…' });
+        const { data: warData } = await supabase.functions.invoke('gmail-warranty-scan', {
+          body: { days, max_results: 30 },
+        });
+        warranties = warData?.saved_count ?? warData?.saved?.length ?? 0;
+      } catch (e) {
+        console.warn('warranty scan failed', e);
+      }
+
+      setImportResult({
+        saved: result.saved,
+        skipped: result.skipped,
+        duplicates: result.duplicates,
+        total: result.total,
+        subscriptions,
+        warranties,
+      });
+      setSyncProgress({ phase: 'done', current: 1, total: 1, message: 'Scan complete.' });
       toast({
-        title: 'Import complete',
-        description: result.saved > 0
-          ? `Imported ${result.saved} new bill(s).${result.duplicates ? ` ${result.duplicates} duplicate(s) skipped.` : ''}`
-          : (result.scanned === 0 ? 'No new bills found.' : 'Everything is up to date.'),
+        title: 'Scan complete',
+        description: `${result.saved} bill${result.saved === 1 ? '' : 's'} · ${subscriptions} subscription${subscriptions === 1 ? '' : 's'} · ${warranties} warrant${warranties === 1 ? 'y' : 'ies'} imported.`,
       });
     } catch (err: any) {
       if (err instanceof SyncLockedError) {
         toast({
           title: 'Sync already running',
-          description: 'A bill sync is currently in progress. Please wait for it to finish.',
+          description: 'A scan is currently in progress. Please wait for it to finish.',
         });
       } else {
-        toast({ title: 'Import failed', description: err.message, variant: 'destructive' });
+        toast({ title: 'Scan failed', description: err.message, variant: 'destructive' });
       }
       setSyncProgress({ phase: 'idle', current: 0, total: 0, message: '' });
     } finally {
@@ -608,62 +601,17 @@ export default function EmailBills() {
           {/* Scan Controls */}
           {isConnected && (
             <div className="glass-card rounded-2xl p-5 space-y-4">
-              {/* Auto-Sync consent */}
-              <div className="flex items-start justify-between gap-3 pb-4 border-b border-border/30">
-                <div className="flex items-start gap-3 min-w-0">
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/15 text-primary">
-                    <RefreshCw className="h-4 w-4" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="font-semibold text-sm text-foreground">Enable automatic sync</p>
-                    <p className="text-xs text-muted-foreground">
-                      When on, EZ Bill checks your inbox in the background once a day and imports any new bills it finds — no need to open this page.
-                      {autoSyncEnabled && autoSyncLastSync && (
-                        <> Last synced: <span className="text-foreground">{autoSyncLastSync}</span>.</>
-                      )}
-                    </p>
-                  </div>
+              <div className="flex items-start gap-3">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/15 text-primary">
+                  <ScanLine className="h-4 w-4" />
                 </div>
-                <Switch checked={autoSyncEnabled} onCheckedChange={handleToggleAutoSync} />
+                <div className="min-w-0">
+                  <p className="font-semibold text-sm text-foreground">Manual scan & import</p>
+                  <p className="text-xs text-muted-foreground">
+                    One tap scans your Gmail for bills, subscriptions, and warranties — all together. Auto-sync is off to keep AI usage minimal.
+                  </p>
+                </div>
               </div>
-
-              <Button
-                onClick={syncNow}
-                disabled={isSyncingNow || isScanning}
-                variant="outline"
-                className="w-full min-h-[44px] glass-button border-0 active:scale-[0.97]"
-              >
-                {isSyncingNow ? (
-                  <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Syncing now…</>
-                ) : (
-                  <><RefreshCw className="h-4 w-4 mr-2" /> Sync now</>
-                )}
-              </Button>
-
-              <Button
-                onClick={importLast30}
-                disabled={isSyncingNow || isScanning}
-                className="w-full min-h-[44px] active:scale-[0.97]"
-              >
-                {isSyncingNow ? (
-                  <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Importing…</>
-                ) : (
-                  <><Download className="h-4 w-4 mr-2" /> Import recent bills</>
-                )}
-              </Button>
-
-              <p className="text-[11px] text-muted-foreground text-center -mt-1">
-                If a background sync is already running, your new run will be skipped to avoid duplicate work.
-              </p>
-
-              {(isSyncingNow || syncProgress.phase !== 'idle') && (
-                <SyncProgressSteps
-                  phase={syncProgress.phase}
-                  current={syncProgress.current}
-                  total={syncProgress.total}
-                  message={syncProgress.message}
-                />
-              )}
 
               <div className="flex flex-col sm:flex-row gap-3">
                 <div className="flex items-center gap-2 flex-1">
@@ -679,14 +627,38 @@ export default function EmailBills() {
                     </SelectContent>
                   </Select>
                 </div>
-                <Button onClick={() => runImportWithProgress(dateRange, { updateLastSync: false })} disabled={isSyncingNow || isScanning} className="min-h-[44px] active:scale-[0.97]">
+                <Button onClick={() => runImportWithProgress(dateRange)} disabled={isSyncingNow || isScanning} className="min-h-[44px] active:scale-[0.97]">
                   {isSyncingNow ? (
-                    <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Importing…</>
+                    <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Scanning…</>
                   ) : (
                     <><ScanLine className="h-4 w-4 mr-2" /> Scan & Import All</>
                   )}
                 </Button>
               </div>
+
+              <div className="grid grid-cols-3 gap-2 pt-1">
+                <div className="rounded-xl bg-secondary/20 border border-border/30 p-2.5 flex items-center gap-2">
+                  <Download className="h-3.5 w-3.5 text-primary shrink-0" />
+                  <span className="text-[11px] text-muted-foreground">Bills</span>
+                </div>
+                <div className="rounded-xl bg-secondary/20 border border-border/30 p-2.5 flex items-center gap-2">
+                  <Sparkles className="h-3.5 w-3.5 text-gold shrink-0" />
+                  <span className="text-[11px] text-muted-foreground">Subscriptions</span>
+                </div>
+                <div className="rounded-xl bg-secondary/20 border border-border/30 p-2.5 flex items-center gap-2">
+                  <ShieldCheck className="h-3.5 w-3.5 text-success shrink-0" />
+                  <span className="text-[11px] text-muted-foreground">Warranties</span>
+                </div>
+              </div>
+
+              {(isSyncingNow || syncProgress.phase !== 'idle') && (
+                <SyncProgressSteps
+                  phase={syncProgress.phase}
+                  current={syncProgress.current}
+                  total={syncProgress.total}
+                  message={syncProgress.message}
+                />
+              )}
 
               {isScanning && importProgress.total > 0 && (
                 <div className="space-y-2">
@@ -711,11 +683,13 @@ export default function EmailBills() {
               <div className="flex items-start gap-3">
                 <CheckCircle2 className="h-6 w-6 text-success shrink-0 mt-0.5" />
                 <div className="space-y-1">
-                  <h3 className="font-semibold text-foreground">Import Complete</h3>
+                  <h3 className="font-semibold text-foreground">Scan Complete</h3>
                   <p className="text-sm text-muted-foreground">
-                    <span className="font-medium text-foreground">{importResult.saved}</span> bill(s) imported successfully.
-                    {importResult.skipped > 0 && (
-                      <> <span className="font-medium text-muted-foreground">{importResult.skipped}</span> skipped (no amount or extraction failed).</>
+                    <span className="font-medium text-foreground">{importResult.saved}</span> bill{importResult.saved === 1 ? '' : 's'}
+                    {' · '}<span className="font-medium text-foreground">{importResult.subscriptions ?? 0}</span> subscription{(importResult.subscriptions ?? 0) === 1 ? '' : 's'}
+                    {' · '}<span className="font-medium text-foreground">{importResult.warranties ?? 0}</span> warrant{(importResult.warranties ?? 0) === 1 ? 'y' : 'ies'} imported.
+                    {importResult.duplicates > 0 && (
+                      <> <span className="text-muted-foreground">{importResult.duplicates} duplicate{importResult.duplicates === 1 ? '' : 's'} skipped.</span></>
                     )}
                   </p>
                   <Button
