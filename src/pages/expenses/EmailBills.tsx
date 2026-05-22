@@ -683,11 +683,13 @@ export default function EmailBills() {
               <div className="flex items-start gap-3">
                 <CheckCircle2 className="h-6 w-6 text-success shrink-0 mt-0.5" />
                 <div className="space-y-1">
-                  <h3 className="font-semibold text-foreground">Import Complete</h3>
+                  <h3 className="font-semibold text-foreground">Scan Complete</h3>
                   <p className="text-sm text-muted-foreground">
-                    <span className="font-medium text-foreground">{importResult.saved}</span> bill(s) imported successfully.
-                    {importResult.skipped > 0 && (
-                      <> <span className="font-medium text-muted-foreground">{importResult.skipped}</span> skipped (no amount or extraction failed).</>
+                    <span className="font-medium text-foreground">{importResult.saved}</span> bill{importResult.saved === 1 ? '' : 's'}
+                    {' · '}<span className="font-medium text-foreground">{importResult.subscriptions ?? 0}</span> subscription{(importResult.subscriptions ?? 0) === 1 ? '' : 's'}
+                    {' · '}<span className="font-medium text-foreground">{importResult.warranties ?? 0}</span> warrant{(importResult.warranties ?? 0) === 1 ? 'y' : 'ies'} imported.
+                    {importResult.duplicates > 0 && (
+                      <> <span className="text-muted-foreground">{importResult.duplicates} duplicate{importResult.duplicates === 1 ? '' : 's'} skipped.</span></>
                     )}
                   </p>
                   <Button
