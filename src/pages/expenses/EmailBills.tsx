@@ -688,6 +688,40 @@ export default function EmailBills() {
                 </div>
               </div>
 
+              {/* Estimated cost for the selected window */}
+              {(() => {
+                const est = estimateScanCost(dateRange);
+                return (
+                  <div className="rounded-xl border border-gold/25 bg-gold/5 p-3 space-y-2">
+                    <div className="flex items-center gap-2">
+                      <Gauge className="h-4 w-4 text-gold" />
+                      <p className="text-xs font-semibold text-foreground">
+                        Estimated usage for last {dateRange} day{dateRange === 1 ? '' : 's'}
+                      </p>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2 text-[11px]">
+                      <div className="rounded-lg bg-background/40 border border-border/30 p-2">
+                        <p className="text-muted-foreground">Emails scanned</p>
+                        <p className="text-sm font-semibold text-foreground">~{est.emails}</p>
+                      </div>
+                      <div className="rounded-lg bg-background/40 border border-border/30 p-2">
+                        <p className="text-muted-foreground">AI calls</p>
+                        <p className="text-sm font-semibold text-foreground">~{est.aiCalls}</p>
+                      </div>
+                      <div className="rounded-lg bg-background/40 border border-border/30 p-2">
+                        <p className="text-muted-foreground">Est. cost</p>
+                        <p className="text-sm font-semibold text-gold">
+                          {formatUsd(est.rangeLowUsd)}–{formatUsd(est.rangeHighUsd)}
+                        </p>
+                      </div>
+                    </div>
+                    <p className="text-[10px] text-muted-foreground leading-relaxed">
+                      Rough estimate based on typical inboxes (AI ≈ {formatUsd(est.aiCreditsUsd)}, Cloud ≈ {formatUsd(est.cloudCreditsUsd)}). Actual cost depends on how many bill, subscription and warranty emails you receive.
+                    </p>
+                  </div>
+                );
+              })()}
+
               {(isSyncingNow || syncProgress.phase !== 'idle') && (
                 <SyncProgressSteps
                   phase={syncProgress.phase}
