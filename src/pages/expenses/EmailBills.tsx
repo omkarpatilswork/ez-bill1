@@ -15,7 +15,7 @@ import {
   Mail, Link2, Unlink, Loader2, Download,
   CheckCircle2, AlertCircle, ScanLine,
   Smartphone, Send, IndianRupee, Clock, CreditCard, Filter,
-  Trash2, RefreshCw, Sparkles, ShieldCheck,
+  Trash2, RefreshCw, Sparkles, ShieldCheck, Gauge,
 } from 'lucide-react';
 import type { ExpenseCategory } from '@/lib/types';
 import { runBillImport, SyncLockedError, type BillImportPhase } from '@/lib/auto-bill-import';
@@ -81,6 +81,43 @@ const CATEGORY_ALIASES: Record<string, string[]> = {
 };
 
 const DEFAULT_BILL_CURRENCY = 'INR';
+
+// Rough heuristics for estimating AI/cloud usage before a scan runs.
+// Tuned to be slightly conservative so users aren't surprised by a higher bill.
+// Per day we assume ~2 bill emails (each → 2 AI calls: attachment fetch + extract-receipt),
+// plus one subscription-scan batch every ~30 days and ~0.3 warranty emails/day
+// (each → 1 extract-warranty call).
+function estimateScanCost(days: number) {
+  const billEmails = Math.round(days * 2);
+  const billAiCalls = billEmails; // extract-receipt per attachment
+  const subAiCalls = Math.max(1, Math.ceil(days / 30)); // batched subscription scan
+  const warrantyEmails = Math.max(1, Math.round(days * 0.3));
+  const warrantyAiCalls = warrantyEmails;
+
+  const totalAiCalls = billAiCalls + subAiCalls + warrantyAiCalls;
+  // Lovable AI: Gemini Flash ≈ $0.0003 per call avg (vision + text mix).
+  const aiCreditsUsd = totalAiCalls * 0.0003;
+  // Cloud (edge function + DB) ≈ $0.00005 per email processed.
+  const cloudCreditsUsd = (billEmails + warrantyEmails + subAiCalls * 20) * 0.00005;
+  const totalUsd = aiCreditsUsd + cloudCreditsUsd;
+
+  return {
+    emails: billEmails + warrantyEmails,
+    aiCalls: totalAiCalls,
+    aiCreditsUsd,
+    cloudCreditsUsd,
+    totalUsd,
+    // Show a ±40% range so users get a band, not a false-precise number.
+    rangeLowUsd: totalUsd * 0.6,
+    rangeHighUsd: totalUsd * 1.4,
+  };
+}
+
+function formatUsd(v: number): string {
+  if (v < 0.01) return `<$0.01`;
+  if (v < 1) return `$${v.toFixed(2)}`;
+  return `$${v.toFixed(2)}`;
+}
 
 function findCategoryByName(name: string, categories: ExpenseCategory[]): { id: string; label: string } | null {
   if (!name || name === 'Not Found') return null;
@@ -650,6 +687,40 @@ export default function EmailBills() {
                   <span className="text-[11px] text-muted-foreground">Warranties</span>
                 </div>
               </div>
+
+              {/* Estimated cost for the selected window */}
+              {(() => {
+                const est = estimateScanCost(dateRange);
+                return (
+                  <div className="rounded-xl border border-gold/25 bg-gold/5 p-3 space-y-2">
+                    <div className="flex items-center gap-2">
+                      <Gauge className="h-4 w-4 text-gold" />
+                      <p className="text-xs font-semibold text-foreground">
+                        Estimated usage for last {dateRange} day{dateRange === 1 ? '' : 's'}
+                      </p>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2 text-[11px]">
+                      <div className="rounded-lg bg-background/40 border border-border/30 p-2">
+                        <p className="text-muted-foreground">Emails scanned</p>
+                        <p className="text-sm font-semibold text-foreground">~{est.emails}</p>
+                      </div>
+                      <div className="rounded-lg bg-background/40 border border-border/30 p-2">
+                        <p className="text-muted-foreground">AI calls</p>
+                        <p className="text-sm font-semibold text-foreground">~{est.aiCalls}</p>
+                      </div>
+                      <div className="rounded-lg bg-background/40 border border-border/30 p-2">
+                        <p className="text-muted-foreground">Est. cost</p>
+                        <p className="text-sm font-semibold text-gold">
+                          {formatUsd(est.rangeLowUsd)}–{formatUsd(est.rangeHighUsd)}
+                        </p>
+                      </div>
+                    </div>
+                    <p className="text-[10px] text-muted-foreground leading-relaxed">
+                      Rough estimate based on typical inboxes (AI ≈ {formatUsd(est.aiCreditsUsd)}, Cloud ≈ {formatUsd(est.cloudCreditsUsd)}). Actual cost depends on how many bill, subscription and warranty emails you receive.
+                    </p>
+                  </div>
+                );
+              })()}
 
               {(isSyncingNow || syncProgress.phase !== 'idle') && (
                 <SyncProgressSteps
