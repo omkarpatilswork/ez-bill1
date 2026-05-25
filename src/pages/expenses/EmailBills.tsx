@@ -15,7 +15,7 @@ import {
   Mail, Link2, Unlink, Loader2, Download,
   CheckCircle2, AlertCircle, ScanLine,
   Smartphone, Send, IndianRupee, Clock, CreditCard, Filter,
-  Trash2, RefreshCw, Sparkles, ShieldCheck,
+  Trash2, RefreshCw, Sparkles, ShieldCheck, Gauge,
 } from 'lucide-react';
 import type { ExpenseCategory } from '@/lib/types';
 import { runBillImport, SyncLockedError, type BillImportPhase } from '@/lib/auto-bill-import';
