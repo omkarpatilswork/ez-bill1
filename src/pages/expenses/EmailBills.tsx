@@ -82,6 +82,43 @@ const CATEGORY_ALIASES: Record<string, string[]> = {
 
 const DEFAULT_BILL_CURRENCY = 'INR';
 
+// Rough heuristics for estimating AI/cloud usage before a scan runs.
+// Tuned to be slightly conservative so users aren't surprised by a higher bill.
+// Per day we assume ~2 bill emails (each → 2 AI calls: attachment fetch + extract-receipt),
+// plus one subscription-scan batch every ~30 days and ~0.3 warranty emails/day
+// (each → 1 extract-warranty call).
+function estimateScanCost(days: number) {
+  const billEmails = Math.round(days * 2);
+  const billAiCalls = billEmails; // extract-receipt per attachment
+  const subAiCalls = Math.max(1, Math.ceil(days / 30)); // batched subscription scan
+  const warrantyEmails = Math.max(1, Math.round(days * 0.3));
+  const warrantyAiCalls = warrantyEmails;
+
+  const totalAiCalls = billAiCalls + subAiCalls + warrantyAiCalls;
+  // Lovable AI: Gemini Flash ≈ $0.0003 per call avg (vision + text mix).
+  const aiCreditsUsd = totalAiCalls * 0.0003;
+  // Cloud (edge function + DB) ≈ $0.00005 per email processed.
+  const cloudCreditsUsd = (billEmails + warrantyEmails + subAiCalls * 20) * 0.00005;
+  const totalUsd = aiCreditsUsd + cloudCreditsUsd;
+
+  return {
+    emails: billEmails + warrantyEmails,
+    aiCalls: totalAiCalls,
+    aiCreditsUsd,
+    cloudCreditsUsd,
+    totalUsd,
+    // Show a ±40% range so users get a band, not a false-precise number.
+    rangeLowUsd: totalUsd * 0.6,
+    rangeHighUsd: totalUsd * 1.4,
+  };
+}
+
+function formatUsd(v: number): string {
+  if (v < 0.01) return `<$0.01`;
+  if (v < 1) return `$${v.toFixed(2)}`;
+  return `$${v.toFixed(2)}`;
+}
+
 function findCategoryByName(name: string, categories: ExpenseCategory[]): { id: string; label: string } | null {
   if (!name || name === 'Not Found') return null;
   const lower = name.toLowerCase();
