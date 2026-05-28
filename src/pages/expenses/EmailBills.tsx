@@ -685,7 +685,11 @@ export default function EmailBills() {
                     </SelectContent>
                   </Select>
                 </div>
-                <Button onClick={() => runImportWithProgress(dateRange)} disabled={isSyncingNow || isScanning} className="min-h-[44px] active:scale-[0.97]">
+                <Button
+                  onClick={() => runImportWithProgress(dateRange)}
+                  disabled={isSyncingNow || isScanning || estimateScanCost(dateRange).rangeHighUsd > maxBudgetUsd}
+                  className="min-h-[44px] active:scale-[0.97]"
+                >
                   {isSyncingNow ? (
                     <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Scanning…</>
                   ) : (
