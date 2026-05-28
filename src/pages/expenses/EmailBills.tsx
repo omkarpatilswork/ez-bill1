@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Slider } from '@/components/ui/slider';
 import { useToast } from '@/hooks/use-toast';
 import {
   Mail, Link2, Unlink, Loader2, Download,
@@ -153,6 +154,14 @@ export default function EmailBills() {
   const [isScanning, setIsScanning] = useState(false);
   const [categories, setCategories] = useState<ExpenseCategory[]>([]);
   const [dateRange, setDateRange] = useState(30);
+  const [maxBudgetUsd, setMaxBudgetUsd] = useState<number>(() => {
+    const saved = typeof window !== 'undefined' ? localStorage.getItem('ezbill:scan:maxBudgetUsd') : null;
+    const n = saved ? Number(saved) : NaN;
+    return Number.isFinite(n) && n > 0 ? n : 0.50;
+  });
+  useEffect(() => {
+    try { localStorage.setItem('ezbill:scan:maxBudgetUsd', String(maxBudgetUsd)); } catch {}
+  }, [maxBudgetUsd]);
 
   const [importProgress, setImportProgress] = useState({ phase: '', current: 0, total: 0 });
   const [importResult, setImportResult] = useState<{ saved: number; skipped: number; duplicates: number; total: number; subscriptions?: number; warranties?: number } | null>(null);
