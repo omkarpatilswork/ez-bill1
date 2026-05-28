@@ -134,8 +134,8 @@ export async function runBillImport(opts: {
     body: { max_results: maxResults, days },
   });
   if (scanError) throw new Error('Failed to scan emails');
-  if (scanData?.error) throw new Error(scanData.error);
   if (scanData?.gmail_disconnected) throw new GmailDisconnectedError(scanData.error || undefined);
+  if (scanData?.error) throw new Error(scanData.error);
 
   const emails: Array<{
     message_id: string; subject: string; from: string; date: string;
