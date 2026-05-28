@@ -248,8 +248,15 @@ serve(async (req) => {
     }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (e) {
     console.error("gmail-warranty-scan error:", e);
+    const msg = e instanceof Error ? e.message : "Unknown error";
+    if (msg.includes("Gmail connection expired")) {
+      return new Response(
+        JSON.stringify({ error: msg, gmail_disconnected: true, saved: [], saved_count: 0 }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
     return new Response(
-      JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }),
+      JSON.stringify({ error: msg }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
