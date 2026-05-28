@@ -716,6 +716,7 @@ export default function EmailBills() {
               {/* Estimated cost for the selected window */}
               {(() => {
                 const est = estimateScanCost(dateRange);
+                const overBudget = est.rangeHighUsd > maxBudgetUsd;
                 return (
                   <div className="rounded-xl border border-gold/25 bg-gold/5 p-3 space-y-2">
                     <div className="flex items-center gap-2">
@@ -735,10 +736,34 @@ export default function EmailBills() {
                       </div>
                       <div className="rounded-lg bg-background/40 border border-border/30 p-2">
                         <p className="text-muted-foreground">Est. cost</p>
-                        <p className="text-sm font-semibold text-gold">
+                        <p className={`text-sm font-semibold ${overBudget ? 'text-destructive' : 'text-gold'}`}>
                           {formatUsd(est.rangeLowUsd)}–{formatUsd(est.rangeHighUsd)}
                         </p>
                       </div>
+                    </div>
+                    <div className="pt-1 space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <p className="text-[11px] font-medium text-muted-foreground">Max budget per scan</p>
+                        <p className="text-xs font-semibold text-foreground">{formatUsd(maxBudgetUsd)}</p>
+                      </div>
+                      <Slider
+                        value={[maxBudgetUsd]}
+                        min={0.05}
+                        max={5}
+                        step={0.05}
+                        onValueChange={(v) => setMaxBudgetUsd(v[0])}
+                        aria-label="Max budget per scan in USD"
+                      />
+                      <div className="flex items-center justify-between text-[10px] text-muted-foreground">
+                        <span>$0.05</span>
+                        <span>$5.00</span>
+                      </div>
+                      {overBudget && (
+                        <p className="text-[11px] text-destructive flex items-center gap-1">
+                          <AlertCircle className="h-3 w-3" />
+                          Estimated cost exceeds your budget. Lower the date range or raise the budget to scan.
+                        </p>
+                      )}
                     </div>
                     <p className="text-[10px] text-muted-foreground leading-relaxed">
                       Rough estimate based on typical inboxes (AI ≈ {formatUsd(est.aiCreditsUsd)}, Cloud ≈ {formatUsd(est.cloudCreditsUsd)}). Actual cost depends on how many bill, subscription and warranty emails you receive.
