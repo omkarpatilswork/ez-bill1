@@ -236,8 +236,15 @@ serve(async (req) => {
     return await processMessages(searchData, accessToken, user.id, supabase, max_results);
   } catch (e) {
     console.error("gmail-scan error:", e);
+    const msg = e instanceof Error ? e.message : "Unknown error";
+    if (msg.includes("Gmail connection expired")) {
+      return new Response(
+        JSON.stringify({ error: msg, gmail_disconnected: true, emails: [] }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
     return new Response(
-      JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }),
+      JSON.stringify({ error: msg }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
