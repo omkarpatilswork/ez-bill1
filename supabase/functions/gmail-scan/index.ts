@@ -200,8 +200,8 @@ serve(async (req) => {
       .single();
 
     if (!connection) {
-      return new Response(JSON.stringify({ error: "Gmail not connected" }), {
-        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      return new Response(JSON.stringify({ error: "Gmail not connected", gmail_disconnected: true, emails: [] }), {
+        status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
