@@ -428,8 +428,8 @@ serve(async (req) => {
     const { data: connection } = await supabase
       .from("gmail_connections").select("*").eq("user_id", user.id).single();
     if (!connection) {
-      return new Response(JSON.stringify({ error: "Gmail not connected" }), {
-        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      return new Response(JSON.stringify({ error: "Gmail not connected", gmail_disconnected: true, saved: [], saved_count: 0 }), {
+        status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
