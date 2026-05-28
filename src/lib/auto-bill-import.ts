@@ -64,6 +64,13 @@ export class SyncLockedError extends Error {
   }
 }
 
+export class GmailDisconnectedError extends Error {
+  constructor(msg = 'Gmail connection expired. Please reconnect your Gmail account.') {
+    super(msg);
+    this.name = 'GmailDisconnectedError';
+  }
+}
+
 const SYNC_LOCK_KIND = 'bill_import';
 const SYNC_LOCK_TTL = 600; // 10 minutes
 
@@ -128,6 +135,7 @@ export async function runBillImport(opts: {
   });
   if (scanError) throw new Error('Failed to scan emails');
   if (scanData?.error) throw new Error(scanData.error);
+  if (scanData?.gmail_disconnected) throw new GmailDisconnectedError(scanData.error || undefined);
 
   const emails: Array<{
     message_id: string; subject: string; from: string; date: string;
