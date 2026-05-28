@@ -18,7 +18,7 @@ import {
   Trash2, RefreshCw, Sparkles, ShieldCheck, Gauge,
 } from 'lucide-react';
 import type { ExpenseCategory } from '@/lib/types';
-import { runBillImport, SyncLockedError, type BillImportPhase } from '@/lib/auto-bill-import';
+import { runBillImport, SyncLockedError, GmailDisconnectedError, type BillImportPhase } from '@/lib/auto-bill-import';
 import { SyncProgressSteps } from '@/components/email-bills/SyncProgressSteps';
 import { SyncHistoryPanel } from '@/components/email-bills/SyncHistoryPanel';
 
@@ -200,8 +200,10 @@ export default function EmailBills() {
         const { data: subData } = await supabase.functions.invoke('gmail-subscription-scan', {
           body: { days, max_results: 50 },
         });
+        if (subData?.gmail_disconnected) throw new GmailDisconnectedError();
         subscriptions = subData?.saved_count ?? subData?.saved?.length ?? 0;
       } catch (e) {
+        if (e instanceof GmailDisconnectedError) throw e;
         console.warn('subscription scan failed', e);
       }
       try {
@@ -209,8 +211,10 @@ export default function EmailBills() {
         const { data: warData } = await supabase.functions.invoke('gmail-warranty-scan', {
           body: { days, max_results: 30 },
         });
+        if (warData?.gmail_disconnected) throw new GmailDisconnectedError();
         warranties = warData?.saved_count ?? warData?.saved?.length ?? 0;
       } catch (e) {
+        if (e instanceof GmailDisconnectedError) throw e;
         console.warn('warranty scan failed', e);
       }
 
@@ -232,6 +236,14 @@ export default function EmailBills() {
         toast({
           title: 'Sync already running',
           description: 'A scan is currently in progress. Please wait for it to finish.',
+        });
+      } else if (err instanceof GmailDisconnectedError) {
+        setIsConnected(false);
+        setConnectedEmail('');
+        toast({
+          title: 'Gmail reconnection required',
+          description: 'Your Gmail access has expired. Please reconnect to resume scanning.',
+          variant: 'destructive',
         });
       } else {
         toast({ title: 'Scan failed', description: err.message, variant: 'destructive' });
