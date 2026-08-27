@@ -1,1 +1,4 @@
 project_id = "uyckmgnspwgdyglahaqg"
+
+[functions.resolve-tag]
+verify_jwt = false

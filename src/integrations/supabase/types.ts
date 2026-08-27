@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.5"
+    PostgrestVersion: "14.17"
   }
   public: {
     Tables: {
@@ -140,6 +140,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      bill_tags: {
+        Row: {
+          created_at: string
+          id: string
+          label: string
+          merchant_name: string
+          tag_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          label: string
+          merchant_name?: string
+          tag_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          label?: string
+          merchant_name?: string
+          tag_id?: string
+        }
+        Relationships: []
       }
       detected_subscriptions: {
         Row: {
@@ -790,6 +814,60 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      tag_pending_bills: {
+        Row: {
+          amount: number | null
+          claimed_at: string | null
+          claimed_by: string | null
+          created_at: string
+          created_by: string | null
+          expense_id: string | null
+          file_path: string
+          id: string
+          merchant_name: string | null
+          tag_id: string
+        }
+        Insert: {
+          amount?: number | null
+          claimed_at?: string | null
+          claimed_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          expense_id?: string | null
+          file_path: string
+          id?: string
+          merchant_name?: string | null
+          tag_id: string
+        }
+        Update: {
+          amount?: number | null
+          claimed_at?: string | null
+          claimed_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          expense_id?: string | null
+          file_path?: string
+          id?: string
+          merchant_name?: string | null
+          tag_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tag_pending_bills_expense_id_fkey"
+            columns: ["expense_id"]
+            isOneToOne: false
+            referencedRelation: "expenses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tag_pending_bills_tag_id_fkey"
+            columns: ["tag_id"]
+            isOneToOne: false
+            referencedRelation: "bill_tags"
+            referencedColumns: ["tag_id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
