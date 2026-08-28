@@ -231,10 +231,34 @@ serve(async (req) => {
           raw_extracted: extracted,
         };
 
+        // Dedup by product identity (repeat scans of different emails for the same item)
+        const norm = (v: unknown) => String(v ?? "").trim().toLowerCase();
+        const { data: sameUser } = await supabase
+          .from("warranties")
+          .select("id, product_name, brand, serial_number, expiry_date, updated_at")
+          .eq("user_id", user.id);
+        const match = (sameUser || []).find((w: any) =>
+          norm(w.product_name) === norm(insertPayload.product_name) &&
+          norm(w.brand) === norm(insertPayload.brand) &&
+          norm(w.serial_number) === norm(insertPayload.serial_number)
+        );
+
+        if (match) {
+          // Keep one row per item: refresh it only if the new email adds an expiry date.
+          if (!match.expiry_date && insertPayload.expiry_date) {
+            await supabase.from("warranties").update(insertPayload).eq("id", match.id);
+            skipped.push({ id: msg.id, reason: "updated_existing" });
+          } else {
+            skipped.push({ id: msg.id, reason: "duplicate_product" });
+          }
+          continue;
+        }
+
         const { data: inserted, error: insErr } = await supabase
           .from("warranties").insert(insertPayload).select().single();
         if (insErr) { skipped.push({ id: msg.id, reason: "db_error", error: insErr.message }); continue; }
         saved.push(inserted);
+
       } catch (err) {
         console.error("scan message error:", msg.id, err);
       }
