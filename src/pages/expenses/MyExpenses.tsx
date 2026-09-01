@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import {
   Search, Receipt, Utensils, Fuel, Car, ParkingCircle, ShoppingBag, Zap,
   MoreHorizontal, Repeat, Trash2, X, CheckSquare, Loader2, AlertCircle,
-  ArrowUpDown, Hotel, Plane, GraduationCap, Gamepad2, Briefcase, Pill
+  ArrowUpDown, Hotel, Plane, GraduationCap, Gamepad2, Briefcase, Pill, Nfc
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
@@ -24,6 +24,14 @@ import {
 import type { Expense } from '@/lib/types';
 import { smartCategoryFromMerchant, isSubscriptionMerchant } from '@/lib/smart-category';
 import { getCurrencySymbol } from '@/lib/countries';
+import NfcReceipt from '@/components/bills/NfcReceipt';
+
+const NFC_FILTER = '__nfc';
+
+function isNfcBill(e: Expense): boolean {
+  const d = (e.description || '').toLowerCase();
+  return d.includes('[nfc]') || d.includes('via nfc tag') || d.includes('tapped at');
+}
 
 interface DuplicateGroup {
   merchant: string;
