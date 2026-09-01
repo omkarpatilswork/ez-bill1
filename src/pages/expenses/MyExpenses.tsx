@@ -247,10 +247,13 @@ export default function MyExpenses() {
     }
   };
 
+  const nfcCount = useMemo(() => expenses.filter(isNfcBill).length, [expenses]);
+
   const categoryPills = useMemo(() => {
     const pills: { label: string; value: string; icon: any }[] = [
       { label: 'All', value: 'all', icon: Receipt },
     ];
+    if (nfcCount > 0) pills.push({ label: `NFC Bills (${nfcCount})`, value: NFC_FILTER, icon: Nfc });
     const order = ['Food & Dining', 'Grocery', 'Fuel', 'Toll & Parking', 'Shopping', 'Subscriptions', 'Travel', 'Transport', 'Hotel & Stay', 'Medical', 'Entertainment', 'Education', 'Utilities', 'Office', 'Other'];
     for (const cat of order) {
       if (availableCategories.has(cat)) {
@@ -258,7 +261,8 @@ export default function MyExpenses() {
       }
     }
     return pills;
-  }, [availableCategories]);
+  }, [availableCategories, nfcCount]);
+
 
   return (
     <div className="space-y-4 pb-20 animate-fade-in">
