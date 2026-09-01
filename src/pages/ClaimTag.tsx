@@ -254,13 +254,20 @@ export default function ClaimTag() {
               )}
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">Total</span>
-                {extracting ? (
+                {extracting && fallbackAmount == null ? (
+                  // No staff-entered amount to show yet — this only happens for
+                  // bills sent before the staff page required a total.
                   <span className="text-sm text-muted-foreground flex items-center gap-1">
                     <Loader2 className="h-3.5 w-3.5 animate-spin" /> Reading bill…
                   </span>
                 ) : (
-                  <span className="text-lg font-bold text-gold">
+                  // Show the real number immediately (staff enters it up front now),
+                  // with a small spinner alongside while OCR confirms/refines it —
+                  // instead of making the customer wait behind a spinner for a total
+                  // staff already knew.
+                  <span className="text-lg font-bold text-gold flex items-center gap-1.5">
                     ₹{Number(extracted?.amount ?? fallbackAmount ?? 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                    {extracting && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />}
                   </span>
                 )}
               </div>
