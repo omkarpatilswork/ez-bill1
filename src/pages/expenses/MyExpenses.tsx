@@ -261,7 +261,7 @@ export default function MyExpenses() {
     const pills: { label: string; value: string; icon: any }[] = [
       { label: 'All', value: 'all', icon: Receipt },
     ];
-    if (nfcCount > 0) pills.push({ label: `NFC Bills (${nfcCount})`, value: NFC_FILTER, icon: Nfc });
+    pills.push({ label: nfcCount > 0 ? `NFC Bills (${nfcCount})` : 'NFC Bills', value: NFC_FILTER, icon: Nfc });
     const order = ['Food & Dining', 'Grocery', 'Fuel', 'Toll & Parking', 'Shopping', 'Subscriptions', 'Travel', 'Transport', 'Hotel & Stay', 'Medical', 'Entertainment', 'Education', 'Utilities', 'Office', 'Other'];
     for (const cat of order) {
       if (availableCategories.has(cat)) {
@@ -350,7 +350,7 @@ export default function MyExpenses() {
             </span>
           </div>
           <p className="text-[11px] text-muted-foreground mt-2">
-            {categoryFilter === 'all' ? 'Total across all categories' : `Filtered · ${categoryFilter}`}
+            {categoryFilter === 'all' ? 'Total across all categories' : categoryFilter === NFC_FILTER ? 'Bills received by tapping an NFC tag' : `Filtered · ${categoryFilter}`}
           </p>
         </div>
       </div>
