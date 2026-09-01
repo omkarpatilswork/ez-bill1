@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import {
   Search, Receipt, Utensils, Fuel, Car, ParkingCircle, ShoppingBag, Zap,
   MoreHorizontal, Repeat, Trash2, X, CheckSquare, Loader2, AlertCircle,
-  ArrowUpDown, Hotel, Plane, GraduationCap, Gamepad2, Briefcase, Pill
+  ArrowUpDown, Hotel, Plane, GraduationCap, Gamepad2, Briefcase, Pill, Nfc
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
@@ -24,6 +24,14 @@ import {
 import type { Expense } from '@/lib/types';
 import { smartCategoryFromMerchant, isSubscriptionMerchant } from '@/lib/smart-category';
 import { getCurrencySymbol } from '@/lib/countries';
+import NfcReceipt from '@/components/bills/NfcReceipt';
+
+const NFC_FILTER = '__nfc';
+
+function isNfcBill(e: Expense): boolean {
+  const d = (e.description || '').toLowerCase();
+  return d.includes('[nfc]') || d.includes('via nfc tag') || d.includes('tapped at');
+}
 
 interface DuplicateGroup {
   merchant: string;
@@ -179,7 +187,9 @@ export default function MyExpenses() {
 
   const filteredExpenses = useMemo(() => {
     let result = expenses.filter(e => {
-      if (categoryFilter !== 'all') {
+      if (categoryFilter === NFC_FILTER) {
+        if (!isNfcBill(e)) return false;
+      } else if (categoryFilter !== 'all') {
         const broad = toBroadCategory(getSmartCategory(e));
         if (broad !== categoryFilter) return false;
       }
@@ -189,6 +199,7 @@ export default function MyExpenses() {
       }
       return true;
     });
+
 
     result = [...result].sort((a, b) => {
       switch (sortKey) {
@@ -244,10 +255,13 @@ export default function MyExpenses() {
     }
   };
 
+  const nfcCount = useMemo(() => expenses.filter(isNfcBill).length, [expenses]);
+
   const categoryPills = useMemo(() => {
     const pills: { label: string; value: string; icon: any }[] = [
       { label: 'All', value: 'all', icon: Receipt },
     ];
+    pills.push({ label: nfcCount > 0 ? `NFC Bills (${nfcCount})` : 'NFC Bills', value: NFC_FILTER, icon: Nfc });
     const order = ['Food & Dining', 'Grocery', 'Fuel', 'Toll & Parking', 'Shopping', 'Subscriptions', 'Travel', 'Transport', 'Hotel & Stay', 'Medical', 'Entertainment', 'Education', 'Utilities', 'Office', 'Other'];
     for (const cat of order) {
       if (availableCategories.has(cat)) {
@@ -255,7 +269,8 @@ export default function MyExpenses() {
       }
     }
     return pills;
-  }, [availableCategories]);
+  }, [availableCategories, nfcCount]);
+
 
   return (
     <div className="space-y-4 pb-20 animate-fade-in">
@@ -335,7 +350,7 @@ export default function MyExpenses() {
             </span>
           </div>
           <p className="text-[11px] text-muted-foreground mt-2">
-            {categoryFilter === 'all' ? 'Total across all categories' : `Filtered · ${categoryFilter}`}
+            {categoryFilter === 'all' ? 'Total across all categories' : categoryFilter === NFC_FILTER ? 'Bills received by tapping an NFC tag' : `Filtered · ${categoryFilter}`}
           </p>
         </div>
       </div>
@@ -410,8 +425,29 @@ export default function MyExpenses() {
           <p className="font-medium mb-1">{searchQuery || categoryFilter !== 'all' ? 'No matching bills' : 'No bills yet'}</p>
           <p className="text-sm">{searchQuery ? 'Try adjusting your search or filters.' : 'Add your first bill to get started.'}</p>
         </div>
+      ) : categoryFilter === NFC_FILTER && !selectMode ? (
+        <div className="space-y-7 pt-1">
+          <div className="flex items-center justify-center gap-2 text-[11px] uppercase tracking-[0.22em] text-muted-foreground">
+            <Nfc className="h-3.5 w-3.5 text-primary animate-pulse" />
+            Delivered by tap
+          </div>
+          {filteredExpenses.map((exp, i) => (
+            <NfcReceipt
+              key={exp.id}
+              index={i}
+              id={exp.id}
+              merchant={exp.merchant || exp.title}
+              amount={Number(exp.amount)}
+              currencySymbol={getCurrencySymbol(exp.currency || 'INR')}
+              date={exp.expense_date}
+              description={exp.description}
+              paymentMethod={exp.cost_center}
+            />
+          ))}
+        </div>
       ) : (
         <div className="space-y-2">
+
           {filteredExpenses.map(exp => {
             const rawCat = getSmartCategory(exp);
             const broadCat = toBroadCategory(rawCat);
