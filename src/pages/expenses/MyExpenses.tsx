@@ -425,8 +425,29 @@ export default function MyExpenses() {
           <p className="font-medium mb-1">{searchQuery || categoryFilter !== 'all' ? 'No matching bills' : 'No bills yet'}</p>
           <p className="text-sm">{searchQuery ? 'Try adjusting your search or filters.' : 'Add your first bill to get started.'}</p>
         </div>
+      ) : categoryFilter === NFC_FILTER && !selectMode ? (
+        <div className="space-y-7 pt-1">
+          <div className="flex items-center justify-center gap-2 text-[11px] uppercase tracking-[0.22em] text-muted-foreground">
+            <Nfc className="h-3.5 w-3.5 text-primary animate-pulse" />
+            Delivered by tap
+          </div>
+          {filteredExpenses.map((exp, i) => (
+            <NfcReceipt
+              key={exp.id}
+              index={i}
+              id={exp.id}
+              merchant={exp.merchant || exp.title}
+              amount={Number(exp.amount)}
+              currencySymbol={getCurrencySymbol(exp.currency || 'INR')}
+              date={exp.expense_date}
+              description={exp.description}
+              paymentMethod={exp.cost_center}
+            />
+          ))}
+        </div>
       ) : (
         <div className="space-y-2">
+
           {filteredExpenses.map(exp => {
             const rawCat = getSmartCategory(exp);
             const broadCat = toBroadCategory(rawCat);
