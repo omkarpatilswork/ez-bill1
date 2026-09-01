@@ -179,7 +179,9 @@ export default function MyExpenses() {
 
   const filteredExpenses = useMemo(() => {
     let result = expenses.filter(e => {
-      if (categoryFilter !== 'all') {
+      if (categoryFilter === NFC_FILTER) {
+        if (!isNfcBill(e)) return false;
+      } else if (categoryFilter !== 'all') {
         const broad = toBroadCategory(getSmartCategory(e));
         if (broad !== categoryFilter) return false;
       }
@@ -189,6 +191,7 @@ export default function MyExpenses() {
       }
       return true;
     });
+
 
     result = [...result].sort((a, b) => {
       switch (sortKey) {
