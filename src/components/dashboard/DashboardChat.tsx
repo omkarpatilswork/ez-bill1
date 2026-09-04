@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { Send, Sparkles, Bot, User, Copy, Check } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -193,7 +194,7 @@ export function DashboardChat() {
                 }`}>
                   {msg.role === 'assistant' ? (
                     <div className="ai-response leading-relaxed">
-                      <ReactMarkdown components={{
+                      <ReactMarkdown remarkPlugins={[remarkGfm]} components={{
                         h1: ({ children }) => <h3 className="text-xs font-bold text-foreground mt-3 mb-1.5 first:mt-0">{children}</h3>,
                         h2: ({ children }) => <h4 className="text-xs font-bold text-foreground mt-2.5 mb-1 first:mt-0">{children}</h4>,
                         h3: ({ children }) => <h5 className="text-xs font-semibold text-foreground mt-2 mb-1 first:mt-0">{children}</h5>,
