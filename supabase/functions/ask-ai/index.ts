@@ -46,16 +46,16 @@ function buildExpenseContext(expenses: any[], profile: any): string {
 
   const lines = [
     `User: ${profile?.full_name || "Unknown"}, Department: ${profile?.department || "Unknown"}`,
-    `Total expenses: ${expenses.length}, Total amount: $${total.toFixed(2)}`,
+    `Total expenses: ${expenses.length}, Total amount: ₹${total.toFixed(2)}`,
     "",
-    "By status: " + Object.entries(byStatus).map(([k, v]) => `${k}: $${v.toFixed(2)}`).join(", "),
-    "By category: " + Object.entries(byCategory).map(([k, v]) => `${k}: $${v.toFixed(2)}`).join(", "),
-    "Top merchants: " + Object.entries(byMerchant).sort((a, b) => b[1] - a[1]).slice(0, 10).map(([k, v]) => `${k}: $${v.toFixed(2)}`).join(", "),
+    "By status: " + Object.entries(byStatus).map(([k, v]) => `${k}: ₹${v.toFixed(2)}`).join(", "),
+    "By category: " + Object.entries(byCategory).map(([k, v]) => `${k}: ₹${v.toFixed(2)}`).join(", "),
+    "Top merchants: " + Object.entries(byMerchant).sort((a, b) => b[1] - a[1]).slice(0, 10).map(([k, v]) => `${k}: ₹${v.toFixed(2)}`).join(", "),
     "",
     "Recent expenses (newest first):",
     ...expenses.slice(0, 50).map(
       (e: any) =>
-        `- ${e.expense_date} | ${e.title} | $${Number(e.amount).toFixed(2)} ${e.currency} | ${e.status} | merchant: ${e.merchant || "N/A"} | category: ${e.expense_categories?.name || "N/A"} | cost_center: ${e.cost_center || "N/A"}`
+        `- ${e.expense_date} | ${e.title} | ₹${Number(e.amount).toFixed(2)} ${e.currency} | ${e.status} | merchant: ${e.merchant || "N/A"} | category: ${e.expense_categories?.name || "N/A"} | cost_center: ${e.cost_center || "N/A"}`
     ),
   ];
   return lines.join("\n");
@@ -104,9 +104,9 @@ ${context}
 Rules:
 - Answer questions about the user's expenses using the data provided.
 - Be concise, helpful, and use numbers/amounts when relevant.
-- Format currency amounts with $ and two decimal places.
+- The user's currency is Indian Rupees. ALWAYS format amounts with the ₹ symbol and two decimal places (e.g. ₹1,250.00). Never use $ or USD.
 - If the user asks something unrelated to expenses, politely redirect.
-- Use markdown formatting for clarity (tables, bold, lists).`;
+- Use GitHub-flavored markdown. When comparing multiple items, use proper markdown tables with a header row and | separators.`;
 
     if (action === "suggestions") {
       const suggestionsPrompt = `Based on the user's expense data, generate exactly 4 short question suggestions (max 8 words each) that would be useful for this user to ask. Return ONLY a JSON array of 4 strings, nothing else.`;
