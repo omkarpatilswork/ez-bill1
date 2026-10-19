@@ -265,7 +265,7 @@ export default function Warranties() {
   return (
     <div className="space-y-5 max-w-3xl mx-auto pb-6 animate-fade-in">
       <SEO
-        title="Warranties | EZ Bill"
+        title="Warranties | EZZ BILLZ"
         description="Track product warranties, expiry dates and warranty cards in one place."
       />
 

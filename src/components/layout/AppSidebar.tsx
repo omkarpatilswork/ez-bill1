@@ -48,7 +48,7 @@ export function AppSidebar() {
               <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary">
                 <Receipt className="h-4 w-4 text-primary-foreground" />
               </div>
-              {!collapsed && <span className="font-bold text-lg text-gold-gradient">EZ Bill</span>}
+              {!collapsed && <span className="font-bold text-lg text-gold-gradient">EZZ BILLZ</span>}
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>

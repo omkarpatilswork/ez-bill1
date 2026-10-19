@@ -18,7 +18,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           <header className="h-12 sm:h-14 hidden md:flex items-center px-4" style={headerStyle}>
             <SidebarTrigger className="mr-4 text-muted-foreground hover:text-foreground" />
             <div className="flex items-center gap-2">
-              <span className="text-lg font-bold text-gold-gradient">EZ Bill</span>
+              <span className="text-lg font-bold text-gold-gradient">EZZ BILLZ</span>
             </div>
           </header>
           <main id="main-content" className="flex-1 p-4 md:p-6 overflow-auto pb-24 md:pb-6">

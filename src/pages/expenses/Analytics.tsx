@@ -387,7 +387,7 @@ export default function Analytics() {
 
   return (
     <div className="space-y-5 sm:space-y-6 pb-24 animate-fade-in">
-      <SEO title="Insights" description="Analyze your spending with EZ Bill — category breakdowns, monthly trends, and merchant insights." path="/analytics" />
+      <SEO title="Insights" description="Analyze your spending with EZZ BILLZ — category breakdowns, monthly trends, and merchant insights." path="/analytics" />
       {/* HERO — 2026 liquid glass */}
       <div
         className="relative overflow-hidden rounded-3xl border border-white/[0.06]"

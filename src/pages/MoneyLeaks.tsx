@@ -213,7 +213,7 @@ export default function MoneyLeaks() {
 
   const shareSummary = () => {
     if (!leakData) return;
-    const text = `💧 I leaked ₹${leakData.totalLeak.toLocaleString('en-IN')} this month 💀\nBiggest mistake: ${leakData.perCategory[0]?.category || 'N/A'}\n\nTracked with EZ Bill`;
+    const text = `💧 I leaked ₹${leakData.totalLeak.toLocaleString('en-IN')} this month 💀\nBiggest mistake: ${leakData.perCategory[0]?.category || 'N/A'}\n\nTracked with EZZ BILLZ`;
     if (navigator.share) navigator.share({ text }).catch(() => {});
     else { navigator.clipboard.writeText(text); toast({ title: 'Copied to clipboard' }); }
   };
@@ -343,7 +343,7 @@ export default function MoneyLeaks() {
 
   return (
     <div className="space-y-5 max-w-2xl mx-auto md:max-w-none animate-fade-in pb-24">
-      <SEO title="Money Leaks" description="Find recurring charges, duplicate subscriptions, and small leaks draining your budget with EZ Bill." path="/money-leaks" />
+      <SEO title="Money Leaks" description="Find recurring charges, duplicate subscriptions, and small leaks draining your budget with EZZ BILLZ." path="/money-leaks" />
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">

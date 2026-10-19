@@ -274,7 +274,7 @@ export default function MyExpenses() {
 
   return (
     <div className="space-y-4 pb-20 animate-fade-in">
-      <SEO title="All Bills" description="Browse, filter, and search all your imported and manually added bills in EZ Bill." path="/expenses" />
+      <SEO title="All Bills" description="Browse, filter, and search all your imported and manually added bills in EZZ BILLZ." path="/expenses" />
 
       {/* ━━━ HERO SUMMARY (2026 glass) ━━━ */}
       <div
