@@ -72,7 +72,7 @@ export default function Onboarding() {
       return;
     }
 
-    toast({ title: '🎉 Welcome to EZ Bill!', description: 'Your account is all set.' });
+    toast({ title: '🎉 Welcome to EZZ BILLZ!', description: 'Your account is all set.' });
     // Force a page reload to re-fetch profile
     window.location.href = '/';
   };
@@ -97,7 +97,7 @@ export default function Onboarding() {
               <div className="h-16 w-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto">
                 <User className="h-8 w-8 text-primary" />
               </div>
-              <h1 className="text-2xl font-bold text-foreground">Welcome to EZ Bill</h1>
+              <h1 className="text-2xl font-bold text-foreground">Welcome to EZZ BILLZ</h1>
               <p className="text-sm text-muted-foreground">Let's set up your account in seconds</p>
             </div>
 

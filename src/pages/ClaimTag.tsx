@@ -197,7 +197,7 @@ export default function ClaimTag() {
       const { error } = await signIn(email, password);
       if (error) toast({ title: 'Sign in failed', description: error.message, variant: 'destructive' });
     } else {
-      const { error } = await signUp(email, password, fullName || 'EZ Bill user', 'General');
+      const { error } = await signUp(email, password, fullName || 'EZZ BILLZ user', 'General');
       if (error) toast({ title: 'Sign up failed', description: error.message, variant: 'destructive' });
       else setAwaitingEmailConfirm(true);
     }
@@ -207,10 +207,10 @@ export default function ClaimTag() {
   // ─────────────────────────── RENDER ───────────────────────────
   return (
     <div className="min-h-screen bg-background flex items-center justify-center px-4 py-10">
-      <SEO title="Your bill" description="Tap-to-receive receipt from EZ Bill." path={`/t/${tagId}`} />
+      <SEO title="Your bill" description="Tap-to-receive receipt from EZZ BILLZ." path={`/t/${tagId}`} />
       <div className="w-full max-w-md space-y-4">
         <div className="flex items-center justify-center gap-2 text-muted-foreground text-sm">
-          <Wifi className="h-4 w-4" /> EZ Bill NFC Airdrop
+          <Wifi className="h-4 w-4" /> EZZ BILLZ NFC Airdrop
         </div>
 
         {status === 'loading' && (
@@ -274,7 +274,7 @@ export default function ClaimTag() {
 
               {user ? (
                 <div className="flex items-center justify-center gap-2 py-2 text-sm text-muted-foreground">
-                  <Loader2 className="h-4 w-4 animate-spin" /> Saving to your EZ Bill…
+                  <Loader2 className="h-4 w-4 animate-spin" /> Saving to your EZZ BILLZ…
                 </div>
               ) : awaitingEmailConfirm ? (
                 <p className="text-xs text-center text-muted-foreground">
@@ -282,7 +282,7 @@ export default function ClaimTag() {
                 </p>
               ) : (
                 <div className="space-y-3 pt-1 border-t border-border/30">
-                  <p className="text-xs text-muted-foreground text-center pt-3">Sign in to save this to your EZ Bill</p>
+                  <p className="text-xs text-muted-foreground text-center pt-3">Sign in to save this to your EZZ BILLZ</p>
                   <Button type="button" variant="outline" className="w-full min-h-[44px]" onClick={handleGoogle} disabled={authSubmitting}>
                     <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
                       <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4" />
@@ -321,7 +321,7 @@ export default function ClaimTag() {
               <div className="h-16 w-16 rounded-full bg-green-500/20 flex items-center justify-center">
                 <CheckCircle2 className="h-8 w-8 text-green-500" />
               </div>
-              <p className="text-base font-semibold text-foreground">Saved to your EZ Bill</p>
+              <p className="text-base font-semibold text-foreground">Saved to your EZZ BILLZ</p>
               <p className="text-xs text-muted-foreground">{merchantName || tableLabel}</p>
               <Button asChild className="mt-2 min-h-[44px] w-full max-w-[220px]">
                 <Link to={`/expenses/${savedExpenseId}`}>View your bill</Link>

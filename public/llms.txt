@@ -1,15 +1,15 @@
-# EZ Bill
+# EZZ BILLZ
 
-> EZ Bill is a smart personal expense manager that automatically imports bills from your email, tracks spending, splits expenses, and surfaces money leaks.
+> EZZ BILLZ is a smart personal expense manager that automatically imports bills from your email, tracks spending, splits expenses, and surfaces money leaks.
 
-EZ Bill connects to Gmail (read-only) to extract bills and receipts, lets you scan or upload receipts, organizes recurring subscriptions, and provides AI-powered insights about your spending.
+EZZ BILLZ connects to Gmail (read-only) to extract bills and receipts, lets you scan or upload receipts, organizes recurring subscriptions, and provides AI-powered insights about your spending.
 
 ## Pages
 
-- [Sign in](/login): Log in to your EZ Bill account.
-- [Sign up](/signup): Create a new EZ Bill account.
-- [Terms and Conditions](/terms): Terms governing use of EZ Bill.
-- [Privacy Policy](/privacy): How EZ Bill handles user data and Gmail access.
+- [Sign in](/login): Log in to your EZZ BILLZ account.
+- [Sign up](/signup): Create a new EZZ BILLZ account.
+- [Terms and Conditions](/terms): Terms governing use of EZZ BILLZ.
+- [Privacy Policy](/privacy): How EZZ BILLZ handles user data and Gmail access.
 
 ## Optional
 

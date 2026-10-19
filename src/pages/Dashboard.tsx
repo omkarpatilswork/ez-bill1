@@ -159,7 +159,7 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-5 max-w-2xl mx-auto md:max-w-none animate-fade-in pb-6">
-      <SEO title="Dashboard" description="Your EZ Bill dashboard — see recent bills, monthly spending, and quick actions at a glance." path="/" />
+      <SEO title="Dashboard" description="Your EZZ BILLZ dashboard — see recent bills, monthly spending, and quick actions at a glance." path="/" />
       {/* Bill Selector Modal */}
       {billSelectorFor && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4"
@@ -537,7 +537,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* ━━━ 5. HOW EZ BILL WORKS — refined 4-step flow ━━━ */}
+      {/* ━━━ 5. HOW EZZ BILLZ WORKS — refined 4-step flow ━━━ */}
       <div className="pt-3">
         <div className="flex items-center justify-between mb-3">
           <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">How it works</p>
@@ -575,7 +575,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* ━━━ 6. WHAT EZ BILL DOES FOR YOU — feature-led, reflects new modules ━━━ */}
+      {/* ━━━ 6. WHAT EZZ BILLZ DOES FOR YOU — feature-led, reflects new modules ━━━ */}
       <div className="pt-1">
         <div className="flex items-center justify-between mb-3">
           <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">What you get</p>

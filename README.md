@@ -1,4 +1,4 @@
-# EZ Bill 1 - template ExpenseDeck
+# EZZ BILLZ 1 - template ExpenseDeck
 
 # AI Agent Prompt
 
