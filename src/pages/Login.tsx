@@ -96,7 +96,7 @@ export default function Login() {
             <CardContent className="space-y-4 pt-0">
               <div className="space-y-2">
                 <Label htmlFor="email" className="text-foreground">Email</Label>
-                <Input id="email" type="email" placeholder="you@company.com" className="min-h-[44px] bg-secondary border-border/30 text-foreground" value={email} onChange={e => setEmail(e.target.value)} required />
+                <Input id="email" type="email" placeholder="you@example.com" className="min-h-[44px] bg-secondary border-border/30 text-foreground" value={email} onChange={e => setEmail(e.target.value)} required />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="password" className="text-foreground">Password</Label>

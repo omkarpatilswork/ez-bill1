@@ -1,438 +1,148 @@
-# EZZ BILLZ 1 - template ExpenseDeck
+<div align="center">
 
-# AI Agent Prompt
+# 🧾 EZZ BILLZ
 
-## Project Overview
+**Your personal money manager that handles your bills for you.**
 
-ExpenseDesk is a comprehensive expense management and reimbursement platform built to replace manual, email-based expense tracking with a modern, centralized digital solution. The platform serves three primary user personas: employees submitting expense claims, managers reviewing team spending, and finance teams processing approvals and managing compliance. The system must handle the complete lifecycle of an expense from submission through final reimbursement, with robust audit trails, receipt management, and integration capabilities with accounting software and banking systems.
+EZZ BILLZ pulls your bills out of Gmail, UPI SMS and paper receipts, organises them automatically, and shows you where your money is leaking.
 
-## Core Functionality
+[![Live](https://img.shields.io/badge/Live-ezbill.live-22C55E?style=for-the-badge)](https://ezbill.live)
+![Status](https://img.shields.io/badge/Status-Active_development-F5B942?style=for-the-badge)
+![Commits](https://img.shields.io/badge/Commits-677+-6366F1?style=for-the-badge)
 
-- **Expense Submission**: Employees upload receipts (photos, PDFs, images), enter expense details, select categories, and submit claims for approval
+<img src="docs/screenshots/login-desktop.png" width="820" alt="EZZ BILLZ">
 
-- **Receipt Management**: OCR-powered receipt scanning that extracts merchant name, amount, date, and category with manual override capability
+</div>
 
-- **Expense Categorization**: Intelligent auto-categorization with machine learning that learns from user corrections and organizational patterns
+---
 
-- **Multi-Level Approval Workflow**: Configurable approval chains based on amount thresholds, departments, and cost centers
+## The problem
 
-- **Expense Tracking & Status**: Real-time status updates (submitted, under review, approved, rejected, reimbursed) with notification system
+For the average Indian consumer, spending data is scattered across a dozen places:
 
-- **Reporting & Analytics**: Dashboard views for employees, managers, and finance teams showing spending trends, approval rates, and compliance metrics
+- **Email**: Swiggy, Amazon and Uber invoices, bank and credit-card statements, and warranty cards, buried in the inbox
+- **SMS**: every UPI payment sends a text that nobody reads twice
+- **Paper**: restaurant and retail receipts that end up in a pocket or the bin
+- **Subscriptions**: OTT, SaaS and telecom plans that renew quietly, often in duplicate
 
-- **Audit Trail**: Complete immutable record of all actions, changes, approvals, and rejections with timestamps and user attribution
+Expense apps expect you to **type all of this in by hand**, and almost nobody keeps that up past the first week. So people don't know what they spend, which subscriptions they've forgotten, or when a return window closes.
 
-- **Reimbursement Management**: Integration with payroll or direct deposit systems to process approved claims
+## The solution
 
-- **Policy Enforcement**: Configurable spending policies with automatic flagging of violations and policy-based approval routing
+EZZ BILLZ makes capture effortless so the insights are there when you need them:
 
-## User Journey
+| Capture (automatic) | Understand | Act |
+|---|---|---|
+| 📥 Gmail import (read-only) | 🕳️ Money Leaks against your personal ideal budget | ➗ Split a bill item by item with friends |
+| 📱 UPI SMS parsing (Android) | 🔄 Subscription radar: unused, low-use and duplicate subscriptions | 🛡️ Warranty and return-window reminders |
+| 📸 AI receipt scanning and bulk upload | 📊 Spending analytics by category and merchant | 🎧 Merchant support lookup in one tap |
+| 📲 Tap an NFC/QR table tag to get the restaurant bill | 💬 Ask AI questions about your own spending | 📂 Statements organised into a Financial Docs hub |
 
-**Employee Journey**: Employee logs in → Captures receipt photo or uploads file → System extracts details via OCR → Employee reviews/corrects details and adds notes → Selects expense category → Assigns to project/cost center → Submits claim → Receives confirmation → Tracks status in dashboard → Receives notification when approved → Reimbursement processed to bank account
+## Features in detail
 
-**Manager Journey**: Manager logs in → Views team expenses dashboard → Sees pending approvals filtered by direct reports → Reviews claim details with receipt → Approves/rejects with optional comments → Tracks team spending patterns → Exports reports for budget analysis → Receives alerts for policy violations
+### 📥 Zero-effort capture
+- **Gmail sync.** Read-only OAuth (`gmail.readonly`). The app scans for bills, subscriptions, warranties and financial documents. Hashing, a processed-email log and sync locks make sure nothing is imported twice.
+- **AI receipt extraction.** Upload a photo, PDF or HEIC. The model is chosen by input type (Gemini 2.5 Flash for images and text, GPT-5-mini for PDFs, with automatic fallback). It extracts the merchant, amount, date, category and **individual line items**.
+- **UPI SMS reader.** In the Android app, transaction SMS from GPay, PhonePe, Paytm, BHIM and bank alerts are filtered on the device and parsed into expenses.
+- **Smart categorisation.** A merchant map tuned for India (Swiggy, Zepto, Blinkit, IRCTC, Jio, HPCL and more) assigns categories automatically.
 
-**Finance Team Journey**: Finance user logs in → Views all pending approvals across organization → Filters by department, amount, or approval status → Reviews claims with full audit context → Performs compliance checks → Approves/rejects in batch or individually → Processes reimbursements → Generates compliance reports → Monitors policy violations and trends
+### 🕳️ Money Leaks
+A short **Money Profile** quiz covers income band, age, city tier, living situation, job type and financial goal. From it, EZZ BILLZ builds a **personalised ideal budget** for each category, compares it with what you actually spend, and shows the gap in rupees. It also calculates a "safe daily spend" until your next payday.
 
-## Technical Requirements
+### 🔄 Subscription radar
+A detection engine finds recurring merchants by cadence (weekly, monthly or yearly) and by amount. It then marks each subscription as **active, low-use, unused or duplicate**, for example two music apps. You see the total you could save each month.
 
-- **Frontend**: Responsive web application (React/Vue.js) with mobile-optimized interface for receipt capture
+### ➗ Smart Split
+Split a bill **item by item** or equally. Tax and discounts are shared out proportionally, and a **friends ledger** tracks who owes whom.
 
-- **Backend**: RESTful API (Node.js/Python) with role-based access control and comprehensive logging
+### 📲 NFC Airdrop (pilot)
+A restaurant's staff photograph the closed bill and attach it to the table's **NFC tag or QR code**. The customer taps their phone and the receipt goes straight into EZZ BILLZ. No POS integration is needed. Bills expire after a short window so nobody sees a stranger's receipt, and the staff dashboard updates live through Supabase Realtime.
 
-- **Database**: PostgreSQL for transactional data with Redis caching for performance
+### 🛡️ Warranties, returns and support
+- Warranty cards found in email are extracted automatically, and the app reminds you before a **return window closes**.
+- **Merchant Support** finds the official phone number, email, help centre and order-tracking link for any merchant on a bill, with a confidence score for each.
 
-- **File Storage**: Secure cloud storage (AWS S3 or equivalent) for receipt images with encryption at rest and in transit
+### 💬 Ask AI
+Chat with your own expense data. Ask "What did I spend on food last month?" or "Which category grew the most?" and get answers from an LLM grounded in your expenses.
 
-- **Authentication**: SSO integration (SAML/OAuth) with company directory, MFA support
+### 📂 Financial Docs hub
+Credit-card statements, bank statements and trade confirmations are kept out of your expense list. They're sorted into their own hub with key fields extracted: due date, minimum due and closing balance.
 
-- **Security**: End-to-end encryption for sensitive data, PCI compliance for payment processing, GDPR/SOC 2 compliance
+## Architecture
 
-- **Scalability**: Horizontal scaling capability to handle 10,000+ concurrent users and millions of transactions
+```mermaid
+flowchart LR
+  subgraph Client["Client: React + Vite (web) / Capacitor (Android, iOS)"]
+    UI[Pages & components]
+    Engines["On-device engines<br/>leaks · subscriptions · split · categories"]
+  end
+  subgraph Supabase
+    Auth[Auth<br/>Google OAuth + email]
+    DB[(Postgres + RLS)]
+    Storage[(Receipt storage)]
+    RT[Realtime]
+    EF["Edge Functions (Deno)<br/>gmail-scan · gmail-subscription-scan<br/>gmail-warranty-scan · gmail-financial-scan<br/>extract-receipt · parse-upi-sms<br/>ask-ai · merchant-support · resolve-tag"]
+  end
+  Gmail[(Gmail API<br/>read-only)]
+  LLM[LLM gateway<br/>Gemini 2.5 / 3 Flash · GPT-5-mini]
 
-- **Performance**: Page load times under 2 seconds, API response times under 500ms for 95th percentile
-
-## API Integrations
-
-- **Accounting Software**: QuickBooks, Xero, NetSuite for automatic expense posting and reconciliation
-
-- **HR/Payroll Systems**: ADP, Workday, BambooHR for employee data and reimbursement processing
-
-- **Banking**: Stripe, Plaid for direct deposit and payment processing
-
-- **Communication**: Slack, Microsoft Teams for approval notifications and status updates
-
-- **Cloud Storage**: AWS S3, Google Cloud Storage for receipt archival
-
-- **OCR Services**: Google Vision API or Tesseract for receipt text extraction
-
-- **Analytics**: Segment or Mixpanel for usage tracking and product analytics
-
-## Real-Time Features
-
-- **Live Notifications**: Push notifications for approval requests, status changes, and policy violations
-
-- **Real-Time Dashboard Updates**: Live expense counts, approval metrics, and spending trends
-
-- **Instant Receipt Processing**: OCR processing begins immediately upon upload with progress indicators
-
-- **Concurrent Approval Workflows**: Multiple approvers can review claims simultaneously with conflict resolution
-
-- **Live Collaboration**: Comments and notes visible in real-time to all stakeholders on a claim
-
-- **Streaming Audit Logs**: Real-time audit trail updates visible to compliance teams
-
-## Implementation Details
-
-- **Architecture Pattern**: Microservices with API gateway, separate services for submissions, approvals, receipts, and reporting
-
-- **Database Schema**: Normalized schema with tables for users, expenses, receipts, approvals, audit logs, and policies
-
-- **Receipt Processing Pipeline**: Async job queue (Celery/Bull) for OCR processing with retry logic and error handling
-
-- **Approval Engine**: State machine implementation for workflow management with configurable rules
-
-- **Caching Strategy**: Redis caching for user permissions, policies, and frequently accessed reports
-
-- **Error Handling**: Comprehensive error codes, graceful degradation, and user-friendly error messages
-
-- **Testing**: Unit tests (80%+ coverage), integration tests for workflows, E2E tests for critical paths
-
-- **Deployment**: Docker containerization, Kubernetes orchestration, CI/CD pipeline with automated testing
-
-## MVP Features
-
-1. Employee expense submission with receipt upload and manual entry
-
-2. Basic OCR receipt scanning (merchant, amount, date extraction)
-
-3. Simple expense categorization (predefined categories)
-
-4. Two-level approval workflow (manager → finance)
-
-5. Expense status tracking and notifications
-
-6. Basic reporting dashboard for finance teams
-
-7. Audit trail for all submissions and approvals
-
-8. Direct deposit reimbursement integration
-
-9. Role-based access control (employee, manager, finance)
-
-10. Mobile-responsive web interface
-
-## Future Features
-
-- **Advanced OCR**: Multi-language support, handwritten receipt recognition, receipt matching with corporate cards
-
-- **AI-Powered Insights**: Spending anomaly detection, predictive policy violation alerts, budget forecasting
-
-- **Mobile Native Apps**: iOS and Android native applications with offline receipt capture
-
-- **Corporate Card Integration**: Automatic expense matching with corporate card transactions, duplicate detection
-
-- **Advanced Analytics**: Predictive analytics, departmental benchmarking, spend forecasting
-
-- **Workflow Customization**: No-code workflow builder for complex approval chains
-
-- **Multi-Currency Support**: Automatic currency conversion with real-time exchange rates
-
-- **Expense Splitting**: Split expenses across multiple projects or cost centers
-
-- **Mileage Tracking**: GPS-based mileage tracking with automatic rate calculation
-
-- **Policy Engine**: Dynamic policy rules with conditional logic and custom validation
-
-- **Integration Marketplace**: Pre-built integrations with 50+ business applications
-
-- **Advanced Reporting**: Custom report builder, scheduled report delivery, data export to BI tools
-
-## User Experience Guidelines
-
-- **Simplicity First**: Minimize required fields on submission form; auto-populate where possible
-
-- **Mobile-First Design**: Optimize for one-handed phone operation for receipt capture
-
-- **Clear Visual Feedback**: Immediate confirmation of successful uploads, clear status indicators
-
-- **Accessibility**: WCAG 2.1 AA compliance, keyboard navigation, screen reader support
-
-- **Consistent Terminology**: Use clear, non-technical language throughout the interface
-
-- **Progressive Disclosure**: Show advanced options only when needed; keep primary workflow simple
-
-- **Error Prevention**: Validate data before submission, warn about policy violations before approval
-
-- **Responsive Design**: Seamless experience across desktop, tablet, and mobile devices
-
-- **Dark Mode Support**: Optional dark theme for reduced eye strain
-
-- **Localization**: Support for multiple languages and regional date/currency formats
-
-## Code Quality Standards
-
-- **Language**: JavaScript/TypeScript for frontend, Python or Node.js for backend
-
-- **Linting**: ESLint/Prettier for JavaScript, Black/Flake8 for Python with pre-commit hooks
-
-- **Testing**: Jest/Mocha for unit tests, Cypress/Selenium for E2E tests, minimum 80% code coverage
-
-- **Documentation**: JSDoc/docstrings for all functions, README files, API documentation with Swagger/OpenAPI
-
-- **Version Control**: Git with conventional commits, feature branch workflow, code review requirements
-
-- **Security**: OWASP Top 10 compliance, regular security audits, dependency vulnerability scanning
-
-- **Performance**: Lighthouse scores >90, bundle size monitoring, database query optimization
-
-- **Logging**: Structured logging with correlation IDs, appropriate log levels, log aggregation
-
-- **Monitoring**: Application performance monitoring, error tracking with Sentry, uptime monitoring
-
-## Deliverable Format
-
-- **Codebase**: GitHub repository with clear directory structure, comprehensive README, contributing guidelines
-
-- **Documentation**: API documentation (Swagger/OpenAPI), user guides (markdown), architecture documentation (C4 diagrams)
-
-- **Deployment**: Docker Compose for local development, Kubernetes manifests for production, Terraform for infrastructure
-
-- **Database**: Migration scripts, schema documentation, sample data for testing
-
-- **Testing**: Test suites with clear naming, test data fixtures, CI/CD pipeline configuration
-
-- **Monitoring**: Dashboards (Grafana), alerts configuration, logging setup
-
-- **Release**: Semantic versioning, changelog, release notes, deployment runbooks
-
-- **Security**: Security policy documentation, incident response procedures, compliance checklists# AI Agent Prompt
-
-## Project Overview
-
-ExpenseDesk is a comprehensive expense management and reimbursement platform built to replace manual, email-based expense tracking with a modern, centralized digital solution. The platform serves three primary user personas: employees submitting expense claims, managers reviewing team spending, and finance teams processing approvals and managing compliance. The system must handle the complete lifecycle of an expense from submission through final reimbursement, with robust audit trails, receipt management, and integration capabilities with accounting software and banking systems.
-
-## Core Functionality
-
-- **Expense Submission**: Employees upload receipts (photos, PDFs, images), enter expense details, select categories, and submit claims for approval
-
-- **Receipt Management**: OCR-powered receipt scanning that extracts merchant name, amount, date, and category with manual override capability
-
-- **Expense Categorization**: Intelligent auto-categorization with machine learning that learns from user corrections and organizational patterns
-
-- **Multi-Level Approval Workflow**: Configurable approval chains based on amount thresholds, departments, and cost centers
-
-- **Expense Tracking & Status**: Real-time status updates (submitted, under review, approved, rejected, reimbursed) with notification system
-
-- **Reporting & Analytics**: Dashboard views for employees, managers, and finance teams showing spending trends, approval rates, and compliance metrics
-
-- **Audit Trail**: Complete immutable record of all actions, changes, approvals, and rejections with timestamps and user attribution
-
-- **Reimbursement Management**: Integration with payroll or direct deposit systems to process approved claims
-
-- **Policy Enforcement**: Configurable spending policies with automatic flagging of violations and policy-based approval routing
-
-## User Journey
-
-**Employee Journey**: Employee logs in → Captures receipt photo or uploads file → System extracts details via OCR → Employee reviews/corrects details and adds notes → Selects expense category → Assigns to project/cost center → Submits claim → Receives confirmation → Tracks status in dashboard → Receives notification when approved → Reimbursement processed to bank account
-
-**Manager Journey**: Manager logs in → Views team expenses dashboard → Sees pending approvals filtered by direct reports → Reviews claim details with receipt → Approves/rejects with optional comments → Tracks team spending patterns → Exports reports for budget analysis → Receives alerts for policy violations
-
-**Finance Team Journey**: Finance user logs in → Views all pending approvals across organization → Filters by department, amount, or approval status → Reviews claims with full audit context → Performs compliance checks → Approves/rejects in batch or individually → Processes reimbursements → Generates compliance reports → Monitors policy violations and trends
-
-## Technical Requirements
-
-- **Frontend**: Responsive web application (React/Vue.js) with mobile-optimized interface for receipt capture
-
-- **Backend**: RESTful API (Node.js/Python) with role-based access control and comprehensive logging
-
-- **Database**: PostgreSQL for transactional data with Redis caching for performance
-
-- **File Storage**: Secure cloud storage (AWS S3 or equivalent) for receipt images with encryption at rest and in transit
-
-- **Authentication**: SSO integration (SAML/OAuth) with company directory, MFA support
-
-- **Security**: End-to-end encryption for sensitive data, PCI compliance for payment processing, GDPR/SOC 2 compliance
-
-- **Scalability**: Horizontal scaling capability to handle 10,000+ concurrent users and millions of transactions
-
-- **Performance**: Page load times under 2 seconds, API response times under 500ms for 95th percentile
-
-## API Integrations
-
-- **Accounting Software**: QuickBooks, Xero, NetSuite for automatic expense posting and reconciliation
-
-- **HR/Payroll Systems**: ADP, Workday, BambooHR for employee data and reimbursement processing
-
-- **Banking**: Stripe, Plaid for direct deposit and payment processing
-
-- **Communication**: Slack, Microsoft Teams for approval notifications and status updates
-
-- **Cloud Storage**: AWS S3, Google Cloud Storage for receipt archival
-
-- **OCR Services**: Google Vision API or Tesseract for receipt text extraction
-
-- **Analytics**: Segment or Mixpanel for usage tracking and product analytics
-
-## Real-Time Features
-
-- **Live Notifications**: Push notifications for approval requests, status changes, and policy violations
-
-- **Real-Time Dashboard Updates**: Live expense counts, approval metrics, and spending trends
-
-- **Instant Receipt Processing**: OCR processing begins immediately upon upload with progress indicators
-
-- **Concurrent Approval Workflows**: Multiple approvers can review claims simultaneously with conflict resolution
-
-- **Live Collaboration**: Comments and notes visible in real-time to all stakeholders on a claim
-
-- **Streaming Audit Logs**: Real-time audit trail updates visible to compliance teams
-
-## Implementation Details
-
-- **Architecture Pattern**: Microservices with API gateway, separate services for submissions, approvals, receipts, and reporting
-
-- **Database Schema**: Normalized schema with tables for users, expenses, receipts, approvals, audit logs, and policies
-
-- **Receipt Processing Pipeline**: Async job queue (Celery/Bull) for OCR processing with retry logic and error handling
-
-- **Approval Engine**: State machine implementation for workflow management with configurable rules
-
-- **Caching Strategy**: Redis caching for user permissions, policies, and frequently accessed reports
-
-- **Error Handling**: Comprehensive error codes, graceful degradation, and user-friendly error messages
-
-- **Testing**: Unit tests (80%+ coverage), integration tests for workflows, E2E tests for critical paths
-
-- **Deployment**: Docker containerization, Kubernetes orchestration, CI/CD pipeline with automated testing
-
-## MVP Features
-
-1. Employee expense submission with receipt upload and manual entry
-
-2. Basic OCR receipt scanning (merchant, amount, date extraction)
-
-3. Simple expense categorization (predefined categories)
-
-4. Two-level approval workflow (manager → finance)
-
-5. Expense status tracking and notifications
-
-6. Basic reporting dashboard for finance teams
-
-7. Audit trail for all submissions and approvals
-
-8. Direct deposit reimbursement integration
-
-9. Role-based access control (employee, manager, finance)
-
-10. Mobile-responsive web interface
-
-## Future Features
-
-- **Advanced OCR**: Multi-language support, handwritten receipt recognition, receipt matching with corporate cards
-
-- **AI-Powered Insights**: Spending anomaly detection, predictive policy violation alerts, budget forecasting
-
-- **Mobile Native Apps**: iOS and Android native applications with offline receipt capture
-
-- **Corporate Card Integration**: Automatic expense matching with corporate card transactions, duplicate detection
-
-- **Advanced Analytics**: Predictive analytics, departmental benchmarking, spend forecasting
-
-- **Workflow Customization**: No-code workflow builder for complex approval chains
-
-- **Multi-Currency Support**: Automatic currency conversion with real-time exchange rates
-
-- **Expense Splitting**: Split expenses across multiple projects or cost centers
-
-- **Mileage Tracking**: GPS-based mileage tracking with automatic rate calculation
-
-- **Policy Engine**: Dynamic policy rules with conditional logic and custom validation
-
-- **Integration Marketplace**: Pre-built integrations with 50+ business applications
-
-- **Advanced Reporting**: Custom report builder, scheduled report delivery, data export to BI tools
-
-## User Experience Guidelines
-
-- **Simplicity First**: Minimize required fields on submission form; auto-populate where possible
-
-- **Mobile-First Design**: Optimize for one-handed phone operation for receipt capture
-
-- **Clear Visual Feedback**: Immediate confirmation of successful uploads, clear status indicators
-
-- **Accessibility**: WCAG 2.1 AA compliance, keyboard navigation, screen reader support
-
-- **Consistent Terminology**: Use clear, non-technical language throughout the interface
-
-- **Progressive Disclosure**: Show advanced options only when needed; keep primary workflow simple
-
-- **Error Prevention**: Validate data before submission, warn about policy violations before approval
-
-- **Responsive Design**: Seamless experience across desktop, tablet, and mobile devices
-
-- **Dark Mode Support**: Optional dark theme for reduced eye strain
-
-- **Localization**: Support for multiple languages and regional date/currency formats
-
-## Code Quality Standards
-
-- **Language**: JavaScript/TypeScript for frontend, Python or Node.js for backend
-
-- **Linting**: ESLint/Prettier for JavaScript, Black/Flake8 for Python with pre-commit hooks
-
-- **Testing**: Jest/Mocha for unit tests, Cypress/Selenium for E2E tests, minimum 80% code coverage
-
-- **Documentation**: JSDoc/docstrings for all functions, README files, API documentation with Swagger/OpenAPI
-
-- **Version Control**: Git with conventional commits, feature branch workflow, code review requirements
-
-- **Security**: OWASP Top 10 compliance, regular security audits, dependency vulnerability scanning
-
-- **Performance**: Lighthouse scores >90, bundle size monitoring, database query optimization
-
-- **Logging**: Structured logging with correlation IDs, appropriate log levels, log aggregation
-
-- **Monitoring**: Application performance monitoring, error tracking with Sentry, uptime monitoring
-
-## Deliverable Format
-
-- **Codebase**: GitHub repository with clear directory structure, comprehensive README, contributing guidelines
-
-- **Documentation**: API documentation (Swagger/OpenAPI), user guides (markdown), architecture documentation (C4 diagrams)
-
-- **Deployment**: Docker Compose for local development, Kubernetes manifests for production, Terraform for infrastructure
-
-- **Database**: Migration scripts, schema documentation, sample data for testing
-
-- **Testing**: Test suites with clear naming, test data fixtures, CI/CD pipeline configuration
-
-- **Monitoring**: Dashboards (Grafana), alerts configuration, logging setup
-
-- **Release**: Semantic versioning, changelog, release notes, deployment runbooks
-
-- **Security**: Security policy documentation, incident response procedures, compliance checklists
-
-This project was built with [Lovable](https://lovable.dev).
-
-**Live app**: https://ez-bill1.lovable.app
-
-## Build with Lovable
-
-Continue developing this project in the [Lovable editor](https://lovable.dev/projects/69dfeef6-f125-45a4-854f-d1eee2a30ff9).
-
-- **Ship faster**: describe what you want to build and Lovable handles the code.
-- **Stay in sync**: every change made in Lovable is committed straight to this repository.
-- **Full ownership**: this code is yours. Push to `main` on GitHub and your changes sync back into Lovable, ready for your next prompt.
-
-## Development
-
-Prefer working locally? You need Node.js and npm — [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating).
-
-```sh
-git clone <this-repository-url>
-cd <repository-name>
-npm i
-npm run dev
+  UI --> Auth
+  UI --> DB
+  UI --> EF
+  UI <--> RT
+  EF --> Gmail
+  EF --> LLM
+  EF --> DB
+  EF --> Storage
+  Engines --- UI
 ```
+
+**Design choices**
+- **Pure-function engines.** Leak, subscription and split logic are side-effect-free TypeScript modules (`src/lib/*-engine.ts`). That keeps them easy to test and lets them run instantly on the client.
+- **Edge Functions for anything sensitive.** OAuth tokens, Gmail calls and LLM keys never reach the browser.
+- **Row Level Security on every table.** Each user can read only their own rows. Public NFC lookups go through a service-role function that returns only a short-lived signed URL.
+- **Idempotent imports.** SHA-256 content hashes, a `processed_emails` log and `sync_locks` prevent duplicates when several syncs run at once.
+
+## Tech stack
+
+| Layer | Tools |
+|---|---|
+| Frontend | React 18, TypeScript, Vite, Tailwind CSS, shadcn/ui, TanStack Query, Recharts |
+| Mobile | Capacitor (Android and iOS), on-device SMS inbox |
+| Backend | Supabase: Postgres, Auth, Storage, Realtime, Edge Functions (Deno) |
+| AI | Gemini 2.5 Flash / Pro, Gemini 3 Flash, GPT-5-mini, called through an LLM gateway |
+| Integrations | Gmail API (read-only), Google OAuth |
+| Testing | Vitest, Playwright |
+
+## Product journey
+
+EZZ BILLZ started as **ExpenseDesk**, a B2B tool for employee expense reimbursements with approval workflows and audit trails. Early on, we saw that the most painful step was not approval but **capture**, and that individuals feel that pain every day, not only at month-end. So the product was **repositioned for consumers**. The OCR pipeline and expense model stayed, and the product was rebuilt around automatic capture and money insights.
+
+## Roadmap
+
+- [x] Gmail bill, subscription, warranty and statement import
+- [x] AI receipt extraction with line items
+- [x] Money Leaks, Subscription radar, Smart Split
+- [x] NFC/QR tap-to-claim receipts (pilot)
+- [ ] Android app on the Play Store with the UPI SMS reader
+- [ ] Bank account aggregation (Account Aggregator framework)
+- [ ] Budget alerts and weekly money digest
+- [ ] Restaurant partner rollout for NFC Airdrop
+
+## Run locally
+
+```bash
+git clone https://github.com/omkarpatilswork/ez-bill1.git
+cd ez-bill1
+npm install
+cp .env.example .env   # add your Supabase URL and anon key
+npm run dev            # http://localhost:8080
+```
+
+Edge Functions live in `supabase/functions/` and the database schema in `supabase/migrations/`.
+
+## Built by
+
+**Omkar Patil**, Product Manager and founder · [LinkedIn](https://www.linkedin.com/in/omkar-patil-757ab3194/) · [omkarpatilswork@gmail.com](mailto:omkarpatilswork@gmail.com)
+
+Built AI-first with Lovable and Supabase.
