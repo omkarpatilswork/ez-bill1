@@ -25,6 +25,7 @@ import TermsAndConditions from "./pages/TermsAndConditions";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import MoneyLeaks from "./pages/MoneyLeaks";
 import Subscriptions from "./pages/Subscriptions";
+import MonthlySummary from "./pages/MonthlySummary";
 import FinancialDocs from "./pages/FinancialDocs";
 import Warranties from "./pages/Warranties";
 import Splits from "./pages/Splits";

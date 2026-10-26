@@ -1,6 +1,6 @@
 import {
   LayoutDashboard, Receipt, PlusCircle,
-  PieChart, LogOut, MessageSquare, Mail, Droplets, Wallet, ShieldCheck,
+  PieChart, LogOut, MessageSquare, Mail, Droplets, Wallet, ShieldCheck, CalendarRange,
 } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { NavLink } from '@/components/NavLink';
