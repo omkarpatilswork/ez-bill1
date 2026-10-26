@@ -33,6 +33,7 @@ import SplitFriendDetail from "./pages/SplitFriendDetail";
 import Support from "./pages/Support";
 import ClaimTag from "./pages/ClaimTag";
 import StaffTables from "./pages/StaffTables";
+import NfcAirdrop from "./pages/NfcAirdrop";
 import NotFound from "./pages/NotFound";
 import { checkDueReminders } from "@/lib/return-reminders";
 
@@ -59,6 +60,7 @@ const App = () => {
           <Route path="/privacy" element={<PrivacyPolicy />} />
           <Route path="/t/:tagId" element={<ClaimTag />} />
           <Route path="/staff" element={<ProtectedRoute><AppLayout><StaffTables /></AppLayout></ProtectedRoute>} />
+          <Route path="/nfc-airdrop" element={<ProtectedRoute><AppLayout><NfcAirdrop /></AppLayout></ProtectedRoute>} />
           <Route path="/" element={<ProtectedRoute><AppLayout><Dashboard /></AppLayout></ProtectedRoute>} />
           <Route path="/expenses/new" element={<ProtectedRoute><AppLayout><NewExpense /></AppLayout></ProtectedRoute>} />
           <Route path="/expenses/:id" element={<ProtectedRoute><AppLayout><ExpenseDetail /></AppLayout></ProtectedRoute>} />

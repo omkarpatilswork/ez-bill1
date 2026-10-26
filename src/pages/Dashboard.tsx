@@ -9,7 +9,7 @@ import {
   Receipt, PlusCircle, ArrowUpRight, TrendingUp, Search,
   Mail, Users as UsersIcon, Headphones, RefreshCw, User, Sparkles,
   Smartphone, Zap, ShieldCheck, X, Droplets, Heart, Scan, Bot,
-  ChevronRight, Upload, Camera, MessageCircle, ShieldQuestion,
+  ChevronRight, Upload, Camera, MessageCircle, ShieldQuestion, Nfc,
   Utensils, Fuel, ParkingCircle, ShoppingBag, Repeat, Plane, Car, Hotel,
   Pill, Gamepad2, GraduationCap, Briefcase, MoreHorizontal,
 } from 'lucide-react';
@@ -90,6 +90,11 @@ export default function Dashboard() {
   const totalLast30 = last30.reduce((s, e) => s + Number(e.amount), 0);
   const totalPrev30 = prev30.reduce((s, e) => s + Number(e.amount), 0);
   const pctChange = totalPrev30 > 0 ? Math.round(((totalLast30 - totalPrev30) / totalPrev30) * 100) : null;
+
+  const nfcCount = useMemo(() => allExpenses.filter(e => {
+    const d = (e.description || '').toLowerCase();
+    return d.includes('[nfc]') || d.includes('via nfc tag') || d.includes('tapped at');
+  }).length, [allExpenses]);
 
   const leakEstimate = useMemo(() => {
     const p = profile as any;
