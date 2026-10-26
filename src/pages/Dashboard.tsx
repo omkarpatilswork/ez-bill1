@@ -715,28 +715,6 @@ export default function Dashboard() {
             </div>
           ))}
         </div>
-
-        {/* Trust strip */}
-        <div
-          className="flex items-center justify-around mt-2.5 px-2 py-2.5 rounded-2xl"
-          style={{
-            background: 'linear-gradient(160deg, hsla(160, 12%, 15%, 0.5), hsla(160, 12%, 9%, 0.3))',
-            backdropFilter: 'blur(16px)',
-            WebkitBackdropFilter: 'blur(16px)',
-            border: '1px solid hsla(160, 10%, 50%, 0.09)',
-            boxShadow: 'inset 0 1px 0 0 hsla(0, 0%, 100%, 0.04)',
-          }}>
-          {[
-            { icon: ShieldCheck, label: 'Privacy first' },
-            { icon: Zap, label: 'Instant' },
-            { icon: Smartphone, label: 'Mobile-first' },
-          ].map(t => (
-            <div key={t.label} className="flex items-center gap-1.5">
-              <t.icon className="h-3 w-3 text-muted-foreground" />
-              <span className="text-[10px] text-muted-foreground font-medium">{t.label}</span>
-            </div>
-          ))}
-        </div>
       </div>
 
       {/* ━━━ 7. BUILT IN INDIA — refined brand statement ━━━ */}
