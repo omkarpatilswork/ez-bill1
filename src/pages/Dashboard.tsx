@@ -20,6 +20,9 @@ import {
   BarChart, Bar, XAxis, YAxis, Tooltip,
   ResponsiveContainer, Cell,
 } from 'recharts';
+import {
+  computeLeaks,
+} from '@/lib/leak-engine';
 import type { Expense } from '@/lib/types';
 import SEO from '@/components/SEO';
 
