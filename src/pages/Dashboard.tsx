@@ -20,6 +20,9 @@ import {
   BarChart, Bar, XAxis, YAxis, Tooltip,
   ResponsiveContainer, Cell,
 } from 'recharts';
+import {
+  computeLeaks,
+} from '@/lib/leak-engine';
 import type { Expense } from '@/lib/types';
 import SEO from '@/components/SEO';
 
@@ -89,6 +92,26 @@ export default function Dashboard() {
   const pctChange = totalPrev30 > 0 ? Math.round(((totalLast30 - totalPrev30) / totalPrev30) * 100) : null;
 
   const leakEstimate = useMemo(() => {
+    const p = profile as any;
+    // Real leak engine when the money profile is complete; heuristic fallback otherwise
+    if (p?.money_profile_completed && p.income_range) {
+      const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+      const thisMonthExpenses = allExpenses.filter(e => new Date(e.expense_date) >= thisMonthStart);
+      const result = computeLeaks(
+        thisMonthExpenses as any, [], {
+          income_range: p.income_range,
+          age_group: p.age_group ?? null,
+          city_tier: p.city_tier ?? null,
+          living_situation: p.living_situation ?? null,
+          job_type: p.job_type ?? null,
+          financial_goal: p.financial_goal ?? null,
+          monthly_rent: p.monthly_rent ?? null,
+          monthly_emi: p.monthly_emi ?? null,
+          money_profile_completed: true,
+        }, now,
+      );
+      return Math.round(result.totalLeak);
+    }
     let leak = 0;
     const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
     const thisMonthExpenses = allExpenses.filter(e => new Date(e.expense_date) >= thisMonthStart);
@@ -99,7 +122,7 @@ export default function Dashboard() {
     const foodish = thisMonthExpenses.filter(e => (e.merchant || '').toLowerCase().match(/swiggy|zomato|food|cafe|restaurant|coffee/));
     if (foodish.length > 10) leak += foodish.reduce((s, e) => s + Number(e.amount), 0) * 0.3;
     return Math.round(leak);
-  }, [allExpenses, now]);
+  }, [allExpenses, profile, now]);
 
   // Category-based chart data for last 30 days
   const categoryData = useMemo(() => {

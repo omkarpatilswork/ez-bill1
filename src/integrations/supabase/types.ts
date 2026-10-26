@@ -644,6 +644,7 @@ export type Database = {
           id: string
           income_range: string | null
           job_type: string | null
+          leak_alerts_enabled: boolean | null
           living_situation: string | null
           manager_id: string | null
           money_profile_completed: boolean
@@ -652,6 +653,8 @@ export type Database = {
           onboarding_completed: boolean
           phone: string | null
           phone_verified: boolean
+          salary_day: number | null
+          survival_balance: number | null
           terms_accepted_at: string | null
           updated_at: string
         }
@@ -668,6 +671,7 @@ export type Database = {
           id: string
           income_range?: string | null
           job_type?: string | null
+          leak_alerts_enabled?: boolean | null
           living_situation?: string | null
           manager_id?: string | null
           money_profile_completed?: boolean
@@ -676,6 +680,8 @@ export type Database = {
           onboarding_completed?: boolean
           phone?: string | null
           phone_verified?: boolean
+          salary_day?: number | null
+          survival_balance?: number | null
           terms_accepted_at?: string | null
           updated_at?: string
         }
@@ -692,6 +698,7 @@ export type Database = {
           id?: string
           income_range?: string | null
           job_type?: string | null
+          leak_alerts_enabled?: boolean | null
           living_situation?: string | null
           manager_id?: string | null
           money_profile_completed?: boolean
@@ -700,6 +707,8 @@ export type Database = {
           onboarding_completed?: boolean
           phone?: string | null
           phone_verified?: boolean
+          salary_day?: number | null
+          survival_balance?: number | null
           terms_accepted_at?: string | null
           updated_at?: string
         }
