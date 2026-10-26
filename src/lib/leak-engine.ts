@@ -90,8 +90,10 @@ export function computeIdealBudget(profile: MoneyProfile): IdealBudget {
   const emi = Number(profile.monthly_emi) || 0;
   // Fixed commitments cap at 60% of income so the model always leaves room to live
   const fixed = Math.min(rent + emi, Math.round(income * 0.6));
-  // Discretionary pool: income minus fixed, floored at 25% of income
-  const discretionary = Math.max(Math.round(income * 0.25), income - fixed);
+  // Discretionary pool: income minus fixed, floored at 25% of income,
+  // then shaped by goal (aggressive savers get a smaller pool)
+  const goalFactor = goal === 'save' ? 0.75 : goal === 'lifestyle' ? 1.15 : 1;
+  const discretionary = Math.round(Math.max(Math.round(income * 0.25), income - fixed) * goalFactor);
   const adjusted = applyModifiers(BASE_PCT[goal], profile);
   const perCategory = {} as Record<LeakCategory, number>;
   let total = 0;
