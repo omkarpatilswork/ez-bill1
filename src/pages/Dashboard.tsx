@@ -470,7 +470,112 @@ export default function Dashboard() {
         )}
       </div>
 
+      {/* ━━━ 4b. MONEY LEAKS — hero CTA card ━━━ */}
+      <div className="space-y-2.5">
+        <button
+          onClick={() => navigate('/money-leaks')}
+          className="w-full text-left rounded-[24px] p-5 relative overflow-hidden transition-all active:scale-[0.985]"
+          style={{
+            background: 'linear-gradient(150deg, hsla(43, 55%, 16%, 0.55) 0%, hsla(160, 12%, 9%, 0.55) 70%, hsla(43, 60%, 12%, 0.5) 100%)',
+            backdropFilter: 'blur(32px) saturate(1.6)',
+            WebkitBackdropFilter: 'blur(32px) saturate(1.6)',
+            border: '1px solid hsla(43, 80%, 50%, 0.22)',
+            boxShadow: 'inset 0 1px 0 0 hsla(0,0%,100%,0.07), 0 20px 50px -18px hsla(43, 80%, 35%, 0.4)',
+          }}
+        >
+          <div aria-hidden className="absolute -top-14 -right-10 h-40 w-40 rounded-full blur-3xl opacity-60 pointer-events-none"
+            style={{ background: 'radial-gradient(circle, hsla(43, 80%, 50%, 0.32), transparent 70%)' }} />
+          <div aria-hidden className="absolute -bottom-16 -left-8 h-32 w-32 rounded-full blur-3xl opacity-40 pointer-events-none"
+            style={{ background: 'radial-gradient(circle, hsla(0, 63%, 45%, 0.18), transparent 70%)' }} />
+          <div aria-hidden className="absolute inset-x-6 top-0 h-px" style={{ background: 'linear-gradient(90deg, transparent, hsla(43, 80%, 70%, 0.35), transparent)' }} />
+
+          <div className="relative z-10">
+            <div className="flex items-center gap-2.5">
+              <div className="h-9 w-9 rounded-xl flex items-center justify-center shrink-0"
+                style={{ background: 'linear-gradient(135deg, hsla(43, 80%, 50%, 0.25), hsla(43, 80%, 40%, 0.1))', border: '1px solid hsla(43, 80%, 50%, 0.3)' }}>
+                <Droplets className="h-4 w-4 text-gold" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-[0.2em]">Money Leaked</p>
+                <p className="text-[11px] text-foreground/75 font-medium mt-0.5">Avoidable spending this month</p>
+              </div>
+              {leakEstimate > 0 && (
+                <span className="text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider shrink-0"
+                  style={{ background: 'hsla(43, 80%, 50%, 0.18)', color: 'hsl(var(--gold))', border: '1px solid hsla(43, 80%, 50%, 0.3)' }}>
+                  Avoidable
+                </span>
+              )}
+            </div>
+
+            <div className="mt-3 flex items-baseline gap-1.5 flex-wrap">
+              <span className="text-[34px] leading-none font-semibold text-foreground tabular-nums tracking-tight">
+                ₹{leakEstimate.toLocaleString('en-IN')}
+              </span>
+            </div>
+            <p className="text-[11px] text-muted-foreground mt-1.5">
+              {leakEstimate > 0
+                ? 'Found by your AI financial advisor — late-night spends, impulse buys & more'
+                : 'Run a leak check to uncover hidden waste in your spending'}
+            </p>
+
+            <div className="mt-4 inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-[12px] font-semibold"
+              style={{
+                background: 'linear-gradient(135deg, hsla(43, 80%, 55%, 0.95), hsla(43, 90%, 48%, 0.95))',
+                color: 'hsl(40, 30%, 8%)',
+                boxShadow: '0 8px 20px -6px hsla(43, 80%, 45%, 0.5)',
+              }}>
+              {leakEstimate > 0 ? 'Fix my leaks' : 'Start leak check'}
+              <ChevronRight className="h-3.5 w-3.5" />
+            </div>
+          </div>
+        </button>
+
+        {/* ━━━ 4c. NFC AIRDROP — entry point ━━━ */}
+        <button
+          onClick={() => navigate('/nfc-airdrop')}
+          className="w-full rounded-2xl p-4 text-left transition-all active:scale-[0.985] flex items-center gap-3.5 relative overflow-hidden"
+          style={{
+            background: 'linear-gradient(135deg, hsla(152, 45%, 16%, 0.45), hsla(160, 12%, 10%, 0.5))',
+            backdropFilter: 'blur(28px) saturate(1.5)',
+            WebkitBackdropFilter: 'blur(28px) saturate(1.5)',
+            border: '1px solid hsla(152, 45%, 45%, 0.2)',
+            boxShadow: 'inset 0 1px 0 0 hsla(0,0%,100%,0.05), 0 8px 28px -10px hsla(152, 60%, 30%, 0.35)',
+          }}
+        >
+          <div aria-hidden className="absolute -right-6 -bottom-6 h-20 w-20 rounded-full blur-2xl opacity-50 pointer-events-none"
+            style={{ background: 'hsla(152, 60%, 45%, 0.35)' }} />
+          <div className="h-11 w-11 rounded-xl flex items-center justify-center shrink-0 relative"
+            style={{
+              background: 'linear-gradient(135deg, hsla(152, 45%, 45%, 0.22), hsla(43, 80%, 50%, 0.08))',
+              border: '1px solid hsla(152, 45%, 45%, 0.28)',
+            }}>
+            <Nfc className="h-5 w-5 text-primary" />
+          </div>
+          <div className="flex-1 min-w-0 relative">
+            <div className="flex items-center gap-2">
+              <p className="text-[13px] font-semibold text-foreground">NFC Tap Bills</p>
+              {nfcCount > 0 ? (
+                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wider shrink-0"
+                  style={{ background: 'hsla(152, 55%, 40%, 0.16)', color: 'hsl(var(--success))', border: '1px solid hsla(152, 55%, 50%, 0.25)' }}>
+                  {nfcCount} received
+                </span>
+              ) : (
+                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wider shrink-0"
+                  style={{ background: 'hsla(0,0%,100%,0.06)', color: 'hsl(0,0%,85%)', border: '1px solid hsla(0,0%,100%,0.1)' }}>
+                  New
+                </span>
+              )}
+            </div>
+            <p className="text-[11px] text-muted-foreground mt-0.5">
+              Tap your phone on a table tag — bills arrive automatically
+            </p>
+          </div>
+          <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0 relative" />
+        </button>
+      </div>
+
       {/* Desktop Charts */}
+
       <div className="hidden md:grid gap-5 grid-cols-1 lg:grid-cols-2">
         <div className="glass-card rounded-2xl p-5">
           <div className="flex items-center justify-between mb-4">
