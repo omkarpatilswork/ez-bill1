@@ -677,40 +677,55 @@ export default function Dashboard() {
         </div>
         <div className="grid grid-cols-2 gap-2">
           {[
-            { icon: Scan, title: 'Smart OCR', desc: 'GST · UPI · handwritten', tint: 'hsla(152, 45%, 45%, 0.14)', color: 'text-primary' },
-            { icon: Droplets, title: 'AI Money Leaks', desc: 'Personalised advice', tint: 'hsla(43, 80%, 50%, 0.14)', color: 'text-gold' },
-            { icon: UsersIcon, title: 'Smart Split', desc: 'Friends & balances', tint: 'hsla(199, 70%, 45%, 0.14)', color: 'text-info' },
-            { icon: Repeat, title: 'Subscriptions', desc: 'Track & cancel waste', tint: 'hsla(280, 50%, 55%, 0.14)', color: 'text-purple-400' },
-            { icon: Headphones, title: 'Support Hub', desc: 'Reach any merchant', tint: 'hsla(199, 70%, 45%, 0.14)', color: 'text-info' },
-            { icon: Bot, title: 'Ask AI', desc: 'Chat with your money', tint: 'hsla(152, 45%, 45%, 0.14)', color: 'text-primary' },
+            { icon: Scan, title: 'Smart OCR', desc: 'GST · UPI · handwritten', accent: '152, 62%, 52%' },
+            { icon: Droplets, title: 'AI Money Leaks', desc: 'Personalised advice', accent: '43, 88%, 58%' },
+            { icon: UsersIcon, title: 'Smart Split', desc: 'Friends & balances', accent: '199, 78%, 55%' },
+            { icon: Repeat, title: 'Subscriptions', desc: 'Track & cancel waste', accent: '280, 65%, 66%' },
+            { icon: Headphones, title: 'Support Hub', desc: 'Reach any merchant', accent: '199, 78%, 55%' },
+            { icon: Bot, title: 'Ask AI', desc: 'Chat with your money', accent: '152, 62%, 52%' },
           ].map(item => (
             <div
               key={item.title}
               aria-disabled="true"
-              className="rounded-xl p-3 flex items-start gap-2.5 select-none pointer-events-none"
+              className="group relative rounded-2xl p-3 pt-3.5 overflow-hidden select-none pointer-events-none"
               style={{
-                background: 'linear-gradient(135deg, hsla(160, 12%, 16%, 0.55), hsla(160, 12%, 10%, 0.35))',
-                backdropFilter: 'blur(20px) saturate(1.4)',
-                WebkitBackdropFilter: 'blur(20px) saturate(1.4)',
-                border: '1px solid hsla(160, 10%, 60%, 0.12)',
-                boxShadow: 'inset 0 1px 0 0 hsla(0, 0%, 100%, 0.04)',
+                background: 'linear-gradient(160deg, hsla(160, 14%, 17%, 0.6), hsla(160, 14%, 9%, 0.32))',
+                backdropFilter: 'blur(24px) saturate(1.5)',
+                WebkitBackdropFilter: 'blur(24px) saturate(1.5)',
+                border: '1px solid hsla(160, 10%, 60%, 0.1)',
+                boxShadow: 'inset 0 1px 0 0 hsla(0, 0%, 100%, 0.05), 0 4px 16px -8px hsla(0, 0%, 0%, 0.4)',
               }}
             >
-              <div className="h-8 w-8 rounded-lg flex items-center justify-center shrink-0"
-                style={{ background: item.tint }}>
-                <item.icon className={`h-4 w-4 ${item.color}`} />
+              {/* corner sheen */}
+              <div
+                className="absolute -top-6 -right-6 h-16 w-16 rounded-full blur-xl opacity-50 pointer-events-none"
+                style={{ background: `hsla(${item.accent}, 0.14)` }}
+              />
+              <div
+                className="relative h-9 w-9 rounded-[12px] flex items-center justify-center shrink-0"
+                style={{
+                  background: `linear-gradient(150deg, hsla(${item.accent}, 0.2), hsla(${item.accent}, 0.07))`,
+                  border: `1px solid hsla(${item.accent}, 0.22)`,
+                  boxShadow: `inset 0 1px 0 0 hsla(0, 0%, 100%, 0.1), 0 0 14px -4px hsla(${item.accent}, 0.35)`,
+                }}>
+                <item.icon className="h-4 w-4" style={{ color: `hsl(${item.accent})` }} />
               </div>
-              <div className="min-w-0">
-                <p className="text-[11px] font-semibold text-foreground leading-tight">{item.title}</p>
-                <p className="text-[10px] text-muted-foreground leading-tight mt-0.5 truncate">{item.desc}</p>
-              </div>
+              <p className="relative text-[11.5px] font-semibold text-foreground leading-tight mt-2.5 tracking-tight">{item.title}</p>
+              <p className="relative text-[10px] text-muted-foreground leading-tight mt-0.5 truncate">{item.desc}</p>
             </div>
           ))}
         </div>
 
         {/* Trust strip */}
-        <div className="flex items-center justify-around mt-3 px-2 py-2.5 rounded-xl"
-          style={{ background: 'hsla(160, 12%, 14%, 0.4)', border: '1px solid hsla(160, 10%, 40%, 0.08)' }}>
+        <div
+          className="flex items-center justify-around mt-2.5 px-2 py-2.5 rounded-2xl"
+          style={{
+            background: 'linear-gradient(160deg, hsla(160, 12%, 15%, 0.5), hsla(160, 12%, 9%, 0.3))',
+            backdropFilter: 'blur(16px)',
+            WebkitBackdropFilter: 'blur(16px)',
+            border: '1px solid hsla(160, 10%, 50%, 0.09)',
+            boxShadow: 'inset 0 1px 0 0 hsla(0, 0%, 100%, 0.04)',
+          }}>
           {[
             { icon: ShieldCheck, label: 'Privacy first' },
             { icon: Zap, label: 'Instant' },
