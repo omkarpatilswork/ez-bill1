@@ -45,7 +45,7 @@ describe("computeLeaks", () => {
   });
 
   it("flags overspend as leak and reports the top merchant", () => {
-    const thisMonth = [mk(3000, 'Swiggy'), mk(2000, 'Swiggy'), mk(1000, 'Zomato')];
+    const thisMonth = [mk(25000, 'Swiggy'), mk(15000, 'Swiggy'), mk(8000, 'Zomato')];
     const r = computeLeaks(thisMonth, [], baseProfile, now);
     const food = r.perCategory.find(c => c.category === 'Food')!;
     expect(food.topMerchant).toBe('Swiggy');
