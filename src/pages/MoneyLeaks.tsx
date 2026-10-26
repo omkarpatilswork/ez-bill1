@@ -576,7 +576,9 @@ export default function MoneyLeaks() {
           <>
             <div className="flex items-center gap-3 mt-4">
               <Progress value={leakData.leakPercent} className="h-2 flex-1 bg-secondary [&>div]:bg-destructive" />
-              <span className="text-xs font-semibold text-destructive tabular-nums">{leakData.leakPercent}% of spending leaked</span>
+              <span className={`text-xs font-semibold tabular-nums ${leakData.leakPercent > 0 ? 'text-destructive' : 'text-success'}`}>
+                {leakData.leakPercent > 0 ? `${leakData.leakPercent}% of spending leaked` : 'No leaks this month 🎉'}
+              </span>
             </div>
 
             <div className="grid grid-cols-3 gap-3 pt-4 mt-2 border-t border-border/30 relative">
