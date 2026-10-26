@@ -536,7 +536,7 @@ export default function MoneyLeaks() {
             </p>
             {hasData ? (
               <>
-                <p className="text-4xl font-bold text-destructive tabular-nums">{fmt(leakData.totalLeak)}</p>
+                <p className={`text-4xl font-bold tabular-nums ${leakData.totalLeak > 0 ? 'text-destructive' : 'text-success'}`}>{fmt(leakData.totalLeak)}</p>
                 {lastTotal > 0 && (
                   <div className="flex items-center gap-2 mt-2">
                     <div className={`inline-flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-full ${changePercent > 0 ? 'bg-destructive/20 text-destructive' : 'bg-success/20 text-success'}`}>
