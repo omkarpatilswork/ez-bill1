@@ -12,6 +12,7 @@ export interface Profile {
   terms_accepted_at: string | null;
   department: string;
   manager_id: string | null;
+  income_range: string | null;
   created_at: string;
   updated_at: string;
 }
