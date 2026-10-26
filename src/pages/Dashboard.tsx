@@ -687,7 +687,7 @@ export default function Dashboard() {
             <div
               key={item.title}
               aria-disabled="true"
-              className="group relative rounded-2xl p-3 pt-3.5 overflow-hidden select-none pointer-events-none"
+              className="relative rounded-xl p-2.5 overflow-hidden select-none pointer-events-none"
               style={{
                 background: 'linear-gradient(160deg, hsla(160, 14%, 17%, 0.6), hsla(160, 14%, 9%, 0.32))',
                 backdropFilter: 'blur(24px) saturate(1.5)',
@@ -698,20 +698,20 @@ export default function Dashboard() {
             >
               {/* corner sheen */}
               <div
-                className="absolute -top-6 -right-6 h-16 w-16 rounded-full blur-xl opacity-50 pointer-events-none"
+                className="absolute -top-5 -right-5 h-12 w-12 rounded-full blur-lg opacity-50 pointer-events-none"
                 style={{ background: `hsla(${item.accent}, 0.14)` }}
               />
               <div
-                className="relative h-9 w-9 rounded-[12px] flex items-center justify-center shrink-0"
+                className="relative h-7 w-7 rounded-[9px] flex items-center justify-center shrink-0"
                 style={{
                   background: `linear-gradient(150deg, hsla(${item.accent}, 0.2), hsla(${item.accent}, 0.07))`,
                   border: `1px solid hsla(${item.accent}, 0.22)`,
-                  boxShadow: `inset 0 1px 0 0 hsla(0, 0%, 100%, 0.1), 0 0 14px -4px hsla(${item.accent}, 0.35)`,
+                  boxShadow: `inset 0 1px 0 0 hsla(0, 0%, 100%, 0.1), 0 0 12px -4px hsla(${item.accent}, 0.35)`,
                 }}>
-                <item.icon className="h-4 w-4" style={{ color: `hsl(${item.accent})` }} />
+                <item.icon className="h-3.5 w-3.5" style={{ color: `hsl(${item.accent})` }} />
               </div>
-              <p className="relative text-[11.5px] font-semibold text-foreground leading-tight mt-2.5 tracking-tight">{item.title}</p>
-              <p className="relative text-[10px] text-muted-foreground leading-tight mt-0.5 truncate">{item.desc}</p>
+              <p className="relative text-[11px] font-semibold text-foreground leading-tight mt-2 tracking-tight">{item.title}</p>
+              <p className="relative text-[9.5px] text-muted-foreground leading-tight mt-0.5 truncate">{item.desc}</p>
             </div>
           ))}
         </div>
