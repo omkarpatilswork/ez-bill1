@@ -354,45 +354,6 @@ export default function Dashboard() {
         </div>
       </button>
 
-      {/* ━━━ 2. MONEY LEAKS — refined glass row ━━━ */}
-      <button
-        onClick={() => navigate('/money-leaks')}
-        className="w-full rounded-2xl p-3.5 text-left transition-all active:scale-[0.985] flex items-center gap-3 relative overflow-hidden"
-        style={{
-          background: 'linear-gradient(135deg, hsla(43, 50%, 18%, 0.35), hsla(160, 12%, 10%, 0.5))',
-          backdropFilter: 'blur(28px) saturate(1.5)',
-          WebkitBackdropFilter: 'blur(28px) saturate(1.5)',
-          border: '1px solid hsla(43, 80%, 50%, 0.18)',
-          boxShadow: 'inset 0 1px 0 0 hsla(0,0%,100%,0.05), 0 8px 28px -10px hsla(43, 80%, 40%, 0.25)',
-        }}
-      >
-        <div aria-hidden className="absolute -right-6 -top-6 h-20 w-20 rounded-full blur-2xl opacity-50 pointer-events-none"
-          style={{ background: 'hsla(43, 80%, 50%, 0.35)' }} />
-        <div className="h-10 w-10 rounded-xl flex items-center justify-center shrink-0 relative"
-          style={{
-            background: 'linear-gradient(135deg, hsla(43, 80%, 50%, 0.22), hsla(43, 80%, 40%, 0.08))',
-            border: '1px solid hsla(43, 80%, 50%, 0.25)',
-          }}>
-          <Droplets className="h-4 w-4 text-gold" />
-        </div>
-        <div className="flex-1 min-w-0 relative">
-          <div className="flex items-center gap-2">
-            <p className="text-[13px] font-semibold text-foreground">Money Leaked</p>
-            {leakEstimate > 0 && (
-              <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wider"
-                style={{ background: 'hsla(43, 80%, 50%, 0.18)', color: 'hsl(var(--gold))', border: '1px solid hsla(43, 80%, 50%, 0.3)' }}>
-                Avoidable
-              </span>
-            )}
-          </div>
-          <p className="text-[11px] text-muted-foreground mt-0.5 truncate">
-            {leakEstimate > 0
-              ? `₹${leakEstimate.toLocaleString('en-IN')} · AI financial advisor found leaks`
-              : 'Your personal AI financial advisor'}
-          </p>
-        </div>
-        <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0 relative" />
-      </button>
 
       {/* ━━━ 3. QUICK ACTIONS — premium squircle tiles ━━━ */}
       <div>
