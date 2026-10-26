@@ -18,6 +18,7 @@ const menuItems = [
   { title: 'All Bills', url: '/expenses', icon: Receipt },
   { title: 'Financial Docs', url: '/financial-docs', icon: Wallet },
   { title: 'Warranties', url: '/warranties', icon: ShieldCheck },
+  { title: 'Monthly Summary', url: '/summary', icon: CalendarRange },
   { title: 'Analytics', url: '/analytics', icon: PieChart },
   { title: 'Money Leaks', url: '/money-leaks', icon: Droplets },
   { title: 'Ask AI', url: '/ask-ai', icon: MessageSquare },
