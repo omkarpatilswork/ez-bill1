@@ -750,6 +750,20 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
+
+      {/* ━━━ Footer: privacy & terms ━━━ */}
+      <div className="pt-3 pb-4 text-center">
+        <Link to="/privacy" className="text-[10px] text-muted-foreground hover:text-foreground underline underline-offset-2">
+          Privacy
+        </Link>
+        <span className="text-[10px] text-muted-foreground/50 mx-2">·</span>
+        <Link to="/terms" className="text-[10px] text-muted-foreground hover:text-foreground underline underline-offset-2">
+          Terms
+        </Link>
+        <p className="text-[9px] text-muted-foreground/50 mt-1">
+          Your bills stay yours — read how we store and protect them.
+        </p>
+      </div>
     </div>
   );
 }
