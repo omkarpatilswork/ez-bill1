@@ -8,6 +8,13 @@
       "when": 1793004729578,
       "tag": "0000_profiles_leak_survival_fields",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1793359370510,
+      "tag": "0001_create_categories_manageable",
+      "breakpoints": true
     }
   ]
 }
