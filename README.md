@@ -1,175 +1,251 @@
 <div align="center">
 
-# 🧾 EZZ BILL
+<img src="docs/assets/hero.svg" alt="EZZ BILL: the digital layer for bills. Bills arrive from Gmail, UPI SMS, receipts and an NFC tap at the table." width="100%"/>
 
-**The digital layer for bills. UPI solved payments; EZZ BILL solves what happens after.**
+<br/>
 
-Your bills arrive on their own, from Gmail, UPI SMS, receipts and an NFC tap at the restaurant table. EZZ BILL organises them and shows you where your money is leaking.
+[![App](https://img.shields.io/badge/app-ezbill.live-22C55E?style=for-the-badge)](https://ezbill.live)
+[![Site](https://img.shields.io/badge/site-ezzbill.com-15803D?style=for-the-badge)](https://ezzbill.com)
+[![Investors](https://img.shields.io/badge/raising-pre--seed-F5B942?style=for-the-badge)](https://ezzbill.com/#investors)
 
-[![App](https://img.shields.io/badge/App-ezbill.live-22C55E?style=for-the-badge)](https://ezbill.live)
-[![Site](https://img.shields.io/badge/Site-ezzbill.com-15803D?style=for-the-badge)](https://ezzbill.com)
-[![Investors](https://img.shields.io/badge/Raising-pre--seed-F5B942?style=for-the-badge)](https://ezzbill.com/#investors)
-![Commits](https://img.shields.io/badge/Commits-700+-6366F1?style=for-the-badge)
+![React](https://img.shields.io/badge/React-18-61DAFB?style=flat-square&logo=react&logoColor=black)
+![Vite](https://img.shields.io/badge/Vite-5-646CFF?style=flat-square&logo=vite&logoColor=white)
+![Supabase](https://img.shields.io/badge/Supabase-Postgres%20%2B%20Edge-3ECF8E?style=flat-square&logo=supabase&logoColor=white)
+![Capacitor](https://img.shields.io/badge/Capacitor-Android%20%2F%20iOS-119EFF?style=flat-square&logo=capacitor&logoColor=white)
+![Gemini](https://img.shields.io/badge/AI-Gemini%20%C2%B7%20GPT--5--mini-8E75B2?style=flat-square&logo=googlegemini&logoColor=white)
 
-<img src="docs/screenshots/home.webp" width="190" alt="Home">&nbsp;
-<img src="docs/screenshots/money-leaks.webp" width="190" alt="Money Leaks">&nbsp;
-<img src="docs/screenshots/subscriptions.webp" width="190" alt="Subscriptions">&nbsp;
-<img src="docs/screenshots/splits.webp" width="190" alt="Smart Split">
-
-<sub>Real screens from the live app, using demo data</sub>
+**[The problem](#01--the-problem)** ·
+**[The product](#02--the-product)** ·
+**[How bills get in](#03--how-bills-get-in)** ·
+**[Under the hood](#05--how-it-works)** ·
+**[Where it stands](#07--where-it-stands)** ·
+**[Limits](#08--what-it-does-not-do-yet)** ·
+**[Run it](#10--run-it-yourself)**
 
 </div>
 
 ---
 
-## The problem
+> **A live, early-stage product.** The web app is live at [ezbill.live](https://ezbill.live). NFC table-tap is a pilot, and the Android app with the UPI SMS reader is not on the Play Store yet. The screens below are the real app with demo data.
 
-For the average Indian consumer, spending data is scattered across a dozen places:
+---
 
-- **Email**: Swiggy, Amazon and Uber invoices, bank and credit-card statements, and warranty cards, buried in the inbox
-- **SMS**: every UPI payment sends a text that nobody reads twice
-- **Paper**: restaurant and retail receipts that end up in a pocket or the bin
-- **Subscriptions**: OTT, SaaS and telecom plans that renew quietly, often in duplicate
+## 01 · The problem
 
-Expense apps expect you to **type all of this in by hand**, and almost nobody keeps that up past the first week. So people don't know what they spend, which subscriptions they've forgotten, or when a return window closes.
+UPI solved payments. Nothing solved what comes after. For most people in India, spending data is scattered across a dozen places:
 
-## The solution
+- **Email:** Swiggy, Amazon and Uber invoices, bank and credit-card statements, warranty cards
+- **SMS:** a text for every UPI payment that nobody reads twice
+- **Paper:** restaurant and shop receipts that end up in a pocket or the bin
+- **Subscriptions:** OTT, SaaS and telecom plans that renew quietly, sometimes twice
 
-EZZ BILL makes capture effortless so the insights are there when you need them:
+Expense apps expect you to type all of this in by hand, and almost nobody keeps that up past the first week. So people don't know what they spend, which subscriptions they've forgotten, or when a return window closes.
+
+## 02 · The product
+
+EZZ BILL makes capture automatic, so the insights are there when you need them.
 
 | Capture (automatic) | Understand | Act |
 |---|---|---|
-| 📥 Gmail import (read-only) | 🕳️ Money Leaks against your personal ideal budget | ➗ Split a bill item by item with friends |
-| 📱 UPI SMS parsing (Android) | 🔄 Subscription radar: unused, low-use and duplicate subscriptions | 🛡️ Warranty and return-window reminders |
-| 📸 AI receipt scanning and bulk upload | 📊 Spending analytics by category and merchant | 🎧 Merchant support lookup in one tap |
-| 📲 Tap an NFC/QR table tag to get the restaurant bill | 💬 Ask AI questions about your own spending | 📂 Statements organised into a Financial Docs hub |
+| Gmail import, read-only | **Money Leaks** against your own ideal budget | Split a bill item by item with friends |
+| UPI SMS parsing (Android) | **Subscription radar**: unused, low-use and duplicate plans | Warranty and return-window reminders |
+| AI receipt scanning and bulk upload | Spending by category and merchant | Merchant support contacts in one tap |
+| Tap an NFC or QR table tag for the restaurant bill | Ask AI about your own spending | Statements sorted into a Financial Docs hub |
 
-## Features in detail
+### Screens
 
-### 📥 Zero-effort capture
-- **Gmail sync.** Read-only OAuth (`gmail.readonly`). The app scans for bills, subscriptions, warranties and financial documents. Hashing, a processed-email log and sync locks make sure nothing is imported twice.
-- **AI receipt extraction.** Upload a photo, PDF or HEIC. The model is chosen by input type (Gemini 2.5 Flash for images and text, GPT-5-mini for PDFs, with automatic fallback). It extracts the merchant, amount, date, category and **individual line items**.
-- **UPI SMS reader.** In the Android app, transaction SMS from GPay, PhonePe, Paytm, BHIM and bank alerts are filtered on the device and parsed into expenses.
-- **Smart categorisation.** A merchant map tuned for India (Swiggy, Zepto, Blinkit, IRCTC, Jio, HPCL and more) assigns categories automatically.
+<table>
+<tr>
+<td width="25%"><img src="docs/screenshots/home.webp" alt="Home: spend this month, money leaks card, quick actions and recent bills"/><br/><sub><b>Home.</b> This month's spend, the biggest leak, quick actions and recent bills.</sub></td>
+<td width="25%"><img src="docs/screenshots/money-leaks.webp" alt="Money Leaks: amount leaked this month and the categories over budget"/><br/><sub><b>Money Leaks.</b> Each category against your ideal budget, with the gap in rupees.</sub></td>
+<td width="25%"><img src="docs/screenshots/subscriptions.webp" alt="Subscription radar listing active, low-use and duplicate subscriptions"/><br/><sub><b>Subscription radar.</b> Recurring charges found by cadence, flagged unused, low-use or duplicate.</sub></td>
+<td width="25%"><img src="docs/screenshots/splits.webp" alt="Smart Split with a friends ledger"/><br/><sub><b>Smart Split.</b> Split by item or equally, with tax shared out and a friends ledger.</sub></td>
+</tr>
+</table>
 
-### 🕳️ Money Leaks
-A short **Money Profile** quiz covers income band, age, city tier, living situation, job type and financial goal. From it, EZZ BILL builds a **personalised ideal budget** for each category, compares it with what you actually spend, and shows the gap in rupees. It also calculates a "safe daily spend" until your next payday.
+<table>
+<tr>
+<td width="50%"><img src="docs/screenshots/desktop-home.webp" alt="Desktop dashboard"/><br/><sub><b>Desktop dashboard.</b> The same app at full width.</sub></td>
+<td width="50%"><img src="docs/screenshots/desktop-analytics.webp" alt="Desktop analytics by category and merchant"/><br/><sub><b>Analytics.</b> Spending by category and merchant over time.</sub></td>
+</tr>
+</table>
 
-### 🔄 Subscription radar
-A detection engine finds recurring merchants by cadence (weekly, monthly or yearly) and by amount. It then marks each subscription as **active, low-use, unused or duplicate**, for example two music apps. You see the total you could save each month.
+## 03 · How bills get in
 
-### ➗ Smart Split
-Split a bill **item by item** or equally. Tax and discounts are shared out proportionally, and a **friends ledger** tracks who owes whom.
+| Channel | How it works |
+|---|---|
+| **Gmail** | Read-only OAuth (`gmail.readonly`). Separate scans look for bills, subscriptions, warranties and financial statements. Content hashes, a processed-email log and sync locks stop anything being imported twice. |
+| **Receipts** | Upload a photo, PDF or HEIC. The model is picked by input type (Gemini 2.5 Flash for images and text, GPT-5-mini for PDFs, with fallback) and extracts merchant, amount, date, category and **line items**. |
+| **UPI SMS** | In the Android app, transaction texts from GPay, PhonePe, Paytm, BHIM and banks are filtered on the device and parsed into expenses. |
+| **NFC / QR table tag** | The restaurant pilot below. |
 
-### 📲 NFC Airdrop (pilot)
+A merchant map tuned for India (Swiggy, Zepto, Blinkit, IRCTC, Jio, HPCL and more) assigns categories automatically.
 
-<img src="docs/screenshots/nfc-staff.webp" width="170" alt="Staff: send a table's bill">&nbsp;
-<img src="docs/screenshots/nfc-guest.webp" width="170" alt="Guest: tap the table">&nbsp;
-<img src="docs/screenshots/nfc-bill.webp" width="170" alt="The bill on your phone">&nbsp;
-<img src="docs/screenshots/nfc-saved.webp" width="170" alt="Saved to EZZ BILL">
+### NFC Airdrop (pilot)
 
-A restaurant's staff photograph the closed bill and attach it to the table's **NFC tag or QR code**. The customer taps their phone and the receipt goes straight into EZZ BILL. No POS integration is needed. Bills expire after a short window so nobody sees a stranger's receipt, and the staff dashboard updates live through Supabase Realtime.
+<div align="center">
+<img src="docs/assets/nfc.svg" alt="NFC Airdrop in four steps: staff photograph the bill, attach it to the table's tag, the guest taps their phone, the bill is saved" width="100%"/>
+</div>
 
-### 🛡️ Warranties, returns and support
-- Warranty cards found in email are extracted automatically, and the app reminds you before a **return window closes**.
-- **Merchant Support** finds the official phone number, email, help centre and order-tracking link for any merchant on a bill, with a confidence score for each.
+<table>
+<tr>
+<td width="25%"><img src="docs/screenshots/nfc-staff.webp" alt="Staff screen to send a table's bill"/><br/><sub><b>Staff.</b> Send a table's bill.</sub></td>
+<td width="25%"><img src="docs/screenshots/nfc-guest.webp" alt="Guest screen after tapping the table"/><br/><sub><b>Guest.</b> Tap the table.</sub></td>
+<td width="25%"><img src="docs/screenshots/nfc-bill.webp" alt="The bill on the guest's phone"/><br/><sub><b>The bill</b> on your phone.</sub></td>
+<td width="25%"><img src="docs/screenshots/nfc-saved.webp" alt="Bill saved to EZZ BILL"/><br/><sub><b>Saved</b> to EZZ BILL.</sub></td>
+</tr>
+</table>
 
-### 💬 Ask AI
-Chat with your own expense data. Ask "What did I spend on food last month?" or "Which category grew the most?" and get answers from an LLM grounded in your expenses.
+No POS integration is needed. Bills expire after a short window so nobody sees a stranger's receipt. The tap habit was tested in the real world with [Racked](https://github.com/omkarpatilswork/racked-app), on 10 tagged gym machines.
 
-### 📂 Financial Docs hub
-Credit-card statements, bank statements and trade confirmations are kept out of your expense list. They're sorted into their own hub with key fields extracted: due date, minimum due and closing balance.
+## 04 · What's inside
 
-## On desktop
+<details open>
+<summary><b>Money Leaks</b></summary>
+<br/>
 
-<img src="docs/screenshots/desktop-home.webp" width="49%" alt="Desktop dashboard">&nbsp;<img src="docs/screenshots/desktop-analytics.webp" width="49%" alt="Desktop analytics">
+A short **Money Profile** quiz covers income band, age, city tier, living situation, job type and financial goal. EZZ BILL turns it into a personal ideal budget per category: rent and EMI are carved out first (capped at 60% of income), then the rest is budgeted by your goal. It compares that with what you actually spend, shows the gap in rupees, and works out a safe daily spend until payday. The logic is one pure function, `computeIdealBudget()` in [`src/lib/leak-engine.ts`](src/lib/leak-engine.ts).
+</details>
 
-## Business model
+<details>
+<summary><b>Subscription radar</b></summary>
+<br/>
 
-**Merchants pay. Their customers join for free.**
+Finds recurring merchants by cadence (weekly, monthly, yearly) and amount, then marks each one **active, low-use, unused or duplicate** (two music apps, for example), with the total you could save each month. See [`subscription-engine.ts`](src/lib/subscription-engine.ts).
+</details>
+
+<details>
+<summary><b>Smart Split</b></summary>
+<br/>
+
+Split a bill item by item or equally. Tax and discounts are shared out proportionally, and a friends ledger tracks who owes whom. See [`split-engine.ts`](src/lib/split-engine.ts).
+</details>
+
+<details>
+<summary><b>Warranties, returns and merchant support</b></summary>
+<br/>
+
+Warranty cards found in email are extracted automatically, with a reminder before a return window closes. Merchant Support finds the official phone, email, help centre and order-tracking link for a merchant on a bill, each with a confidence score.
+</details>
+
+<details>
+<summary><b>Ask AI and the Financial Docs hub</b></summary>
+<br/>
+
+Ask questions like "What did I spend on food last month?" and get answers grounded in your own expenses. Credit-card statements, bank statements and trade confirmations are kept out of the expense list and sorted into their own hub, with the due date, minimum due and closing balance pulled out.
+</details>
+
+## 05 · How it works
+
+<div align="center">
+<img src="docs/assets/architecture.svg" alt="Bills come in from Gmail, receipts, UPI SMS and NFC tags; Supabase Edge Functions and an LLM gateway process them; Postgres with row-level security stores them; the app shows Money Leaks, Subscription radar, Smart Split and Ask AI" width="100%"/>
+</div>
+
+**Design choices**
+
+- **Pure-function engines.** Leak, subscription and split logic are side-effect-free TypeScript modules (`src/lib/*-engine.ts`). They run instantly on the device and are easy to test.
+- **Edge Functions for anything sensitive.** OAuth tokens, Gmail calls and LLM keys never reach the browser. There are 12 functions in [`supabase/functions/`](supabase/functions).
+- **Row-level security on every table.** Each user can read only their own rows. Public NFC lookups go through a service-role function that returns only a short-lived signed URL.
+- **Idempotent imports.** SHA-256 content hashes, a `processed_emails` log and `sync_locks` prevent duplicates when several syncs run at once.
+
+<details>
+<summary><b>Stack</b></summary>
+<br/>
+
+| Layer | What's used |
+|---|---|
+| **Frontend** | React 18, TypeScript, Vite, Tailwind CSS, shadcn/ui, TanStack Query, Recharts |
+| **Mobile** | Capacitor (Android and iOS), on-device SMS inbox on Android |
+| **Backend** | Supabase: Postgres, Auth, Storage, Realtime, Edge Functions (Deno) |
+| **AI** | Gemini 2.5 Flash / Pro, Gemini 3 Flash and GPT-5-mini through an LLM gateway |
+| **Integrations** | Gmail API (read-only), Google OAuth |
+| **Testing** | Vitest and Playwright |
+
+</details>
+
+## 06 · Business model
+
+**Merchants pay. Their customers join free.**
 
 | Stream | Price | Why it works |
 |---|---|---|
-| **Merchant SaaS** | ₹499–999 per location per month | Restaurants and retailers get digital bills, NFC table-tap and fewer paper receipts |
+| **Merchant SaaS** | ₹499–999 per location per month | Digital bills, NFC table-tap and less paper for restaurants and shops |
 | **Consumer premium** | ₹49–99 per month | Power features for heavy users |
-| **Bill collection** | Free, always | Every merchant tap brings in a new consumer user |
+| **Bill collection** | Free, always | Every merchant tap brings in a new consumer |
 
-## Architecture
+## 07 · Where it stands
 
-```mermaid
-flowchart LR
-  subgraph Client["Client: React + Vite (web) / Capacitor (Android, iOS)"]
-    UI[Pages & components]
-    Engines["On-device engines<br/>leaks · subscriptions · split · categories"]
-  end
-  subgraph Supabase
-    Auth[Auth<br/>Google OAuth + email]
-    DB[(Postgres + RLS)]
-    Storage[(Receipt storage)]
-    RT[Realtime]
-    EF["Edge Functions (Deno)<br/>gmail-scan · gmail-subscription-scan<br/>gmail-warranty-scan · gmail-financial-scan<br/>extract-receipt · parse-upi-sms<br/>ask-ai · merchant-support · resolve-tag"]
-  end
-  Gmail[(Gmail API<br/>read-only)]
-  LLM[LLM gateway<br/>Gemini 2.5 / 3 Flash · GPT-5-mini]
-
-  UI --> Auth
-  UI --> DB
-  UI --> EF
-  UI <--> RT
-  EF --> Gmail
-  EF --> LLM
-  EF --> DB
-  EF --> Storage
-  Engines --- UI
-```
-
-**Design choices**
-- **Pure-function engines.** Leak, subscription and split logic are side-effect-free TypeScript modules (`src/lib/*-engine.ts`). That keeps them easy to test and lets them run instantly on the client.
-- **Edge Functions for anything sensitive.** OAuth tokens, Gmail calls and LLM keys never reach the browser.
-- **Row Level Security on every table.** Each user can read only their own rows. Public NFC lookups go through a service-role function that returns only a short-lived signed URL.
-- **Idempotent imports.** SHA-256 content hashes, a `processed_emails` log and `sync_locks` prevent duplicates when several syncs run at once.
-
-## Tech stack
-
-| Layer | Tools |
+|  |  |
 |---|---|
-| Frontend | React 18, TypeScript, Vite, Tailwind CSS, shadcn/ui, TanStack Query, Recharts |
-| Mobile | Capacitor (Android and iOS), on-device SMS inbox |
-| Backend | Supabase: Postgres, Auth, Storage, Realtime, Edge Functions (Deno) |
-| AI | Gemini 2.5 Flash / Pro, Gemini 3 Flash, GPT-5-mini, called through an LLM gateway |
-| Integrations | Gmail API (read-only), Google OAuth |
-| Testing | Vitest, Playwright |
+| **Status** | Web app live at [ezbill.live](https://ezbill.live). Marketing and investor site at [ezzbill.com](https://ezzbill.com) ([repo](https://github.com/omkarpatilswork/ezzbill-site)). |
+| **Mobile** | Capacitor Android and iOS builds exist. Not on the Play Store or App Store yet. |
+| **NFC Airdrop** | Pilot. Works end to end; no restaurant rollout yet. |
+| **Backend** | 12 Edge Functions and 29 database migrations. |
+| **Tests** | Unit tests cover the Money Leaks engine (9 cases). Vitest and Playwright are set up, but most of the app has no automated tests yet. |
+| **How it's built** | AI-first, with Lovable and Supabase. 700+ commits. |
 
-## Product journey
+**How it got here.** EZZ BILL started as **ExpenseDesk**, a B2B tool for employee expense claims with approvals and audit trails. The painful step turned out not to be approval but **capture**, and individuals feel that every day, not just at month end. So the product was repositioned for consumers: the OCR pipeline and expense model stayed, and everything else was rebuilt around automatic capture and money insights.
 
-EZZ BILL started as **ExpenseDesk**, a B2B tool for employee expense reimbursements with approval workflows and audit trails. Early on, we saw that the most painful step was not approval but **capture**, and that individuals feel that pain every day, not only at month-end. So the product was **repositioned for consumers**. The OCR pipeline and expense model stayed, and the product was rebuilt around automatic capture and money insights.
+## 08 · What it does not do (yet)
 
-## Roadmap
+- **No bank account linking.** Spending comes from email, SMS, receipts and taps, not from your bank. Account Aggregator support is on the roadmap.
+- **The SMS reader is Android only**, and iOS doesn't let apps read SMS at all.
+- **AI extraction can be wrong.** Receipts and emails are parsed by language models; amounts and categories can be edited.
+- **Ideal budgets are rules of thumb**, built from a six-question profile. They're not financial advice.
+- **NFC needs staff to act.** A restaurant has to photograph and attach the bill; there's no POS integration.
+- **No budget alerts or weekly digest yet.**
+
+## 09 · What's next
 
 - [x] Gmail bill, subscription, warranty and statement import
 - [x] AI receipt extraction with line items
 - [x] Money Leaks, Subscription radar, Smart Split
-- [x] NFC/QR tap-to-claim receipts (pilot)
-- [x] NFC tap habit tested in the real world with [Racked](https://github.com/omkarpatilswork/racked-app), on 10 tagged gym machines
+- [x] NFC / QR tap-to-claim receipts (pilot)
+- [x] NFC tap habit tested with [Racked](https://github.com/omkarpatilswork/racked-app) on 10 gym machines
 - [ ] Android app on the Play Store with the UPI SMS reader
 - [ ] Bank account aggregation (Account Aggregator framework)
-- [ ] Budget alerts and weekly money digest
+- [ ] Budget alerts and a weekly money digest
 - [ ] Restaurant partner rollout for NFC Airdrop
 
-## Run locally
+## 10 · Run it yourself
+
+You'll need Node 20+ and a Supabase project.
 
 ```bash
 git clone https://github.com/omkarpatilswork/ez-bill1.git
 cd ez-bill1
 npm install
-cp .env.example .env   # add your Supabase URL and anon key
+cp .env.example .env   # add your Supabase URL, project ID and publishable key
 npm run dev            # http://localhost:8080
 ```
 
-Edge Functions live in `supabase/functions/` and the database schema in `supabase/migrations/`.
+```bash
+npm test               # Vitest
+npm run build          # production build
+```
 
-## Built by
+Edge Functions live in `supabase/functions/` and the schema in `supabase/migrations/`. Gmail import and AI extraction need their own Google OAuth client and LLM keys set as Supabase function secrets.
 
-**Omkar Patil**, founder (ex-PM, Bajaj Finserv Health) · [omkarpatil.in](https://www.omkarpatil.in) · [LinkedIn](https://www.linkedin.com/in/omkar-patil-757ab3194/) · [omkarpatilswork@gmail.com](mailto:omkarpatilswork@gmail.com)
+## Repository map
 
-Built AI-first with Lovable and Supabase.
+```
+ez-bill1/
+├── src/
+│   ├── pages/              Dashboard, MoneyLeaks, Subscriptions, Splits, AskAI,
+│   │                       FinancialDocs, Warranties, NfcAirdrop, StaffTables, …
+│   ├── components/         UI, bills, charts
+│   ├── lib/                leak-, subscription- and split-engine (pure functions)
+│   └── integrations/       Supabase client
+├── supabase/
+│   ├── functions/          12 Edge Functions: gmail-*, extract-receipt, parse-upi-sms,
+│   │                       ask-ai, merchant-support, resolve-tag, …
+│   └── migrations/         29 Postgres migrations with row-level security
+├── capacitor.config.ts     Android and iOS shells
+└── docs/                   screenshots and README diagrams
+```
+
+---
+
+<div align="center">
+<sub>Built by <a href="https://www.omkarpatil.in">Omkar Patil</a>, founder (ex-PM, Bajaj Finserv Health) · <a href="https://www.linkedin.com/in/omkar-patil-757ab3194/">LinkedIn</a> · <a href="mailto:omkarpatilswork@gmail.com">omkarpatilswork@gmail.com</a></sub>
+</div>
