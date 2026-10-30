@@ -1,16 +1,22 @@
 <div align="center">
 
-# 🧾 EZZ BILLZ
+# 🧾 EZZ BILL
 
-**Your personal money manager that handles your bills for you.**
+**The digital layer for bills. UPI solved payments; EZZ BILL solves what happens after.**
 
-EZZ BILLZ pulls your bills out of Gmail, UPI SMS and paper receipts, organises them automatically, and shows you where your money is leaking.
+Your bills arrive on their own, from Gmail, UPI SMS, receipts and an NFC tap at the restaurant table. EZZ BILL organises them and shows you where your money is leaking.
 
-[![Live](https://img.shields.io/badge/Live-ezbill.live-22C55E?style=for-the-badge)](https://ezbill.live)
-![Status](https://img.shields.io/badge/Status-Active_development-F5B942?style=for-the-badge)
-![Commits](https://img.shields.io/badge/Commits-677+-6366F1?style=for-the-badge)
+[![App](https://img.shields.io/badge/App-ezbill.live-22C55E?style=for-the-badge)](https://ezbill.live)
+[![Site](https://img.shields.io/badge/Site-ezzbill.com-15803D?style=for-the-badge)](https://ezzbill.com)
+[![Investors](https://img.shields.io/badge/Raising-pre--seed-F5B942?style=for-the-badge)](https://ezzbill.com/#investors)
+![Commits](https://img.shields.io/badge/Commits-700+-6366F1?style=for-the-badge)
 
-<img src="docs/screenshots/login-desktop.png" width="820" alt="EZZ BILLZ">
+<img src="docs/screenshots/home.webp" width="190" alt="Home">&nbsp;
+<img src="docs/screenshots/money-leaks.webp" width="190" alt="Money Leaks">&nbsp;
+<img src="docs/screenshots/subscriptions.webp" width="190" alt="Subscriptions">&nbsp;
+<img src="docs/screenshots/splits.webp" width="190" alt="Smart Split">
+
+<sub>Real screens from the live app, using demo data</sub>
 
 </div>
 
@@ -29,7 +35,7 @@ Expense apps expect you to **type all of this in by hand**, and almost nobody ke
 
 ## The solution
 
-EZZ BILLZ makes capture effortless so the insights are there when you need them:
+EZZ BILL makes capture effortless so the insights are there when you need them:
 
 | Capture (automatic) | Understand | Act |
 |---|---|---|
@@ -47,7 +53,7 @@ EZZ BILLZ makes capture effortless so the insights are there when you need them:
 - **Smart categorisation.** A merchant map tuned for India (Swiggy, Zepto, Blinkit, IRCTC, Jio, HPCL and more) assigns categories automatically.
 
 ### 🕳️ Money Leaks
-A short **Money Profile** quiz covers income band, age, city tier, living situation, job type and financial goal. From it, EZZ BILLZ builds a **personalised ideal budget** for each category, compares it with what you actually spend, and shows the gap in rupees. It also calculates a "safe daily spend" until your next payday.
+A short **Money Profile** quiz covers income band, age, city tier, living situation, job type and financial goal. From it, EZZ BILL builds a **personalised ideal budget** for each category, compares it with what you actually spend, and shows the gap in rupees. It also calculates a "safe daily spend" until your next payday.
 
 ### 🔄 Subscription radar
 A detection engine finds recurring merchants by cadence (weekly, monthly or yearly) and by amount. It then marks each subscription as **active, low-use, unused or duplicate**, for example two music apps. You see the total you could save each month.
@@ -56,7 +62,13 @@ A detection engine finds recurring merchants by cadence (weekly, monthly or year
 Split a bill **item by item** or equally. Tax and discounts are shared out proportionally, and a **friends ledger** tracks who owes whom.
 
 ### 📲 NFC Airdrop (pilot)
-A restaurant's staff photograph the closed bill and attach it to the table's **NFC tag or QR code**. The customer taps their phone and the receipt goes straight into EZZ BILLZ. No POS integration is needed. Bills expire after a short window so nobody sees a stranger's receipt, and the staff dashboard updates live through Supabase Realtime.
+
+<img src="docs/screenshots/nfc-staff.webp" width="170" alt="Staff: send a table's bill">&nbsp;
+<img src="docs/screenshots/nfc-guest.webp" width="170" alt="Guest: tap the table">&nbsp;
+<img src="docs/screenshots/nfc-bill.webp" width="170" alt="The bill on your phone">&nbsp;
+<img src="docs/screenshots/nfc-saved.webp" width="170" alt="Saved to EZZ BILL">
+
+A restaurant's staff photograph the closed bill and attach it to the table's **NFC tag or QR code**. The customer taps their phone and the receipt goes straight into EZZ BILL. No POS integration is needed. Bills expire after a short window so nobody sees a stranger's receipt, and the staff dashboard updates live through Supabase Realtime.
 
 ### 🛡️ Warranties, returns and support
 - Warranty cards found in email are extracted automatically, and the app reminds you before a **return window closes**.
@@ -67,6 +79,20 @@ Chat with your own expense data. Ask "What did I spend on food last month?" or "
 
 ### 📂 Financial Docs hub
 Credit-card statements, bank statements and trade confirmations are kept out of your expense list. They're sorted into their own hub with key fields extracted: due date, minimum due and closing balance.
+
+## On desktop
+
+<img src="docs/screenshots/desktop-home.webp" width="49%" alt="Desktop dashboard">&nbsp;<img src="docs/screenshots/desktop-analytics.webp" width="49%" alt="Desktop analytics">
+
+## Business model
+
+**Merchants pay. Their customers join for free.**
+
+| Stream | Price | Why it works |
+|---|---|---|
+| **Merchant SaaS** | ₹499–999 per location per month | Restaurants and retailers get digital bills, NFC table-tap and fewer paper receipts |
+| **Consumer premium** | ₹49–99 per month | Power features for heavy users |
+| **Bill collection** | Free, always | Every merchant tap brings in a new consumer user |
 
 ## Architecture
 
@@ -116,7 +142,7 @@ flowchart LR
 
 ## Product journey
 
-EZZ BILLZ started as **ExpenseDesk**, a B2B tool for employee expense reimbursements with approval workflows and audit trails. Early on, we saw that the most painful step was not approval but **capture**, and that individuals feel that pain every day, not only at month-end. So the product was **repositioned for consumers**. The OCR pipeline and expense model stayed, and the product was rebuilt around automatic capture and money insights.
+EZZ BILL started as **ExpenseDesk**, a B2B tool for employee expense reimbursements with approval workflows and audit trails. Early on, we saw that the most painful step was not approval but **capture**, and that individuals feel that pain every day, not only at month-end. So the product was **repositioned for consumers**. The OCR pipeline and expense model stayed, and the product was rebuilt around automatic capture and money insights.
 
 ## Roadmap
 
@@ -124,6 +150,7 @@ EZZ BILLZ started as **ExpenseDesk**, a B2B tool for employee expense reimbursem
 - [x] AI receipt extraction with line items
 - [x] Money Leaks, Subscription radar, Smart Split
 - [x] NFC/QR tap-to-claim receipts (pilot)
+- [x] NFC tap habit tested in the real world with [Racked](https://github.com/omkarpatilswork/racked-app), on 10 tagged gym machines
 - [ ] Android app on the Play Store with the UPI SMS reader
 - [ ] Bank account aggregation (Account Aggregator framework)
 - [ ] Budget alerts and weekly money digest
@@ -143,6 +170,6 @@ Edge Functions live in `supabase/functions/` and the database schema in `supabas
 
 ## Built by
 
-**Omkar Patil**, Product Manager and founder · [LinkedIn](https://www.linkedin.com/in/omkar-patil-757ab3194/) · [omkarpatilswork@gmail.com](mailto:omkarpatilswork@gmail.com)
+**Omkar Patil**, founder (ex-PM, Bajaj Finserv Health) · [omkarpatil.in](https://www.omkarpatil.in) · [LinkedIn](https://www.linkedin.com/in/omkar-patil-757ab3194/) · [omkarpatilswork@gmail.com](mailto:omkarpatilswork@gmail.com)
 
 Built AI-first with Lovable and Supabase.
