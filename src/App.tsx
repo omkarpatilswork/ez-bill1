@@ -20,6 +20,7 @@ import AskAI from "./pages/AskAI";
 import EmailBills from "./pages/expenses/EmailBills";
 import BulkUpload from "./pages/expenses/BulkUpload";
 import Profile from "./pages/Profile";
+import Settings from "./pages/Settings";
 import Onboarding from "./pages/Onboarding";
 import TermsAndConditions from "./pages/TermsAndConditions";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
@@ -72,6 +73,7 @@ const App = () => {
           <Route path="/bulk-upload" element={<ProtectedRoute><AppLayout><BulkUpload /></AppLayout></ProtectedRoute>} />
           <Route path="/ask-ai" element={<ProtectedRoute><AppLayout><AskAI /></AppLayout></ProtectedRoute>} />
           <Route path="/profile" element={<ProtectedRoute><AppLayout><Profile /></AppLayout></ProtectedRoute>} />
+          <Route path="/settings" element={<ProtectedRoute><AppLayout><Settings /></AppLayout></ProtectedRoute>} />
           <Route path="/money-leaks" element={<ProtectedRoute><AppLayout><MoneyLeaks /></AppLayout></ProtectedRoute>} />
           <Route path="/subscriptions" element={<ProtectedRoute><AppLayout><Subscriptions /></AppLayout></ProtectedRoute>} />
           <Route path="/summary" element={<ProtectedRoute><AppLayout><MonthlySummary /></AppLayout></ProtectedRoute>} />
