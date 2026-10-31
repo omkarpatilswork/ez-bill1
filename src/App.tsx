@@ -28,6 +28,7 @@ import MoneyLeaks from "./pages/MoneyLeaks";
 import Subscriptions from "./pages/Subscriptions";
 import MonthlySummary from "./pages/MonthlySummary";
 import FinancialDocs from "./pages/FinancialDocs";
+import Security from "./pages/Security";
 import Warranties from "./pages/Warranties";
 import Splits from "./pages/Splits";
 import SplitFriendDetail from "./pages/SplitFriendDetail";
