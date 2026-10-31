@@ -60,6 +60,7 @@ const App = () => {
           <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
           <Route path="/terms" element={<TermsAndConditions />} />
           <Route path="/privacy" element={<PrivacyPolicy />} />
+          <Route path="/security" element={<ProtectedRoute><AppLayout><Security /></AppLayout></ProtectedRoute>} />
           <Route path="/t/:tagId" element={<ClaimTag />} />
           <Route path="/staff" element={<ProtectedRoute><AppLayout><StaffTables /></AppLayout></ProtectedRoute>} />
           <Route path="/nfc-airdrop" element={<ProtectedRoute><AppLayout><NfcAirdrop /></AppLayout></ProtectedRoute>} />
