@@ -1,0 +1,18 @@
+node_modules/
+# Browser profiles hold your login cookies. Never commit them.
+.profile/
+.profile-racked/
+# Names you want blurred stay on your machine.
+capture/private-names.txt
+# Live captures from your account stay out of this public repo by default.
+screens/live/*
+!screens/live/.gitkeep
+clips/journeys/*
+!clips/journeys/.gitkeep
+# Full YouTube download (only the trimmed cut is used)
+assets/video/raw/
+# Your test bill photo
+assets/sample_bill.jpg
+out/test/
+*.tmp.mp4
+.frames-*/

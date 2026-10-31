@@ -1,0 +1,616 @@
+<!doctype html><html><head><meta charset="utf-8"><title>EZZ BILL deck: assets contact sheet</title>
+<style>
+@font-face{font-family:'Archivo';src:url('../../assets/fonts/archivo-latin-wght-normal.woff2') format('woff2');font-weight:100 900;font-display:block}
+@font-face{font-family:'Archivo';src:url('../../assets/fonts/archivo-latin-ext-wght-normal.woff2') format('woff2');font-weight:100 900;font-display:block}
+@font-face{font-family:'Schibsted Grotesk';src:url('../../assets/fonts/schibsted-grotesk-latin-wght-normal.woff2') format('woff2');font-weight:100 900;font-display:block}
+@font-face{font-family:'Schibsted Grotesk';src:url('../../assets/fonts/schibsted-grotesk-latin-ext-wght-normal.woff2') format('woff2');font-weight:100 900;font-display:block}
+@font-face{font-family:'Martian Mono';src:url('../../assets/fonts/martian-mono-latin-wght-normal.woff2') format('woff2');font-weight:100 900;font-display:block}
+@font-face{font-family:'Martian Mono';src:url('../../assets/fonts/martian-mono-latin-ext-wght-normal.woff2') format('woff2');font-weight:100 900;font-display:block}
+:root{--bg:#0F1713;--panel:#111915;--line:#22302a;--green:#47C48A;--gold:#C98A10;--text:#E9EFEA;--muted:#93A39A;--flag:#F2B544}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px/1.45 'Schibsted Grotesk',system-ui,sans-serif;width:2400px}
+header{padding:40px 48px 8px}h1{font:800 44px/1 'Archivo',sans-serif;margin:0 0 10px}header p{color:var(--muted);margin:4px 0}
+section{padding:28px 48px 40px;border-top:1px solid var(--line)}h2{font:700 30px/1 'Archivo',sans-serif;margin:0 0 6px}section>p{color:var(--muted);margin:0 0 20px}
+.grid{display:flex;flex-wrap:wrap;gap:22px;align-items:flex-start}
+figure{margin:0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px;width:360px}
+figure:has(.wide),figure:has(.strip){width:744px}
+.thumb{border-radius:10px;overflow:hidden;background:#000;display:flex;justify-content:center}
+.thumb img{display:block;width:100%;height:auto}
+.thumb.phone img{height:700px;width:auto;max-width:100%;object-fit:cover;object-position:top}
+.thumb.tall img{width:100%;height:700px;object-fit:cover;object-position:top}
+.thumb.wide img,.thumb.photo img{width:100%;height:auto}
+img.strip{width:100%;border-radius:10px;display:block}
+.pending{height:300px;border:2px dashed #3a4a42;border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:var(--muted);text-align:center;padding:12px}
+.pending code{font:12px 'Martian Mono',monospace;color:#6f8077}
+.font{height:140px;display:flex;flex-direction:column;justify-content:center;gap:8px}.font b{font-size:30px}.font span{font-size:20px;color:var(--muted)}
+figcaption{margin-top:10px}.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.row b{font:500 13px 'Martian Mono',monospace}
+.tag{font-size:12px;padding:2px 8px;border-radius:999px;background:rgba(71,196,138,.15);color:var(--green);border:1px solid rgba(71,196,138,.35)}
+.tag.wait{background:rgba(201,138,16,.12);color:var(--gold);border-color:rgba(201,138,16,.4)}
+.note{margin-top:6px}.file,.src{color:var(--muted);font-size:12.5px;margin-top:4px;word-break:break-all}.file{font-family:'Martian Mono',monospace;font-size:11.5px}
+.flag{margin-top:6px;color:var(--flag);font-size:13.5px}
+</style></head><body>
+<header><h1>EZZ BILL deck v1 · assets contact sheet</h1>
+<p>64 entries in assets.json · 34 ready · 30 waiting for captures on your machine. Flags (⚑) are things that look broken, odd or still personal.</p></header>
+<section id="site-demo"><h2>Site demo data</h2><p>ezzbill.com app screens with demo data. On slides they carry the tag “Demo data”.</p><div class="grid"><figure class="">
+    <div class="thumb phone"><img src="../../assets/site-demo/nfc-staff.webp" ></div>
+    <figcaption>
+      <div class="row"><b>site.nfc-staff</b><span class="tag">Demo data</span></div>
+      <div class="note">Staff console: Table 3 ₹412 ready, Counter ₹1,180, Table 12 and Table 7 open</div>
+      <div class="file">assets/site-demo/nfc-staff.webp · 600×1298</div>
+      <div class="src">Source: ezzbill.com demo-data app screens. Copied from your repos (ez-bill1/docs/screenshots and Omi-Website/public/assets) because ezzbill.com is blocked from this cloud session</div>
+      
+    </figcaption>
+  </figure><figure class="">
+    <div class="thumb phone"><img src="../../assets/site-demo/nfc-guest.webp" ></div>
+    <figcaption>
+      <div class="row"><b>site.nfc-guest</b><span class="tag">Demo data</span></div>
+      <div class="note">Guest tap page: Blue Tokai Coffee, Table 3, ₹412.00</div>
+      <div class="file">assets/site-demo/nfc-guest.webp · 469×1015</div>
+      <div class="src">Source: ezzbill.com demo-data app screens. Copied from your repos (ez-bill1/docs/screenshots and Omi-Website/public/assets) because ezzbill.com is blocked from this cloud session</div>
+      <div class="flag">⚑ Shows the old name &quot;EZZ BILLZ&quot; inside the image</div>
+    </figcaption>
+  </figure><figure class="">
+    <div class="thumb phone"><img src="../../assets/site-demo/nfc-bill.webp" ></div>
+    <figcaption>
+      <div class="row"><b>site.nfc-bill</b><span class="tag">Demo data</span></div>
+      <div class="note">The tapped bill saved: Blue Tokai Coffee, 2 items, Food &amp; Dining, UPI</div>
+      <div class="file">assets/site-demo/nfc-bill.webp · 469×1015</div>
+      <div class="src">Source: ezzbill.com demo-data app screens. Copied from your repos (ez-bill1/docs/screenshots and Omi-Website/public/assets) because ezzbill.com is blocked from this cloud session</div>
+      
+    </figcaption>
+  </figure><figure class="">
+    <div class="thumb phone"><img src="../../assets/site-demo/nfc-saved.webp" ></div>
+    <figcaption>
+      <div class="row"><b>site.nfc-saved</b><span class="tag">Demo data</span></div>
+      <div class="note">&quot;Saved&quot; confirmation</div>
+      <div class="file">assets/site-demo/nfc-saved.webp · 600×1298</div>
+      <div class="src">Source: ezzbill.com demo-data app screens. Copied from your repos (ez-bill1/docs/screenshots and Omi-Website/public/assets) because ezzbill.com is blocked from this cloud session</div>
+      <div class="flag">⚑ Shows the old name &quot;EZZ BILLZ&quot; inside the image</div><div class="flag">⚑ Says &quot;Burger Seigneurie, Koregaon Park&quot; while the guest and bill screens say &quot;Blue Tokai Coffee&quot;</div>
+    </figcaption>
+  </figure><figure class="">
+    <div class="thumb phone"><img src="../../assets/site-demo/home.webp" ></div>
+    <figcaption>
+      <div class="row"><b>site.home</b><span class="tag">Demo data</span></div>
+      <div class="note">Home, first screen</div>
+      <div class="file">assets/site-demo/home.webp · 600×1300</div>
+      <div class="src">Source: ezzbill.com demo-data app screens. Copied from your repos (ez-bill1/docs/screenshots and Omi-Website/public/assets) because ezzbill.com is blocked from this cloud session</div>
+      <div class="flag">⚑ Greets &quot;Hi, Omkar&quot;, not the &quot;Aarav Mehta&quot; demo user</div>
+    </figcaption>
+  </figure><figure class="">
+    <div class="thumb phone tall"><img src="../../assets/site-demo/home-long.webp" ></div>
+    <figcaption>
+      <div class="row"><b>site.home-long</b><span class="tag">Demo data</span></div>
+      <div class="note">Home, full scroll</div>
+      <div class="file">assets/site-demo/home-long.webp · 600×2895</div>
+      <div class="src">Source: ezzbill.com demo-data app screens. Copied from your repos (ez-bill1/docs/screenshots and Omi-Website/public/assets) because ezzbill.com is blocked from this cloud session</div>
+      <div class="flag">⚑ Greets &quot;Hi, Omkar&quot;, not the &quot;Aarav Mehta&quot; demo user</div>
+    </figcaption>
+  </figure><figure class="">
+    <div class="thumb phone"><img src="../../assets/site-demo/money-leaks.webp" ></div>
+    <figcaption>
+      <div class="row"><b>site.money-leaks</b><span class="tag">Demo data</span></div>
+      <div class="note">Money Leaks: ₹5,615 leaked, leak score 56/100, category cards</div>
+      <div class="file">assets/site-demo/money-leaks.webp · 600×1300</div>
+      <div class="src">Source: ezzbill.com demo-data app screens. Copied from your repos (ez-bill1/docs/screenshots and Omi-Website/public/assets) because ezzbill.com is blocked from this cloud session</div>
+      
+    </figcaption>
+  </figure><figure class="">
+    <div class="thumb phone tall"><img src="../../assets/site-demo/money-leaks-long.webp" ></div>
+    <figcaption>
+      <div class="row"><b>site.money-leaks-long</b><span class="tag">Demo data</span></div>
+      <div class="note">Money Leaks, full scroll</div>
+      <div class="file">assets/site-demo/money-leaks-long.webp · 600×3200</div>
+      <div class="src">Source: ezzbill.com demo-data app screens. Copied from your repos (ez-bill1/docs/screenshots and Omi-Website/public/assets) because ezzbill.com is blocked from this cloud session</div>
+      
+    </figcaption>
+  </figure><figure class="">
+    <div class="thumb phone"><img src="../../assets/site-demo/subscriptions.webp" ></div>
+    <figcaption>
+      <div class="row"><b>site.subscriptions</b><span class="tag">Demo data</span></div>
+      <div class="note">Subscriptions: ₹5,065/month, 5 active</div>
+      <div class="file">assets/site-demo/subscriptions.webp · 600×1300</div>
+      <div class="src">Source: ezzbill.com demo-data app screens. Copied from your repos (ez-bill1/docs/screenshots and Omi-Website/public/assets) because ezzbill.com is blocked from this cloud session</div>
+      
+    </figcaption>
+  </figure><figure class="">
+    <div class="thumb phone tall"><img src="../../assets/site-demo/subscriptions-long.webp" style="object-position:top"></div>
+    <figcaption>
+      <div class="row"><b>site.subscriptions-long</b><span class="tag">Demo data</span></div>
+      <div class="note">Subscriptions, full scroll</div>
+      <div class="file">assets/site-demo/subscriptions-long.webp · 600×3121</div>
+      <div class="src">Source: ezzbill.com demo-data app screens. Copied from your repos (ez-bill1/docs/screenshots and Omi-Website/public/assets) because ezzbill.com is blocked from this cloud session</div>
+      <div class="flag">⚑ Lower half shows the Review queue with sample source emails; crop above it</div>
+    </figcaption>
+  </figure><figure class="">
+    <div class="thumb phone"><img src="../../assets/site-demo/splits.webp" ></div>
+    <figcaption>
+      <div class="row"><b>site.splits</b><span class="tag">Demo data</span></div>
+      <div class="note">Splits friends ledger: Rohan ₹420, Parth ₹214, Aditi ₹214 (demo friends)</div>
+      <div class="file">assets/site-demo/splits.webp · 600×1300</div>
+      <div class="src">Source: ezzbill.com demo-data app screens. Copied from your repos (ez-bill1/docs/screenshots and Omi-Website/public/assets) because ezzbill.com is blocked from this cloud session</div>
+      
+    </figcaption>
+  </figure><figure class="">
+    <div class="thumb phone tall"><img src="../../assets/site-demo/splits-long.webp" ></div>
+    <figcaption>
+      <div class="row"><b>site.splits-long</b><span class="tag">Demo data</span></div>
+      <div class="note">Splits, full scroll</div>
+      <div class="file">assets/site-demo/splits-long.webp · 600×1940</div>
+      <div class="src">Source: ezzbill.com demo-data app screens. Copied from your repos (ez-bill1/docs/screenshots and Omi-Website/public/assets) because ezzbill.com is blocked from this cloud session</div>
+      
+    </figcaption>
+  </figure><figure class="">
+    <div class="thumb wide"><img src="../../assets/site-demo/desktop-home.webp" ></div>
+    <figcaption>
+      <div class="row"><b>site.desktop-home</b><span class="tag">Demo data</span></div>
+      <div class="note">Desktop dashboard</div>
+      <div class="file">assets/site-demo/desktop-home.webp · 1600×1000</div>
+      <div class="src">Source: ezzbill.com demo-data app screens. Copied from your repos (ez-bill1/docs/screenshots and Omi-Website/public/assets) because ezzbill.com is blocked from this cloud session</div>
+      <div class="flag">⚑ Shows the old name &quot;EZZ BILLZ&quot; inside the image</div><div class="flag">⚑ Sidebar shows &quot;Omkar Patil&quot; profile and &quot;Hi, Omkar&quot;</div>
+    </figcaption>
+  </figure><figure class="">
+    <div class="thumb wide"><img src="../../assets/site-demo/desktop-analytics.webp" ></div>
+    <figcaption>
+      <div class="row"><b>site.desktop-analytics</b><span class="tag">Demo data</span></div>
+      <div class="note">Desktop analytics</div>
+      <div class="file">assets/site-demo/desktop-analytics.webp · 1600×1000</div>
+      <div class="src">Source: ezzbill.com demo-data app screens. Copied from your repos (ez-bill1/docs/screenshots and Omi-Website/public/assets) because ezzbill.com is blocked from this cloud session</div>
+      <div class="flag">⚑ Shows the old name &quot;EZZ BILLZ&quot; inside the image</div>
+    </figcaption>
+  </figure><figure class="">
+    <div class="thumb wide"><img src="../../assets/site-demo/desktop-money-leaks.webp" ></div>
+    <figcaption>
+      <div class="row"><b>site.desktop-money-leaks</b><span class="tag">Demo data</span></div>
+      <div class="note">Desktop Money Leaks</div>
+      <div class="file">assets/site-demo/desktop-money-leaks.webp · 1600×1000</div>
+      <div class="src">Source: ezzbill.com demo-data app screens. Copied from your repos (ez-bill1/docs/screenshots and Omi-Website/public/assets) because ezzbill.com is blocked from this cloud session</div>
+      <div class="flag">⚑ Shows the old name &quot;EZZ BILLZ&quot; inside the image</div><div class="flag">⚑ Sidebar shows &quot;Omkar Patil&quot;</div>
+    </figcaption>
+  </figure><figure class="">
+    <div class="thumb wide"><img src="../../assets/site-demo/landing-hero.webp" ></div>
+    <figcaption>
+      <div class="row"><b>site.landing-hero</b><span class="tag">Demo data</span></div>
+      <div class="note">ezzbill.com hero with phone; small, 800x456</div>
+      <div class="file">assets/site-demo/landing-hero.webp · 800×456</div>
+      <div class="src">Source: omkarpatil.in (Omi-Website/public/assets) (screenshot of the ezzbill.com hero)</div>
+      
+    </figcaption>
+  </figure><figure class="">
+    <img class="strip" src="thumbs/video_site_walkthrough.jpg">
+    <figcaption>
+      <div class="row"><b>video.site-walkthrough</b><span class="tag">Demo data</span></div>
+      <div class="note">Home → Money Leaks → Subscriptions → Splits → All Bills, 390x844</div>
+      <div class="file">assets/video/site-walkthrough.mp4 · 390×844 · 39.57s</div>
+      <div class="src">Source: omkarpatil.in (Omi-Website/public/assets) (ez-walkthrough.mp4, the phone walkthrough)</div>
+      <div class="flag">⚑ About 19-24 s shows the Subscriptions review queue with sample source emails; skip that range</div><div class="flag">⚑ Greets &quot;Hi, Omkar&quot;</div>
+    </figcaption>
+  </figure></div></section>
+<section id="live"><h2>Live app, blurred</h2><p>ezbill.live from your account, captured on your machine with blurs. Tag: “Live app, personal details blurred”.</p><div class="grid"><figure class="is-pending">
+    <div class="pending"><span>Waiting for capture on your machine</span><code>screens/live/staff_phone_before.png</code></div>
+    <figcaption>
+      <div class="row"><b>live.staff-phone-before</b><span class="tag">Live app, personal details blurred</span><span class="tag wait">pending</span></div>
+      <div class="note">/staff before the test bill (Table 3 state as found)</div>
+      <div class="file">screens/live/staff_phone_before.png</div>
+      <div class="src">Source: ezbill.live, your account, captured on your machine (npm run capture)</div>
+      
+    </figcaption>
+  </figure><figure class="is-pending">
+    <div class="pending"><span>Waiting for capture on your machine</span><code>screens/live/staff_phone_sheet.png</code></div>
+    <figcaption>
+      <div class="row"><b>live.staff-phone-sheet</b><span class="tag">Live app, personal details blurred</span><span class="tag wait">pending</span></div>
+      <div class="note">/staff send sheet: ₹600 entered, bill photo attached</div>
+      <div class="file">screens/live/staff_phone_sheet.png</div>
+      <div class="src">Source: ezbill.live, your account, captured on your machine (npm run capture)</div>
+      
+    </figcaption>
+  </figure><figure class="is-pending">
+    <div class="pending"><span>Waiting for capture on your machine</span><code>screens/live/staff_phone_after.png</code></div>
+    <figcaption>
+      <div class="row"><b>live.staff-phone-after</b><span class="tag">Live app, personal details blurred</span><span class="tag wait">pending</span></div>
+      <div class="note">/staff after sending: Table 3 ready</div>
+      <div class="file">screens/live/staff_phone_after.png</div>
+      <div class="src">Source: ezbill.live, your account, captured on your machine (npm run capture)</div>
+      
+    </figcaption>
+  </figure><figure class="is-pending">
+    <div class="pending"><span>Waiting for capture on your machine</span><code>screens/live/staff_desktop.png</code></div>
+    <figcaption>
+      <div class="row"><b>live.staff-desktop</b><span class="tag">Live app, personal details blurred</span><span class="tag wait">pending</span></div>
+      <div class="note">/staff at 1920x1080 (@2x)</div>
+      <div class="file">screens/live/staff_desktop.png</div>
+      <div class="src">Source: ezbill.live, your account, captured on your machine (npm run capture)</div>
+      
+    </figcaption>
+  </figure><figure class="is-pending">
+    <div class="pending"><span>Waiting for capture on your machine</span><code>screens/live/tap_guest.png</code></div>
+    <figcaption>
+      <div class="row"><b>live.tap-guest</b><span class="tag">Live app, personal details blurred</span><span class="tag wait">pending</span></div>
+      <div class="note">/t/t3 in a logged-out browser: the ₹600 test bill</div>
+      <div class="file">screens/live/tap_guest.png</div>
+      <div class="src">Source: ezbill.live, your account, captured on your machine (npm run capture)</div>
+      
+    </figcaption>
+  </figure><figure class="is-pending">
+    <div class="pending"><span>Waiting for capture on your machine</span><code>screens/live/tap_guest--tall.png</code></div>
+    <figcaption>
+      <div class="row"><b>live.tap-guest-tall</b><span class="tag">Live app, personal details blurred</span><span class="tag wait">pending</span></div>
+      <div class="note">/t/t3 full height</div>
+      <div class="file">screens/live/tap_guest--tall.png</div>
+      <div class="src">Source: ezbill.live, your account, captured on your machine (npm run capture)</div>
+      
+    </figcaption>
+  </figure><figure class="is-pending">
+    <div class="pending"><span>Waiting for capture on your machine</span><code>screens/live/nfc-airdrop.png</code></div>
+    <figcaption>
+      <div class="row"><b>live.nfc-airdrop</b><span class="tag">Live app, personal details blurred</span><span class="tag wait">pending</span></div>
+      <div class="note">/nfc-airdrop</div>
+      <div class="file">screens/live/nfc-airdrop.png</div>
+      <div class="src">Source: ezbill.live, your account, captured on your machine (npm run capture)</div>
+      
+    </figcaption>
+  </figure><figure class="is-pending">
+    <div class="pending"><span>Waiting for capture on your machine</span><code>screens/live/expenses_food.png</code></div>
+    <figcaption>
+      <div class="row"><b>live.expenses-food</b><span class="tag">Live app, personal details blurred</span><span class="tag wait">pending</span></div>
+      <div class="note">/expenses filtered to Food &amp; Dining</div>
+      <div class="file">screens/live/expenses_food.png</div>
+      <div class="src">Source: ezbill.live, your account, captured on your machine (npm run capture)</div>
+      
+    </figcaption>
+  </figure><figure class="is-pending">
+    <div class="pending"><span>Waiting for capture on your machine</span><code>screens/live/bill_detail.png</code></div>
+    <figcaption>
+      <div class="row"><b>live.bill-detail</b><span class="tag">Live app, personal details blurred</span><span class="tag wait">pending</span></div>
+      <div class="note">Imported restaurant bill with 5+ line items</div>
+      <div class="file">screens/live/bill_detail.png</div>
+      <div class="src">Source: ezbill.live, your account, captured on your machine (npm run capture)</div>
+      
+    </figcaption>
+  </figure><figure class="is-pending">
+    <div class="pending"><span>Waiting for capture on your machine</span><code>screens/live/bill_detail--tall.png</code></div>
+    <figcaption>
+      <div class="row"><b>live.bill-detail-tall</b><span class="tag">Live app, personal details blurred</span><span class="tag wait">pending</span></div>
+      <div class="note">Same bill, full height (all line items)</div>
+      <div class="file">screens/live/bill_detail--tall.png</div>
+      <div class="src">Source: ezbill.live, your account, captured on your machine (npm run capture)</div>
+      
+    </figcaption>
+  </figure><figure class="is-pending">
+    <div class="pending"><span>Waiting for capture on your machine</span><code>screens/live/split.png</code></div>
+    <figcaption>
+      <div class="row"><b>live.split</b><span class="tag">Live app, personal details blurred</span><span class="tag wait">pending</span></div>
+      <div class="note">/expenses/:id/split for that bill</div>
+      <div class="file">screens/live/split.png</div>
+      <div class="src">Source: ezbill.live, your account, captured on your machine (npm run capture)</div>
+      
+    </figcaption>
+  </figure><figure class="is-pending">
+    <div class="pending"><span>Waiting for capture on your machine</span><code>screens/live/split_custom.png</code></div>
+    <figcaption>
+      <div class="row"><b>live.split-custom</b><span class="tag">Live app, personal details blurred</span><span class="tag wait">pending</span></div>
+      <div class="note">Same split in Custom (item-level) mode; nothing saved</div>
+      <div class="file">screens/live/split_custom.png</div>
+      <div class="src">Source: ezbill.live, your account, captured on your machine (npm run capture)</div>
+      
+    </figcaption>
+  </figure><figure class="is-pending">
+    <div class="pending"><span>Waiting for capture on your machine</span><code>screens/live/bulk-upload.png</code></div>
+    <figcaption>
+      <div class="row"><b>live.bulk-upload</b><span class="tag">Live app, personal details blurred</span><span class="tag wait">pending</span></div>
+      <div class="note">/bulk-upload</div>
+      <div class="file">screens/live/bulk-upload.png</div>
+      <div class="src">Source: ezbill.live, your account, captured on your machine (npm run capture)</div>
+      
+    </figcaption>
+  </figure><figure class="is-pending">
+    <div class="pending"><span>Waiting for capture on your machine</span><code>screens/live/email-bills.png</code></div>
+    <figcaption>
+      <div class="row"><b>live.email-bills</b><span class="tag">Live app, personal details blurred</span><span class="tag wait">pending</span></div>
+      <div class="note">/email-bills, Gmail address blurred</div>
+      <div class="file">screens/live/email-bills.png</div>
+      <div class="src">Source: ezbill.live, your account, captured on your machine (npm run capture)</div>
+      
+    </figcaption>
+  </figure><figure class="is-pending">
+    <div class="pending"><span>Waiting for capture on your machine</span><code>screens/live/warranties.png</code></div>
+    <figcaption>
+      <div class="row"><b>live.warranties</b><span class="tag">Live app, personal details blurred</span><span class="tag wait">pending</span></div>
+      <div class="note">/warranties</div>
+      <div class="file">screens/live/warranties.png</div>
+      <div class="src">Source: ezbill.live, your account, captured on your machine (npm run capture)</div>
+      
+    </figcaption>
+  </figure><figure class="is-pending">
+    <div class="pending"><span>Waiting for capture on your machine</span><code>screens/live/subscriptions--tall.png</code></div>
+    <figcaption>
+      <div class="row"><b>live.subscriptions</b><span class="tag">Live app, personal details blurred</span><span class="tag wait">pending</span></div>
+      <div class="note">/subscriptions: summary + active list, cropped above the review queue</div>
+      <div class="file">screens/live/subscriptions--tall.png</div>
+      <div class="src">Source: ezbill.live, your account, captured on your machine (npm run capture)</div>
+      
+    </figcaption>
+  </figure><figure class="is-pending">
+    <div class="pending"><span>Waiting for capture on your machine</span><code>screens/live/money-leaks--tall.png</code></div>
+    <figcaption>
+      <div class="row"><b>live.money-leaks</b><span class="tag">Live app, personal details blurred</span><span class="tag wait">pending</span></div>
+      <div class="note">/money-leaks: score + category cards, merchants blurred</div>
+      <div class="file">screens/live/money-leaks--tall.png</div>
+      <div class="src">Source: ezbill.live, your account, captured on your machine (npm run capture)</div>
+      
+    </figcaption>
+  </figure><figure class="is-pending">
+    <div class="pending"><span>Waiting for capture on your machine</span><code>screens/live/ask-ai.png</code></div>
+    <figcaption>
+      <div class="row"><b>live.ask-ai</b><span class="tag">Live app, personal details blurred</span><span class="tag wait">pending</span></div>
+      <div class="note">/ask-ai after &quot;How much did I spend eating out this month?&quot;</div>
+      <div class="file">screens/live/ask-ai.png</div>
+      <div class="src">Source: ezbill.live, your account, captured on your machine (npm run capture)</div>
+      
+    </figcaption>
+  </figure><figure class="is-pending">
+    <div class="pending"><span>Waiting for capture on your machine</span><code>clips/journeys/staff-send-bill.mp4</code></div>
+    <figcaption>
+      <div class="row"><b>clip.staff-send-bill</b><span class="tag">Live app, personal details blurred</span><span class="tag wait">pending</span></div>
+      <div class="note">Staff enters ₹600, attaches the bill, sends to Table 3</div>
+      <div class="file">clips/journeys/staff-send-bill.mp4</div>
+      <div class="src">Source: ezbill.live, your account, captured on your machine (npm run capture)</div>
+      
+    </figcaption>
+  </figure><figure class="is-pending">
+    <div class="pending"><span>Waiting for capture on your machine</span><code>clips/journeys/tap-guest-scroll.mp4</code></div>
+    <figcaption>
+      <div class="row"><b>clip.tap-guest-scroll</b><span class="tag">Live app, personal details blurred</span><span class="tag wait">pending</span></div>
+      <div class="note">Guest page scroll</div>
+      <div class="file">clips/journeys/tap-guest-scroll.mp4</div>
+      <div class="src">Source: ezbill.live, your account, captured on your machine (npm run capture)</div>
+      
+    </figcaption>
+  </figure><figure class="is-pending">
+    <div class="pending"><span>Waiting for capture on your machine</span><code>clips/journeys/expenses-food-filter.mp4</code></div>
+    <figcaption>
+      <div class="row"><b>clip.expenses-food-filter</b><span class="tag">Live app, personal details blurred</span><span class="tag wait">pending</span></div>
+      <div class="note">Tap Food &amp; Dining filter, scroll</div>
+      <div class="file">clips/journeys/expenses-food-filter.mp4</div>
+      <div class="src">Source: ezbill.live, your account, captured on your machine (npm run capture)</div>
+      
+    </figcaption>
+  </figure><figure class="is-pending">
+    <div class="pending"><span>Waiting for capture on your machine</span><code>clips/journeys/bill-line-items.mp4</code></div>
+    <figcaption>
+      <div class="row"><b>clip.bill-line-items</b><span class="tag">Live app, personal details blurred</span><span class="tag wait">pending</span></div>
+      <div class="note">Scroll to the line items</div>
+      <div class="file">clips/journeys/bill-line-items.mp4</div>
+      <div class="src">Source: ezbill.live, your account, captured on your machine (npm run capture)</div>
+      
+    </figcaption>
+  </figure><figure class="is-pending">
+    <div class="pending"><span>Waiting for capture on your machine</span><code>clips/journeys/split-custom.mp4</code></div>
+    <figcaption>
+      <div class="row"><b>clip.split-custom</b><span class="tag">Live app, personal details blurred</span><span class="tag wait">pending</span></div>
+      <div class="note">Switch to Custom split, scroll items</div>
+      <div class="file">clips/journeys/split-custom.mp4</div>
+      <div class="src">Source: ezbill.live, your account, captured on your machine (npm run capture)</div>
+      
+    </figcaption>
+  </figure><figure class="is-pending">
+    <div class="pending"><span>Waiting for capture on your machine</span><code>clips/journeys/subscriptions-scroll.mp4</code></div>
+    <figcaption>
+      <div class="row"><b>clip.subscriptions-scroll</b><span class="tag">Live app, personal details blurred</span><span class="tag wait">pending</span></div>
+      <div class="note">Scroll the active list (stops above review queue)</div>
+      <div class="file">clips/journeys/subscriptions-scroll.mp4</div>
+      <div class="src">Source: ezbill.live, your account, captured on your machine (npm run capture)</div>
+      
+    </figcaption>
+  </figure><figure class="is-pending">
+    <div class="pending"><span>Waiting for capture on your machine</span><code>clips/journeys/money-leaks-scroll.mp4</code></div>
+    <figcaption>
+      <div class="row"><b>clip.money-leaks-scroll</b><span class="tag">Live app, personal details blurred</span><span class="tag wait">pending</span></div>
+      <div class="note">Scroll the category cards</div>
+      <div class="file">clips/journeys/money-leaks-scroll.mp4</div>
+      <div class="src">Source: ezbill.live, your account, captured on your machine (npm run capture)</div>
+      
+    </figcaption>
+  </figure><figure class="is-pending">
+    <div class="pending"><span>Waiting for capture on your machine</span><code>clips/journeys/ask-ai.mp4</code></div>
+    <figcaption>
+      <div class="row"><b>clip.ask-ai</b><span class="tag">Live app, personal details blurred</span><span class="tag wait">pending</span></div>
+      <div class="note">Type the question, answer arrives</div>
+      <div class="file">clips/journeys/ask-ai.mp4</div>
+      <div class="src">Source: ezbill.live, your account, captured on your machine (npm run capture)</div>
+      
+    </figcaption>
+  </figure></div></section>
+<section id="youtube"><h2>YouTube</h2><p>Your real-world NFC demo. Tag: “Real cafe test”.</p><div class="grid"><figure class="is-pending">
+    <div class="pending"><span>Waiting for capture on your machine</span><code>assets/video/raw/real-cafe-test.mp4</code></div>
+    <figcaption>
+      <div class="row"><b>video.real-cafe-test</b><span class="tag">Real cafe test</span><span class="tag wait">pending</span></div>
+      <div class="note">Slide 6: 10-15 s cut, set by trim</div>
+      <div class="file">assets/video/raw/real-cafe-test.mp4</div>
+      <div class="src">Source: https://youtu.be/RGl08gM4TGk (your video), via npm run fetch:youtube on your machine</div>
+      
+    </figcaption>
+  </figure></div></section>
+<section id="racked"><h2>Racked</h2><p>Racked screenshots (your gym NFC test).</p><div class="grid"><figure class="">
+    <div class="thumb phone"><img src="../../assets/racked/leaderboard.webp" ></div>
+    <figcaption>
+      <div class="row"><b>racked.leaderboard</b><span class="tag">Racked app</span></div>
+      <div class="note">Leaderboard: your row unblurred, other members already blurred</div>
+      <div class="file">assets/racked/leaderboard.webp · 469×1015</div>
+      <div class="src">Source: racked-app repo (docs/screenshots); same screens as omkarpatil.in</div>
+      <div class="flag">⚑ Shows &quot;840 XP&quot; and &quot;60 XP&quot;, which are not in your claims list</div><div class="flag">⚑ Shows your full name</div>
+    </figcaption>
+  </figure><figure class="">
+    <div class="thumb phone"><img src="../../assets/racked/tap-in.webp" ></div>
+    <figcaption>
+      <div class="row"><b>racked.tap-in</b><span class="tag">Racked app</span></div>
+      <div class="note">&quot;Tap in to Lat Pulldown&quot; lock screen</div>
+      <div class="file">assets/racked/tap-in.webp · 469×1015</div>
+      <div class="src">Source: racked-app repo (docs/screenshots); same screens as omkarpatil.in</div>
+      
+    </figcaption>
+  </figure><figure class="">
+    <div class="thumb phone"><img src="../../assets/racked/machines.webp" ></div>
+    <figcaption>
+      <div class="row"><b>racked.machines</b><span class="tag">Racked app</span></div>
+      <div class="note">Machines list</div>
+      <div class="file">assets/racked/machines.webp · 469×1015</div>
+      <div class="src">Source: racked-app repo (docs/screenshots); same screens as omkarpatil.in</div>
+      <div class="flag">⚑ Says &quot;All 10 machines in this gym&quot;; your claim is 140 tap-ins on 2 NFC tags, so this may confuse</div>
+    </figcaption>
+  </figure><figure class="is-pending">
+    <div class="pending"><span>Waiting for capture on your machine</span><code>screens/live/racked_home.png</code></div>
+    <figcaption>
+      <div class="row"><b>racked.home-live</b><span class="tag">Racked app</span><span class="tag wait">pending</span></div>
+      <div class="note">Home feed at 412x915 @2.625</div>
+      <div class="file">screens/live/racked_home.png</div>
+      <div class="src">Source: racked-app-liard.vercel.app, captured on your machine (npm run capture:racked)</div>
+      
+    </figcaption>
+  </figure><figure class="is-pending">
+    <div class="pending"><span>Waiting for capture on your machine</span><code>screens/live/racked_leaderboard.png</code></div>
+    <figcaption>
+      <div class="row"><b>racked.leaderboard-live</b><span class="tag">Racked app</span><span class="tag wait">pending</span></div>
+      <div class="note">Leaderboard at 412x915 @2.625, other members blurred</div>
+      <div class="file">screens/live/racked_leaderboard.png</div>
+      <div class="src">Source: racked-app-liard.vercel.app, captured on your machine (npm run capture:racked)</div>
+      
+    </figcaption>
+  </figure></div></section>
+<section id="founder-site"><h2>Founder site</h2><p>omkarpatil.in photos and images for the proof and founder slides. No tag.</p><div class="grid"><figure class="">
+    <div class="thumb wide"><img src="../../assets/founder/omkar-speaking.webp" ></div>
+    <figcaption>
+      <div class="row"><b>founder.speaking</b></div>
+      <div class="note">You at a podium; site OG image</div>
+      <div class="file">assets/founder/omkar-speaking.webp · 1200×908</div>
+      <div class="src">Source: omkarpatil.in (Omi-Website/public/assets)</div>
+      <div class="flag">⚑ Photographer credit &quot;© Gagan Parikshith&quot; burned into the corner</div><div class="flag">⚑ Screen behind reads &quot;General Secretary 2021-2025&quot;</div>
+    </figcaption>
+  </figure><figure class="">
+    <div class="thumb photo"><img src="../../assets/founder/omkar-hiking.webp" ></div>
+    <figcaption>
+      <div class="row"><b>founder.hiking</b></div>
+      <div class="note">You hiking, portrait</div>
+      <div class="file">assets/founder/omkar-hiking.webp · 800×1200</div>
+      <div class="src">Source: omkarpatil.in (Omi-Website/public/assets)</div>
+      
+    </figcaption>
+  </figure><figure class="">
+    <div class="thumb photo"><img src="../../assets/founder/omkar-biking.webp" ></div>
+    <figcaption>
+      <div class="row"><b>founder.biking</b></div>
+      <div class="note">You with your motorcycle</div>
+      <div class="file">assets/founder/omkar-biking.webp · 800×1066</div>
+      <div class="src">Source: omkarpatil.in (Omi-Website/public/assets)</div>
+      
+    </figcaption>
+  </figure><figure class="">
+    <div class="thumb photo"><img src="../../assets/founder/omkar-casual.webp" ></div>
+    <figcaption>
+      <div class="row"><b>founder.casual</b></div>
+      <div class="note">Mirror selfie</div>
+      <div class="file">assets/founder/omkar-casual.webp · 700×1244</div>
+      <div class="src">Source: omkarpatil.in (Omi-Website/public/assets)</div>
+      <div class="flag">⚑ Casual mirror selfie, phone covers part of the face</div>
+    </figcaption>
+  </figure><figure class="">
+    <div class="thumb wide"><img src="../../assets/founder/omkar-convocation.webp" ></div>
+    <figcaption>
+      <div class="row"><b>founder.convocation</b></div>
+      <div class="note">MAHE convocation, Nov 2023</div>
+      <div class="file">assets/founder/omkar-convocation.webp · 1400×1238</div>
+      <div class="src">Source: omkarpatil.in (Omi-Website/public/assets)</div>
+      <div class="flag">⚑ Another person (an official) is in the frame</div>
+    </figcaption>
+  </figure><figure class="">
+    <div class="thumb photo"><img src="../../assets/jerseydrip/jd-experience-center.webp" ></div>
+    <figcaption>
+      <div class="row"><b>jerseydrip.store</b></div>
+      <div class="note">You at the Jersey Drip experience centre</div>
+      <div class="file">assets/jerseydrip/jd-experience-center.webp · 738×923</div>
+      <div class="src">Source: omkarpatil.in (Omi-Website/public/assets)</div>
+      <div class="flag">⚑ Banner shows a phone number and QR code; crop above them</div>
+    </figcaption>
+  </figure><figure class="">
+    <div class="thumb phone"><img src="../../assets/jerseydrip/jd-mobile-home.webp" ></div>
+    <figcaption>
+      <div class="row"><b>jerseydrip.site</b></div>
+      <div class="note">Jersey Drip mobile site</div>
+      <div class="file">assets/jerseydrip/jd-mobile-home.webp · 427×923</div>
+      <div class="src">Source: omkarpatil.in (Omi-Website/public/assets)</div>
+      
+    </figcaption>
+  </figure><figure class="">
+    <div class="thumb wide"><img src="../../assets/bijlee/bijlee-site.webp" ></div>
+    <figcaption>
+      <div class="row"><b>bijlee.site</b></div>
+      <div class="note">bijlee.run hero (website, not an event photo)</div>
+      <div class="file">assets/bijlee/bijlee-site.webp · 799×456</div>
+      <div class="src">Source: omkarpatil.in (Omi-Website/public/assets)</div>
+      
+    </figcaption>
+  </figure><figure class="">
+    <div class="thumb wide"><img src="../../assets/bijlee/bijlee-partners.webp" ></div>
+    <figcaption>
+      <div class="row"><b>bijlee.partners</b></div>
+      <div class="note">Partner strip from bijlee.run</div>
+      <div class="file">assets/bijlee/bijlee-partners.webp · 800×200</div>
+      <div class="src">Source: omkarpatil.in (Omi-Website/public/assets)</div>
+      <div class="flag">⚑ Shows Courtiers Club, Afternoons, Club 360, Decathlon and others, not the Decathlon / Red Bull / Playo / Fast&amp;Up list in your claims. Recommend not using it</div>
+    </figcaption>
+  </figure><figure class="">
+    <div class="thumb wide"><img src="../../assets/bijlee/hyrox-finisher-tag.webp" ></div>
+    <figcaption>
+      <div class="row"><b>bijlee.hyrox-tag</b></div>
+      <div class="note">&quot;HYROX · Bijlee x Club360 · Finisher&quot; tag (object, no people)</div>
+      <div class="file">assets/bijlee/hyrox-finisher-tag.webp · 680×456</div>
+      <div class="src">Source: omkarpatil.in (Omi-Website/public/assets)</div>
+      
+    </figcaption>
+  </figure><figure class="">
+    <div class="thumb photo"><img src="../../assets/logos/bajaj-finserv-health.webp" ></div>
+    <figcaption>
+      <div class="row"><b>logo.bajaj-finserv-health</b></div>
+      <div class="note">Bajaj Finserv Health logo</div>
+      <div class="file">assets/logos/bajaj-finserv-health.webp · 300×300</div>
+      <div class="src">Source: omkarpatil.in (Omi-Website/public/assets)</div>
+      <div class="flag">⚑ Former employer trademark; I would set the name as text instead</div>
+    </figcaption>
+  </figure></div></section>
+<section id="font"><h2>Fonts</h2><p>Archivo (headlines), Schibsted Grotesk (body), Martian Mono (numbers).</p><div class="grid"><figure class="">
+    <div class="font" style="font-family:'Archivo'"><b>Archivo</b><span>UPI solved payments. ₹24.07B 711 140</span></div>
+    <figcaption>
+      <div class="row"><b>font.archivo</b></div>
+      <div class="note"></div>
+      <div class="file">assets/fonts/archivo-latin-wght-normal.woff2, assets/fonts/archivo-latin-ext-wght-normal.woff2 · 2 files</div>
+      <div class="src">Source: Fontsource variable build (@fontsource-variable, OFL). Same families ezzbill.com uses; its own font files are blocked from this session</div>
+      
+    </figcaption>
+  </figure><figure class="">
+    <div class="font" style="font-family:'Schibsted Grotesk'"><b>Schibsted Grotesk</b><span>UPI solved payments. ₹24.07B 711 140</span></div>
+    <figcaption>
+      <div class="row"><b>font.schibsted-grotesk</b></div>
+      <div class="note"></div>
+      <div class="file">assets/fonts/schibsted-grotesk-latin-wght-normal.woff2, assets/fonts/schibsted-grotesk-latin-ext-wght-normal.woff2 · 2 files</div>
+      <div class="src">Source: Fontsource variable build (@fontsource-variable, OFL). Same families ezzbill.com uses; its own font files are blocked from this session</div>
+      
+    </figcaption>
+  </figure><figure class="">
+    <div class="font" style="font-family:'Martian Mono'"><b>Martian Mono</b><span>UPI solved payments. ₹24.07B 711 140</span></div>
+    <figcaption>
+      <div class="row"><b>font.martian-mono</b></div>
+      <div class="note"></div>
+      <div class="file">assets/fonts/martian-mono-latin-wght-normal.woff2, assets/fonts/martian-mono-latin-ext-wght-normal.woff2 · 2 files</div>
+      <div class="src">Source: Fontsource variable build (@fontsource-variable, OFL). Same families ezzbill.com uses; its own font files are blocked from this session</div>
+      
+    </figcaption>
+  </figure></div></section>
+<section id="input"><h2>Inputs you provide</h2><p></p><div class="grid"><figure class="is-pending">
+    <div class="pending"><span>Waiting for capture on your machine</span><code>assets/sample_bill.jpg</code></div>
+    <figcaption>
+      <div class="row"><b>input.sample-bill</b><span class="tag wait">pending</span></div>
+      <div class="note"></div>
+      <div class="file">assets/sample_bill.jpg</div>
+      <div class="src">Source: You provide it on your machine; used once for the ₹600 test bill</div>
+      <div class="flag">⚑ Make sure the bill photo shows no person's name or phone number</div>
+    </figcaption>
+  </figure></div></section>
+</body></html>

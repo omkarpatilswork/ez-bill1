@@ -1,0 +1,37 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EZZ BILLZ fixture</title>
+<style>
+  body{margin:0;background:#0f1713;color:#e8efe9;font:14px/1.4 system-ui,sans-serif}
+  .glass-card{background:#17211b;border-radius:16px;padding:14px;margin:12px}
+  .rounded-full{display:inline-flex;gap:4px;border-radius:999px;background:#24342a;padding:4px 10px;margin:2px}
+  .muted{color:#93a39a;font-size:11px;text-transform:uppercase;letter-spacing:.06em}
+  #lovable-badge{position:fixed;right:10px;bottom:10px;background:#fff;color:#000;padding:6px 10px;border-radius:8px}
+  .tall{height:900px}
+</style></head>
+<body>
+  <a href="/profile"><span>OP</span><span>Omkar Patil</span><span>Profile</span></a>
+  <h1>Welcome to EZZ BILLZ</h1>
+  <div class="glass-card">
+    <p class="muted">Merchant</p><p>Blue Tokai Coffee</p>
+    <div><p class="muted">Invoice Number</p><p>BT/PNQ/88213</p></div>
+    <div><p class="muted">Payment Method</p><p>UPI</p></div>
+    <p>Total <b>₹1,240.00</b> on 19 Oct 2026</p>
+    <p>Receipt sent to omkar.test@example.com · call 9876543210</p>
+    <p>Payment id pay_N3xQ81bLm2 · UTR 412398765432</p>
+  </div>
+  <div class="glass-card">
+    <p>People (3)</p>
+    <div><div class="rounded-full"><span>Omkar (you)</span></div><div class="rounded-full"><span>Rhea Kulkarni</span></div><div class="rounded-full"><span>Kabir</span></div></div>
+  </div>
+  <div class="glass-card"><p>Cappuccino</p><button class="rounded-full">Omkar</button><button class="rounded-full">Rhea Kulkarni</button><button class="rounded-full">Kabir</button></div>
+  <div class="glass-card"><p>Shopping</p><p class="muted"><span>4</span><span> txns · ideal </span><span>₹5,250</span><span> · mostly Amazon</span></p></div>
+  <div class="glass-card"><p>Kabir said the GPT answer was fine. Gemini 2.5 Flash, ₹28,722, 348%.</p></div>
+  <div class="tall"></div>
+  <div class="glass-card"><h3>Review queue</h3><p>From billing@jiosaavn.com: Your JioSaavn receipt</p></div>
+  <a id="lovable-badge" href="https://lovable.dev/projects/x">Edit with Lovable</a>
+  <script>
+    // simulate React re-rendering text later
+    setTimeout(() => { const p = document.createElement('p'); p.textContent = 'Saved to your EZZ BILLZ'; document.body.insertBefore(p, document.body.children[2]); }, 200);
+  </script>
+</body></html>

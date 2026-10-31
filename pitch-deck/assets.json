@@ -1,0 +1,787 @@
+{
+  "about": "Every image, clip and font the deck uses. Scenes ask for an id (for example \"site.nfc-bill\"); to swap a screen in version 2, change \"file\" (and \"label\" if the source changes). Scenes never hard-code paths.",
+  "labels": {
+    "demo": "Demo data",
+    "live": "Live app, personal details blurred",
+    "real": "Real cafe test",
+    "racked": "Racked app",
+    "none": null
+  },
+  "items": {
+    "site.nfc-staff": {
+      "file": "assets/site-demo/nfc-staff.webp",
+      "type": "image",
+      "label": "demo",
+      "sourceType": "site-demo",
+      "source": "ezzbill.com demo-data app screens. Copied from your repos (ez-bill1/docs/screenshots and Omi-Website/public/assets) because ezzbill.com is blocked from this cloud session",
+      "status": "ready",
+      "size": [
+        600,
+        1298
+      ],
+      "notes": "Staff console: Table 3 ₹412 ready, Counter ₹1,180, Table 12 and Table 7 open"
+    },
+    "site.nfc-guest": {
+      "file": "assets/site-demo/nfc-guest.webp",
+      "type": "image",
+      "label": "demo",
+      "sourceType": "site-demo",
+      "source": "ezzbill.com demo-data app screens. Copied from your repos (ez-bill1/docs/screenshots and Omi-Website/public/assets) because ezzbill.com is blocked from this cloud session",
+      "status": "ready",
+      "size": [
+        469,
+        1015
+      ],
+      "notes": "Guest tap page: Blue Tokai Coffee, Table 3, ₹412.00",
+      "flags": [
+        "Shows the old name \"EZZ BILLZ\" inside the image"
+      ]
+    },
+    "site.nfc-bill": {
+      "file": "assets/site-demo/nfc-bill.webp",
+      "type": "image",
+      "label": "demo",
+      "sourceType": "site-demo",
+      "source": "ezzbill.com demo-data app screens. Copied from your repos (ez-bill1/docs/screenshots and Omi-Website/public/assets) because ezzbill.com is blocked from this cloud session",
+      "status": "ready",
+      "size": [
+        469,
+        1015
+      ],
+      "notes": "The tapped bill saved: Blue Tokai Coffee, 2 items, Food & Dining, UPI"
+    },
+    "site.nfc-saved": {
+      "file": "assets/site-demo/nfc-saved.webp",
+      "type": "image",
+      "label": "demo",
+      "sourceType": "site-demo",
+      "source": "ezzbill.com demo-data app screens. Copied from your repos (ez-bill1/docs/screenshots and Omi-Website/public/assets) because ezzbill.com is blocked from this cloud session",
+      "status": "ready",
+      "size": [
+        600,
+        1298
+      ],
+      "notes": "\"Saved\" confirmation",
+      "flags": [
+        "Shows the old name \"EZZ BILLZ\" inside the image",
+        "Says \"Burger Seigneurie, Koregaon Park\" while the guest and bill screens say \"Blue Tokai Coffee\""
+      ]
+    },
+    "site.home": {
+      "file": "assets/site-demo/home.webp",
+      "type": "image",
+      "label": "demo",
+      "sourceType": "site-demo",
+      "source": "ezzbill.com demo-data app screens. Copied from your repos (ez-bill1/docs/screenshots and Omi-Website/public/assets) because ezzbill.com is blocked from this cloud session",
+      "status": "ready",
+      "size": [
+        600,
+        1300
+      ],
+      "notes": "Home, first screen",
+      "flags": [
+        "Greets \"Hi, Omkar\", not the \"Aarav Mehta\" demo user"
+      ]
+    },
+    "site.home-long": {
+      "file": "assets/site-demo/home-long.webp",
+      "type": "image",
+      "label": "demo",
+      "sourceType": "site-demo",
+      "source": "ezzbill.com demo-data app screens. Copied from your repos (ez-bill1/docs/screenshots and Omi-Website/public/assets) because ezzbill.com is blocked from this cloud session",
+      "status": "ready",
+      "size": [
+        600,
+        2895
+      ],
+      "notes": "Home, full scroll",
+      "flags": [
+        "Greets \"Hi, Omkar\", not the \"Aarav Mehta\" demo user"
+      ]
+    },
+    "site.money-leaks": {
+      "file": "assets/site-demo/money-leaks.webp",
+      "type": "image",
+      "label": "demo",
+      "sourceType": "site-demo",
+      "source": "ezzbill.com demo-data app screens. Copied from your repos (ez-bill1/docs/screenshots and Omi-Website/public/assets) because ezzbill.com is blocked from this cloud session",
+      "status": "ready",
+      "size": [
+        600,
+        1300
+      ],
+      "notes": "Money Leaks: ₹5,615 leaked, leak score 56/100, category cards"
+    },
+    "site.money-leaks-long": {
+      "file": "assets/site-demo/money-leaks-long.webp",
+      "type": "image",
+      "label": "demo",
+      "sourceType": "site-demo",
+      "source": "ezzbill.com demo-data app screens. Copied from your repos (ez-bill1/docs/screenshots and Omi-Website/public/assets) because ezzbill.com is blocked from this cloud session",
+      "status": "ready",
+      "size": [
+        600,
+        3200
+      ],
+      "notes": "Money Leaks, full scroll"
+    },
+    "site.subscriptions": {
+      "file": "assets/site-demo/subscriptions.webp",
+      "type": "image",
+      "label": "demo",
+      "sourceType": "site-demo",
+      "source": "ezzbill.com demo-data app screens. Copied from your repos (ez-bill1/docs/screenshots and Omi-Website/public/assets) because ezzbill.com is blocked from this cloud session",
+      "status": "ready",
+      "size": [
+        600,
+        1300
+      ],
+      "notes": "Subscriptions: ₹5,065/month, 5 active"
+    },
+    "site.subscriptions-long": {
+      "file": "assets/site-demo/subscriptions-long.webp",
+      "type": "image",
+      "label": "demo",
+      "sourceType": "site-demo",
+      "source": "ezzbill.com demo-data app screens. Copied from your repos (ez-bill1/docs/screenshots and Omi-Website/public/assets) because ezzbill.com is blocked from this cloud session",
+      "status": "ready",
+      "size": [
+        600,
+        3121
+      ],
+      "notes": "Subscriptions, full scroll",
+      "flags": [
+        "Lower half shows the Review queue with sample source emails; crop above it"
+      ],
+      "cropBeforeY": 1690
+    },
+    "site.splits": {
+      "file": "assets/site-demo/splits.webp",
+      "type": "image",
+      "label": "demo",
+      "sourceType": "site-demo",
+      "source": "ezzbill.com demo-data app screens. Copied from your repos (ez-bill1/docs/screenshots and Omi-Website/public/assets) because ezzbill.com is blocked from this cloud session",
+      "status": "ready",
+      "size": [
+        600,
+        1300
+      ],
+      "notes": "Splits friends ledger: Rohan ₹420, Parth ₹214, Aditi ₹214 (demo friends)"
+    },
+    "site.splits-long": {
+      "file": "assets/site-demo/splits-long.webp",
+      "type": "image",
+      "label": "demo",
+      "sourceType": "site-demo",
+      "source": "ezzbill.com demo-data app screens. Copied from your repos (ez-bill1/docs/screenshots and Omi-Website/public/assets) because ezzbill.com is blocked from this cloud session",
+      "status": "ready",
+      "size": [
+        600,
+        1940
+      ],
+      "notes": "Splits, full scroll"
+    },
+    "site.desktop-home": {
+      "file": "assets/site-demo/desktop-home.webp",
+      "type": "image",
+      "label": "demo",
+      "sourceType": "site-demo",
+      "source": "ezzbill.com demo-data app screens. Copied from your repos (ez-bill1/docs/screenshots and Omi-Website/public/assets) because ezzbill.com is blocked from this cloud session",
+      "status": "ready",
+      "size": [
+        1600,
+        1000
+      ],
+      "notes": "Desktop dashboard",
+      "flags": [
+        "Shows the old name \"EZZ BILLZ\" inside the image",
+        "Sidebar shows \"Omkar Patil\" profile and \"Hi, Omkar\""
+      ]
+    },
+    "site.desktop-analytics": {
+      "file": "assets/site-demo/desktop-analytics.webp",
+      "type": "image",
+      "label": "demo",
+      "sourceType": "site-demo",
+      "source": "ezzbill.com demo-data app screens. Copied from your repos (ez-bill1/docs/screenshots and Omi-Website/public/assets) because ezzbill.com is blocked from this cloud session",
+      "status": "ready",
+      "size": [
+        1600,
+        1000
+      ],
+      "notes": "Desktop analytics",
+      "flags": [
+        "Shows the old name \"EZZ BILLZ\" inside the image"
+      ]
+    },
+    "site.desktop-money-leaks": {
+      "file": "assets/site-demo/desktop-money-leaks.webp",
+      "type": "image",
+      "label": "demo",
+      "sourceType": "site-demo",
+      "source": "ezzbill.com demo-data app screens. Copied from your repos (ez-bill1/docs/screenshots and Omi-Website/public/assets) because ezzbill.com is blocked from this cloud session",
+      "status": "ready",
+      "size": [
+        1600,
+        1000
+      ],
+      "notes": "Desktop Money Leaks",
+      "flags": [
+        "Shows the old name \"EZZ BILLZ\" inside the image",
+        "Sidebar shows \"Omkar Patil\""
+      ]
+    },
+    "site.landing-hero": {
+      "file": "assets/site-demo/landing-hero.webp",
+      "type": "image",
+      "label": "demo",
+      "sourceType": "site-demo",
+      "source": "omkarpatil.in (Omi-Website/public/assets) (screenshot of the ezzbill.com hero)",
+      "status": "ready",
+      "size": [
+        800,
+        456
+      ],
+      "notes": "ezzbill.com hero with phone; small, 800x456"
+    },
+    "video.site-walkthrough": {
+      "file": "assets/video/site-walkthrough.mp4",
+      "type": "video",
+      "label": "demo",
+      "sourceType": "site-demo",
+      "source": "omkarpatil.in (Omi-Website/public/assets) (ez-walkthrough.mp4, the phone walkthrough)",
+      "status": "ready",
+      "size": [
+        390,
+        844
+      ],
+      "duration": 39.57,
+      "notes": "Home → Money Leaks → Subscriptions → Splits → All Bills, 390x844",
+      "flags": [
+        "About 19-24 s shows the Subscriptions review queue with sample source emails; skip that range",
+        "Greets \"Hi, Omkar\""
+      ],
+      "poster": "assets/video/site-walkthrough-poster.jpg"
+    },
+    "founder.speaking": {
+      "file": "assets/founder/omkar-speaking.webp",
+      "type": "image",
+      "label": "none",
+      "sourceType": "founder-site",
+      "source": "omkarpatil.in (Omi-Website/public/assets)",
+      "status": "ready",
+      "size": [
+        1200,
+        908
+      ],
+      "notes": "You at a podium; site OG image",
+      "flags": [
+        "Photographer credit \"© Gagan Parikshith\" burned into the corner",
+        "Screen behind reads \"General Secretary 2021-2025\""
+      ]
+    },
+    "founder.hiking": {
+      "file": "assets/founder/omkar-hiking.webp",
+      "type": "image",
+      "label": "none",
+      "sourceType": "founder-site",
+      "source": "omkarpatil.in (Omi-Website/public/assets)",
+      "status": "ready",
+      "size": [
+        800,
+        1200
+      ],
+      "notes": "You hiking, portrait"
+    },
+    "founder.biking": {
+      "file": "assets/founder/omkar-biking.webp",
+      "type": "image",
+      "label": "none",
+      "sourceType": "founder-site",
+      "source": "omkarpatil.in (Omi-Website/public/assets)",
+      "status": "ready",
+      "size": [
+        800,
+        1066
+      ],
+      "notes": "You with your motorcycle"
+    },
+    "founder.casual": {
+      "file": "assets/founder/omkar-casual.webp",
+      "type": "image",
+      "label": "none",
+      "sourceType": "founder-site",
+      "source": "omkarpatil.in (Omi-Website/public/assets)",
+      "status": "ready",
+      "size": [
+        700,
+        1244
+      ],
+      "notes": "Mirror selfie",
+      "flags": [
+        "Casual mirror selfie, phone covers part of the face"
+      ]
+    },
+    "founder.convocation": {
+      "file": "assets/founder/omkar-convocation.webp",
+      "type": "image",
+      "label": "none",
+      "sourceType": "founder-site",
+      "source": "omkarpatil.in (Omi-Website/public/assets)",
+      "status": "ready",
+      "size": [
+        1400,
+        1238
+      ],
+      "notes": "MAHE convocation, Nov 2023",
+      "flags": [
+        "Another person (an official) is in the frame"
+      ]
+    },
+    "jerseydrip.store": {
+      "file": "assets/jerseydrip/jd-experience-center.webp",
+      "type": "image",
+      "label": "none",
+      "sourceType": "founder-site",
+      "source": "omkarpatil.in (Omi-Website/public/assets)",
+      "status": "ready",
+      "size": [
+        738,
+        923
+      ],
+      "notes": "You at the Jersey Drip experience centre",
+      "flags": [
+        "Banner shows a phone number and QR code; crop above them"
+      ]
+    },
+    "jerseydrip.site": {
+      "file": "assets/jerseydrip/jd-mobile-home.webp",
+      "type": "image",
+      "label": "none",
+      "sourceType": "founder-site",
+      "source": "omkarpatil.in (Omi-Website/public/assets)",
+      "status": "ready",
+      "size": [
+        427,
+        923
+      ],
+      "notes": "Jersey Drip mobile site"
+    },
+    "bijlee.site": {
+      "file": "assets/bijlee/bijlee-site.webp",
+      "type": "image",
+      "label": "none",
+      "sourceType": "founder-site",
+      "source": "omkarpatil.in (Omi-Website/public/assets)",
+      "status": "ready",
+      "size": [
+        799,
+        456
+      ],
+      "notes": "bijlee.run hero (website, not an event photo)"
+    },
+    "bijlee.partners": {
+      "file": "assets/bijlee/bijlee-partners.webp",
+      "type": "image",
+      "label": "none",
+      "sourceType": "founder-site",
+      "source": "omkarpatil.in (Omi-Website/public/assets)",
+      "status": "ready",
+      "size": [
+        800,
+        200
+      ],
+      "notes": "Partner strip from bijlee.run",
+      "flags": [
+        "Shows Courtiers Club, Afternoons, Club 360, Decathlon and others, not the Decathlon / Red Bull / Playo / Fast&Up list in your claims. Recommend not using it"
+      ]
+    },
+    "bijlee.hyrox-tag": {
+      "file": "assets/bijlee/hyrox-finisher-tag.webp",
+      "type": "image",
+      "label": "none",
+      "sourceType": "founder-site",
+      "source": "omkarpatil.in (Omi-Website/public/assets)",
+      "status": "ready",
+      "size": [
+        680,
+        456
+      ],
+      "notes": "\"HYROX · Bijlee x Club360 · Finisher\" tag (object, no people)"
+    },
+    "logo.bajaj-finserv-health": {
+      "file": "assets/logos/bajaj-finserv-health.webp",
+      "type": "image",
+      "label": "none",
+      "sourceType": "founder-site",
+      "source": "omkarpatil.in (Omi-Website/public/assets)",
+      "status": "ready",
+      "size": [
+        300,
+        300
+      ],
+      "notes": "Bajaj Finserv Health logo",
+      "flags": [
+        "Former employer trademark; I would set the name as text instead"
+      ]
+    },
+    "racked.leaderboard": {
+      "file": "assets/racked/leaderboard.webp",
+      "type": "image",
+      "label": "racked",
+      "sourceType": "racked",
+      "source": "racked-app repo (docs/screenshots); same screens as omkarpatil.in",
+      "status": "ready",
+      "size": [
+        469,
+        1015
+      ],
+      "notes": "Leaderboard: your row unblurred, other members already blurred",
+      "flags": [
+        "Shows \"840 XP\" and \"60 XP\", which are not in your claims list",
+        "Shows your full name"
+      ]
+    },
+    "racked.tap-in": {
+      "file": "assets/racked/tap-in.webp",
+      "type": "image",
+      "label": "racked",
+      "sourceType": "racked",
+      "source": "racked-app repo (docs/screenshots); same screens as omkarpatil.in",
+      "status": "ready",
+      "size": [
+        469,
+        1015
+      ],
+      "notes": "\"Tap in to Lat Pulldown\" lock screen"
+    },
+    "racked.machines": {
+      "file": "assets/racked/machines.webp",
+      "type": "image",
+      "label": "racked",
+      "sourceType": "racked",
+      "source": "racked-app repo (docs/screenshots); same screens as omkarpatil.in",
+      "status": "ready",
+      "size": [
+        469,
+        1015
+      ],
+      "notes": "Machines list",
+      "flags": [
+        "Says \"All 10 machines in this gym\"; your claim is 140 tap-ins on 2 NFC tags, so this may confuse"
+      ]
+    },
+    "racked.home-live": {
+      "file": "screens/live/racked_home.png",
+      "type": "image",
+      "label": "racked",
+      "sourceType": "racked",
+      "source": "racked-app-liard.vercel.app, captured on your machine (npm run capture:racked)",
+      "status": "pending-capture",
+      "notes": "Home feed at 412x915 @2.625"
+    },
+    "racked.leaderboard-live": {
+      "file": "screens/live/racked_leaderboard.png",
+      "type": "image",
+      "label": "racked",
+      "sourceType": "racked",
+      "source": "racked-app-liard.vercel.app, captured on your machine (npm run capture:racked)",
+      "status": "pending-capture",
+      "notes": "Leaderboard at 412x915 @2.625, other members blurred"
+    },
+    "video.real-cafe-test": {
+      "file": "assets/video/raw/real-cafe-test.mp4",
+      "type": "video",
+      "label": "real",
+      "sourceType": "youtube",
+      "source": "https://youtu.be/RGl08gM4TGk (your video), via npm run fetch:youtube on your machine",
+      "status": "pending-capture",
+      "notes": "Slide 6: 10-15 s cut, set by trim",
+      "trim": {
+        "start": null,
+        "end": null
+      }
+    },
+    "live.staff-phone-before": {
+      "file": "screens/live/staff_phone_before.png",
+      "type": "image",
+      "label": "live",
+      "sourceType": "live",
+      "source": "ezbill.live, your account, captured on your machine (npm run capture)",
+      "status": "pending-capture",
+      "notes": "/staff before the test bill (Table 3 state as found)"
+    },
+    "live.staff-phone-sheet": {
+      "file": "screens/live/staff_phone_sheet.png",
+      "type": "image",
+      "label": "live",
+      "sourceType": "live",
+      "source": "ezbill.live, your account, captured on your machine (npm run capture)",
+      "status": "pending-capture",
+      "notes": "/staff send sheet: ₹600 entered, bill photo attached"
+    },
+    "live.staff-phone-after": {
+      "file": "screens/live/staff_phone_after.png",
+      "type": "image",
+      "label": "live",
+      "sourceType": "live",
+      "source": "ezbill.live, your account, captured on your machine (npm run capture)",
+      "status": "pending-capture",
+      "notes": "/staff after sending: Table 3 ready"
+    },
+    "live.staff-desktop": {
+      "file": "screens/live/staff_desktop.png",
+      "type": "image",
+      "label": "live",
+      "sourceType": "live",
+      "source": "ezbill.live, your account, captured on your machine (npm run capture)",
+      "status": "pending-capture",
+      "notes": "/staff at 1920x1080 (@2x)"
+    },
+    "live.tap-guest": {
+      "file": "screens/live/tap_guest.png",
+      "type": "image",
+      "label": "live",
+      "sourceType": "live",
+      "source": "ezbill.live, your account, captured on your machine (npm run capture)",
+      "status": "pending-capture",
+      "notes": "/t/t3 in a logged-out browser: the ₹600 test bill"
+    },
+    "live.tap-guest-tall": {
+      "file": "screens/live/tap_guest--tall.png",
+      "type": "image",
+      "label": "live",
+      "sourceType": "live",
+      "source": "ezbill.live, your account, captured on your machine (npm run capture)",
+      "status": "pending-capture",
+      "notes": "/t/t3 full height"
+    },
+    "live.nfc-airdrop": {
+      "file": "screens/live/nfc-airdrop.png",
+      "type": "image",
+      "label": "live",
+      "sourceType": "live",
+      "source": "ezbill.live, your account, captured on your machine (npm run capture)",
+      "status": "pending-capture",
+      "notes": "/nfc-airdrop"
+    },
+    "live.expenses-food": {
+      "file": "screens/live/expenses_food.png",
+      "type": "image",
+      "label": "live",
+      "sourceType": "live",
+      "source": "ezbill.live, your account, captured on your machine (npm run capture)",
+      "status": "pending-capture",
+      "notes": "/expenses filtered to Food & Dining"
+    },
+    "live.bill-detail": {
+      "file": "screens/live/bill_detail.png",
+      "type": "image",
+      "label": "live",
+      "sourceType": "live",
+      "source": "ezbill.live, your account, captured on your machine (npm run capture)",
+      "status": "pending-capture",
+      "notes": "Imported restaurant bill with 5+ line items"
+    },
+    "live.bill-detail-tall": {
+      "file": "screens/live/bill_detail--tall.png",
+      "type": "image",
+      "label": "live",
+      "sourceType": "live",
+      "source": "ezbill.live, your account, captured on your machine (npm run capture)",
+      "status": "pending-capture",
+      "notes": "Same bill, full height (all line items)"
+    },
+    "live.split": {
+      "file": "screens/live/split.png",
+      "type": "image",
+      "label": "live",
+      "sourceType": "live",
+      "source": "ezbill.live, your account, captured on your machine (npm run capture)",
+      "status": "pending-capture",
+      "notes": "/expenses/:id/split for that bill"
+    },
+    "live.split-custom": {
+      "file": "screens/live/split_custom.png",
+      "type": "image",
+      "label": "live",
+      "sourceType": "live",
+      "source": "ezbill.live, your account, captured on your machine (npm run capture)",
+      "status": "pending-capture",
+      "notes": "Same split in Custom (item-level) mode; nothing saved"
+    },
+    "live.bulk-upload": {
+      "file": "screens/live/bulk-upload.png",
+      "type": "image",
+      "label": "live",
+      "sourceType": "live",
+      "source": "ezbill.live, your account, captured on your machine (npm run capture)",
+      "status": "pending-capture",
+      "notes": "/bulk-upload"
+    },
+    "live.email-bills": {
+      "file": "screens/live/email-bills.png",
+      "type": "image",
+      "label": "live",
+      "sourceType": "live",
+      "source": "ezbill.live, your account, captured on your machine (npm run capture)",
+      "status": "pending-capture",
+      "notes": "/email-bills, Gmail address blurred"
+    },
+    "live.warranties": {
+      "file": "screens/live/warranties.png",
+      "type": "image",
+      "label": "live",
+      "sourceType": "live",
+      "source": "ezbill.live, your account, captured on your machine (npm run capture)",
+      "status": "pending-capture",
+      "notes": "/warranties"
+    },
+    "live.subscriptions": {
+      "file": "screens/live/subscriptions--tall.png",
+      "type": "image",
+      "label": "live",
+      "sourceType": "live",
+      "source": "ezbill.live, your account, captured on your machine (npm run capture)",
+      "status": "pending-capture",
+      "notes": "/subscriptions: summary + active list, cropped above the review queue"
+    },
+    "live.money-leaks": {
+      "file": "screens/live/money-leaks--tall.png",
+      "type": "image",
+      "label": "live",
+      "sourceType": "live",
+      "source": "ezbill.live, your account, captured on your machine (npm run capture)",
+      "status": "pending-capture",
+      "notes": "/money-leaks: score + category cards, merchants blurred"
+    },
+    "live.ask-ai": {
+      "file": "screens/live/ask-ai.png",
+      "type": "image",
+      "label": "live",
+      "sourceType": "live",
+      "source": "ezbill.live, your account, captured on your machine (npm run capture)",
+      "status": "pending-capture",
+      "notes": "/ask-ai after \"How much did I spend eating out this month?\""
+    },
+    "clip.staff-send-bill": {
+      "file": "clips/journeys/staff-send-bill.mp4",
+      "type": "video",
+      "label": "live",
+      "sourceType": "live",
+      "source": "ezbill.live, your account, captured on your machine (npm run capture)",
+      "status": "pending-capture",
+      "notes": "Staff enters ₹600, attaches the bill, sends to Table 3"
+    },
+    "clip.tap-guest-scroll": {
+      "file": "clips/journeys/tap-guest-scroll.mp4",
+      "type": "video",
+      "label": "live",
+      "sourceType": "live",
+      "source": "ezbill.live, your account, captured on your machine (npm run capture)",
+      "status": "pending-capture",
+      "notes": "Guest page scroll"
+    },
+    "clip.expenses-food-filter": {
+      "file": "clips/journeys/expenses-food-filter.mp4",
+      "type": "video",
+      "label": "live",
+      "sourceType": "live",
+      "source": "ezbill.live, your account, captured on your machine (npm run capture)",
+      "status": "pending-capture",
+      "notes": "Tap Food & Dining filter, scroll"
+    },
+    "clip.bill-line-items": {
+      "file": "clips/journeys/bill-line-items.mp4",
+      "type": "video",
+      "label": "live",
+      "sourceType": "live",
+      "source": "ezbill.live, your account, captured on your machine (npm run capture)",
+      "status": "pending-capture",
+      "notes": "Scroll to the line items"
+    },
+    "clip.split-custom": {
+      "file": "clips/journeys/split-custom.mp4",
+      "type": "video",
+      "label": "live",
+      "sourceType": "live",
+      "source": "ezbill.live, your account, captured on your machine (npm run capture)",
+      "status": "pending-capture",
+      "notes": "Switch to Custom split, scroll items"
+    },
+    "clip.subscriptions-scroll": {
+      "file": "clips/journeys/subscriptions-scroll.mp4",
+      "type": "video",
+      "label": "live",
+      "sourceType": "live",
+      "source": "ezbill.live, your account, captured on your machine (npm run capture)",
+      "status": "pending-capture",
+      "notes": "Scroll the active list (stops above review queue)"
+    },
+    "clip.money-leaks-scroll": {
+      "file": "clips/journeys/money-leaks-scroll.mp4",
+      "type": "video",
+      "label": "live",
+      "sourceType": "live",
+      "source": "ezbill.live, your account, captured on your machine (npm run capture)",
+      "status": "pending-capture",
+      "notes": "Scroll the category cards"
+    },
+    "clip.ask-ai": {
+      "file": "clips/journeys/ask-ai.mp4",
+      "type": "video",
+      "label": "live",
+      "sourceType": "live",
+      "source": "ezbill.live, your account, captured on your machine (npm run capture)",
+      "status": "pending-capture",
+      "notes": "Type the question, answer arrives"
+    },
+    "font.archivo": {
+      "type": "font",
+      "family": "Archivo",
+      "files": [
+        "assets/fonts/archivo-latin-wght-normal.woff2",
+        "assets/fonts/archivo-latin-ext-wght-normal.woff2"
+      ],
+      "label": "none",
+      "sourceType": "font",
+      "source": "Fontsource variable build (@fontsource-variable, OFL). Same families ezzbill.com uses; its own font files are blocked from this session",
+      "status": "ready"
+    },
+    "font.schibsted-grotesk": {
+      "type": "font",
+      "family": "Schibsted Grotesk",
+      "files": [
+        "assets/fonts/schibsted-grotesk-latin-wght-normal.woff2",
+        "assets/fonts/schibsted-grotesk-latin-ext-wght-normal.woff2"
+      ],
+      "label": "none",
+      "sourceType": "font",
+      "source": "Fontsource variable build (@fontsource-variable, OFL). Same families ezzbill.com uses; its own font files are blocked from this session",
+      "status": "ready"
+    },
+    "font.martian-mono": {
+      "type": "font",
+      "family": "Martian Mono",
+      "files": [
+        "assets/fonts/martian-mono-latin-wght-normal.woff2",
+        "assets/fonts/martian-mono-latin-ext-wght-normal.woff2"
+      ],
+      "label": "none",
+      "sourceType": "font",
+      "source": "Fontsource variable build (@fontsource-variable, OFL). Same families ezzbill.com uses; its own font files are blocked from this session",
+      "status": "ready"
+    },
+    "input.sample-bill": {
+      "file": "assets/sample_bill.jpg",
+      "type": "image",
+      "label": "none",
+      "sourceType": "input",
+      "source": "You provide it on your machine; used once for the ₹600 test bill",
+      "status": "pending-capture",
+      "flags": [
+        "Make sure the bill photo shows no person's name or phone number"
+      ]
+    }
+  }
+}

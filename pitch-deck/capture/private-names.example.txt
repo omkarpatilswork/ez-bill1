@@ -1,0 +1,7 @@
+# Copy this file to private-names.txt (it is gitignored) and list every person's
+# name that might appear on a captured screen: friends you split with, your own
+# name, family. One per line. First names alone are fine.
+# The capture also learns names on its own from the split "People" chips and the
+# profile link, but this list catches names inside Ask AI answers and elsewhere.
+Rhea
+Kabir Mehta
