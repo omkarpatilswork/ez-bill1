@@ -144,6 +144,7 @@ export type Database = {
       bill_tags: {
         Row: {
           created_at: string
+          created_by: string | null
           id: string
           label: string
           merchant_name: string
@@ -151,6 +152,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          created_by?: string | null
           id?: string
           label: string
           merchant_name?: string
@@ -158,6 +160,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          created_by?: string | null
           id?: string
           label?: string
           merchant_name?: string
@@ -248,16 +251,19 @@ export type Database = {
       }
       expense_categories: {
         Row: {
+          created_by: string | null
           description: string | null
           id: string
           name: string
         }
         Insert: {
+          created_by?: string | null
           description?: string | null
           id?: string
           name: string
         }
         Update: {
+          created_by?: string | null
           description?: string | null
           id?: string
           name?: string

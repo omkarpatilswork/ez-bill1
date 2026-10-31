@@ -146,7 +146,7 @@ export default function StaffTables() {
     setSubmitting(true);
     try {
       const ext = file.name.split('.').pop() || 'jpg';
-      const filePath = `${sheetTag.tag_id}/${crypto.randomUUID()}.${ext}`;
+      const filePath = `${user.id}/${crypto.randomUUID()}.${ext}`;
       const { error: upErr } = await supabase.storage.from('pending-receipts').upload(filePath, file);
       if (upErr) throw upErr;
 
