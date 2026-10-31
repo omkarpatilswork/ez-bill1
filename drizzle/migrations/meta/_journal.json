@@ -15,6 +15,13 @@
       "when": 1793359370510,
       "tag": "0001_create_categories_manageable",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1793432810829,
+      "tag": "0002_security_fix_nfc_and_category_rls",
+      "breakpoints": true
     }
   ]
 }
