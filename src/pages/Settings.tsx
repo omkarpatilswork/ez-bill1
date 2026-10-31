@@ -142,6 +142,7 @@ export default function Settings() {
     const { data, error } = await supabase.from('expense_categories').insert({
       name,
       description: newCatDesc.trim() || null,
+      created_by: user.id,
     } as any).select().single();
     if (error) {
       toast({ title: 'Could not add category', description: error.message, variant: 'destructive' });
