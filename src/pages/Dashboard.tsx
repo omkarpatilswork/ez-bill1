@@ -760,6 +760,10 @@ export default function Dashboard() {
         <Link to="/terms" className="text-[10px] text-muted-foreground hover:text-foreground underline underline-offset-2">
           Terms
         </Link>
+        <span className="text-[10px] text-muted-foreground/50 mx-2">·</span>
+        <Link to="/security" className="text-[10px] text-muted-foreground hover:text-foreground underline underline-offset-2">
+          Security
+        </Link>
         <p className="text-[9px] text-muted-foreground/50 mt-1">
           Your bills stay yours — read how we store and protect them.
         </p>
