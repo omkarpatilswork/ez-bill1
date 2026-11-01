@@ -36,7 +36,7 @@ export default function NfcAirdrop() {
   return (
     <div className="space-y-6 pb-6">
       <SEO
-        title="NFC Airdrop · EZZ BILLZ"
+        title="NFC Airdrop · EZZ BILL"
         description="Tap your phone on an NFC tag and bills are delivered instantly — no photos, no typing."
         path="/nfc-airdrop"
       />
@@ -72,7 +72,7 @@ export default function NfcAirdrop() {
           </div>
           <h1 className="text-xl font-bold text-foreground tracking-tight">NFC Airdrop for Bills</h1>
           <p className="text-[12px] text-muted-foreground leading-relaxed max-w-[300px] mx-auto mt-2">
-            At a restaurant or store, tap your phone on their EZZ BILLZ tag —
+            At a restaurant or store, tap your phone on their EZZ BILL tag —
             the bill lands in your app instantly. No photos, no typing, no waiting.
           </p>
 
@@ -104,7 +104,7 @@ export default function NfcAirdrop() {
         <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-[0.18em] mb-2.5">How it works</p>
         <div className="glass-card rounded-2xl p-4 space-y-3">
           {[
-            { icon: Smartphone, title: 'Tap your phone', sub: 'Hold it against the EZZ BILLZ NFC tag on the table or counter', tint: 'hsla(152, 45%, 45%, 0.18)', color: 'text-primary' },
+            { icon: Smartphone, title: 'Tap your phone', sub: 'Hold it against the EZZ BILL NFC tag on the table or counter', tint: 'hsla(152, 45%, 45%, 0.18)', color: 'text-primary' },
             { icon: Wifi, title: 'Bill arrives instantly', sub: 'A real, itemized receipt airdrops into your app in seconds', tint: 'hsla(43, 80%, 50%, 0.18)', color: 'text-gold' },
             { icon: Users, title: 'Split or act on it', sub: 'Split with friends, track spending, or reach merchant support — like any bill', tint: 'hsla(199, 70%, 45%, 0.18)', color: 'text-info' },
           ].map((step, i) => (
@@ -147,7 +147,7 @@ export default function NfcAirdrop() {
             </div>
             <p className="font-medium text-foreground mb-1 text-sm">No NFC bills yet</p>
             <p className="text-xs text-muted-foreground max-w-[260px] mx-auto leading-relaxed">
-              Next time you're at a table with an EZZ BILLZ tag, tap your phone on it — your bill will appear here.
+              Next time you're at a table with an EZZ BILL tag, tap your phone on it — your bill will appear here.
             </p>
           </div>
         ) : (
