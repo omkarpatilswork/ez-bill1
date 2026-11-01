@@ -282,7 +282,7 @@ export default function MoneyLeaks() {
   const shareSummary = () => {
     if (!leakData) return;
     const grade = leakGrade(leakData.leakScore).label;
-    const text = `💧 Money leak check — ${monthLabel(selectedMonth)}\nLeaked: ${fmt(leakData.totalLeak)} (${leakData.leakPercent}% of spending)\nHealth: ${leakData.leakScore}/100 · ${grade}\nBiggest leak: ${leakData.perCategory[0]?.category || 'N/A'}\n\nTracked with EZZ BILLZ`;
+    const text = `💧 Money leak check — ${monthLabel(selectedMonth)}\nLeaked: ${fmt(leakData.totalLeak)} (${leakData.leakPercent}% of spending)\nHealth: ${leakData.leakScore}/100 · ${grade}\nBiggest leak: ${leakData.perCategory[0]?.category || 'N/A'}\n\nTracked with EZZ BILL`;
     if (navigator.share) navigator.share({ text }).catch(() => {});
     else { navigator.clipboard.writeText(text); toast({ title: 'Copied to clipboard' }); }
   };
@@ -473,7 +473,7 @@ export default function MoneyLeaks() {
 
   return (
     <div className="space-y-5 max-w-2xl mx-auto md:max-w-none animate-fade-in pb-24">
-      <SEO title="Money Leaks" description="Find recurring charges, duplicate subscriptions, and small leaks draining your budget with EZZ BILLZ." path="/money-leaks" />
+      <SEO title="Money Leaks" description="Find recurring charges, duplicate subscriptions, and small leaks draining your budget with EZZ BILL." path="/money-leaks" />
 
       {/* Header + month selector */}
       <div className="flex items-center justify-between gap-3">

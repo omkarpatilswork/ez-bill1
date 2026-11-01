@@ -84,7 +84,7 @@ export default function TermsAndConditions() {
             <Scale className="h-3 w-3 text-primary" />
             <span className="text-[9px] font-bold text-foreground uppercase tracking-widest">The agreement between us</span>
           </div>
-          <h1 className="text-2xl font-bold text-foreground tracking-tight">Terms at EZZ BILLZ</h1>
+          <h1 className="text-2xl font-bold text-foreground tracking-tight">Terms at EZZ BILL</h1>
           <p className="text-sm text-muted-foreground mt-2 max-w-md mx-auto leading-relaxed">
             What you can expect from us, what we expect from you, and how each feature works under the hood.
           </p>
@@ -94,7 +94,7 @@ export default function TermsAndConditions() {
         <div className="space-y-4">
           <Section icon={FileText} accent="152, 62%, 52%" title="Using the service">
             <p>
-              EZZ BILLZ helps you capture, store and understand your bills — manually, from uploads, via email scans
+              EZZ BILL helps you capture, store and understand your bills — manually, from uploads, via email scans
               or through NFC table tags. You may use it only for your own lawful personal or household record-keeping.
             </p>
             <Bullets
@@ -122,7 +122,7 @@ export default function TermsAndConditions() {
 
           <Section icon={Mail} accent="199, 78%, 55%" title="Email (Gmail) connection">
             <p>
-              If you connect Gmail, you grant EZZ BILLZ <strong className="text-foreground">read-only</strong> access
+              If you connect Gmail, you grant EZZ BILL <strong className="text-foreground">read-only</strong> access
               to find bills, subscriptions and warranty emails when you request a scan.
             </p>
             <Bullets
@@ -156,7 +156,7 @@ export default function TermsAndConditions() {
             <Bullets
               items={[
                 <>You are responsible for the names, phone numbers or emails you enter, and for having permission to share bill details with them.</>,
-                <>EZZ BILLZ tracks balances only — it does not process payments, transfer money or enforce settlements.</>,
+                <>EZZ BILL tracks balances only — it does not process payments, transfer money or enforce settlements.</>,
                 <>Friend records you add are yours to manage and delete at any time.</>,
               ]}
             />
@@ -188,7 +188,7 @@ export default function TermsAndConditions() {
 
           <Section icon={Scale} accent="199, 78%, 55%" title="No financial advice & liability">
             <p>
-              EZZ BILLZ is a record-keeping and insight tool. Amounts, leak checks, budgets and subscription totals
+              EZZ BILL is a record-keeping and insight tool. Amounts, leak checks, budgets and subscription totals
               are informational only and are not financial, tax or legal advice.
             </p>
             <Bullets

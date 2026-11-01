@@ -11,7 +11,7 @@ const SITE = "https://ezbill.live";
 
 export default function SEO({ title, description, path = "/", type = "website" }: SEOProps) {
   const url = `${SITE}${path}`;
-  const fullTitle = title.includes("EZZ BILLZ") ? title : `${title} — EZZ BILLZ`;
+  const fullTitle = title.includes("EZZ BILL") ? title : `${title} — EZZ BILL`;
   return (
     <Helmet>
       <title>{fullTitle}</title>

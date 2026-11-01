@@ -81,7 +81,7 @@ export default function PrivacyPolicy() {
             <ShieldCheck className="h-3 w-3 text-primary" />
             <span className="text-[9px] font-bold text-foreground uppercase tracking-widest">Your data, your rules</span>
           </div>
-          <h1 className="text-2xl font-bold text-foreground tracking-tight">Privacy at EZZ BILLZ</h1>
+          <h1 className="text-2xl font-bold text-foreground tracking-tight">Privacy at EZZ BILL</h1>
           <p className="text-sm text-muted-foreground mt-2 max-w-md mx-auto leading-relaxed">
             How your bills, NFC taps, emails and receipts are stored, who can see them, and how you stay in control.
           </p>
@@ -92,7 +92,7 @@ export default function PrivacyPolicy() {
           <Section icon={Receipt} accent="152, 62%, 52%" title="Bills & receipts you add">
             <p>
               Every bill you capture — a photo, a PDF, a manual entry or an SMS forward — is saved to your own
-              account in the EZZ BILLZ database. Receipt images and PDFs are stored as files that only your
+              account in the EZZ BILL database. Receipt images and PDFs are stored as files that only your
               account can open.
             </p>
             <Bullets
@@ -106,7 +106,7 @@ export default function PrivacyPolicy() {
 
           <Section icon={Mail} accent="199, 78%, 55%" title="Your email (Gmail connection)">
             <p>
-              When you connect Gmail, you grant EZZ BILLZ <strong className="text-foreground">read-only</strong> access
+              When you connect Gmail, you grant EZZ BILL <strong className="text-foreground">read-only</strong> access
               so it can find bills, subscriptions and warranty emails on your behalf.
             </p>
             <Bullets
@@ -158,7 +158,7 @@ export default function PrivacyPolicy() {
               items={[
                 <>Splits share only what you choose: the friend names, phone numbers or emails you enter, and the amounts you assign.</>,
                 <>NFC tags share only the pending bill photo with whoever taps that physical tag.</>,
-                <>The EZZ BILLZ team does not browse your bills. Team access is limited to operating, securing and supporting the service.</>,
+                <>The EZZ BILL team does not browse your bills. Team access is limited to operating, securing and supporting the service.</>,
               ]}
             />
           </Section>
