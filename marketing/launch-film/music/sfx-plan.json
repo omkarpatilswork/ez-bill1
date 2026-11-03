@@ -1,0 +1,209 @@
+{
+ "fps": 60,
+ "bpm": 120,
+ "key": "C",
+ "seed": 5615,
+ "cues": [
+  {
+   "kind": "pop",
+   "variant": "tiny",
+   "frame": 15,
+   "label": "receipt 4"
+  },
+  {
+   "kind": "pop",
+   "variant": "tiny",
+   "frame": 45,
+   "label": "receipt 5"
+  },
+  {
+   "kind": "pop",
+   "variant": "tiny",
+   "frame": 60,
+   "label": "receipt 6"
+  },
+  {
+   "kind": "pop",
+   "variant": "tiny",
+   "frame": 75,
+   "label": "receipt 7"
+  },
+  {
+   "kind": "pop",
+   "variant": "tiny",
+   "frame": 90,
+   "label": "receipt 8"
+  },
+  {
+   "kind": "pop",
+   "variant": "tiny",
+   "frame": 105,
+   "label": "receipt 9"
+  },
+  {
+   "kind": "pop",
+   "variant": "tiny",
+   "frame": 120,
+   "label": "receipt 10"
+  },
+  {
+   "kind": "pop",
+   "variant": "tiny",
+   "frame": 135,
+   "label": "receipt 11"
+  },
+  {
+   "kind": "pop",
+   "variant": "tiny",
+   "frame": 150,
+   "label": "receipt 12"
+  },
+  {
+   "kind": "pop",
+   "variant": "tiny",
+   "frame": 165,
+   "label": "receipt 13"
+  },
+  {
+   "kind": "pop",
+   "variant": "tiny",
+   "frame": 180,
+   "label": "receipt 14"
+  },
+  {
+   "kind": "pop",
+   "variant": "tiny",
+   "frame": 195,
+   "label": "receipt 15"
+  },
+  {
+   "kind": "pop",
+   "variant": "tiny",
+   "frame": 210,
+   "label": "receipt 16"
+  },
+  {
+   "kind": "riser",
+   "variant": "soft",
+   "frame": 240,
+   "label": "build into the leak",
+   "beats": 4
+  },
+  {
+   "kind": "impact",
+   "variant": "boom",
+   "frame": 240,
+   "label": "₹5,615 lands"
+  },
+  {
+   "kind": "swish",
+   "variant": "out",
+   "frame": 422,
+   "label": "card leaves",
+   "gainDb": 3
+  },
+  {
+   "kind": "pop",
+   "variant": "cork",
+   "frame": 443,
+   "label": "Myntra lands",
+   "gainDb": 3
+  },
+  {
+   "kind": "pop",
+   "variant": "cork",
+   "frame": 472,
+   "label": "ChatGPT Plus lands",
+   "gainDb": 3
+  },
+  {
+   "kind": "pop",
+   "variant": "cork",
+   "frame": 505,
+   "label": "Blinkit lands",
+   "gainDb": 3
+  },
+  {
+   "kind": "pop",
+   "variant": "cork",
+   "frame": 533,
+   "label": "Netflix lands",
+   "gainDb": 3
+  },
+  {
+   "kind": "swish",
+   "variant": "in",
+   "frame": 653,
+   "label": "rows arrive"
+  },
+  {
+   "kind": "tick",
+   "variant": "ui",
+   "frame": 674,
+   "label": "Shopping over",
+   "gainDb": 4
+  },
+  {
+   "kind": "tick",
+   "variant": "ui",
+   "frame": 689,
+   "label": "Subscriptions over",
+   "gainDb": 4
+  },
+  {
+   "kind": "tick",
+   "variant": "ui",
+   "frame": 704,
+   "label": "Misc over",
+   "gainDb": 4
+  },
+  {
+   "kind": "pop",
+   "variant": "tiny",
+   "frame": 774,
+   "label": "Shopping singled out"
+  },
+  {
+   "kind": "swish",
+   "variant": "in",
+   "frame": 840,
+   "label": "button lifts"
+  },
+  {
+   "kind": "press",
+   "variant": "confirm",
+   "frame": 876,
+   "label": "Fix My Biggest Leak"
+  },
+  {
+   "kind": "swish",
+   "variant": "in",
+   "frame": 897,
+   "label": "Shopping opens"
+  },
+  {
+   "kind": "chime",
+   "variant": "sparkle",
+   "frame": 961,
+   "label": "₹ starts counting"
+  },
+  {
+   "kind": "chime",
+   "variant": "glint",
+   "frame": 1026,
+   "label": "₹32,952 lands"
+  },
+  {
+   "kind": "chime",
+   "variant": "bell",
+   "frame": 1202,
+   "label": "end card"
+  },
+  {
+   "kind": "pop",
+   "variant": "tiny",
+   "frame": 1320,
+   "label": "link pulse"
+  }
+ ]
+}
