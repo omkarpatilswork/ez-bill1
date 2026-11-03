@@ -21,4 +21,4 @@ bash ~/.claude/skills/take-one/scripts/mux-audio.sh out/picture.mp4 music/mix.wa
 All figures in the film are demo data and are labelled as such on screen.
 
 ## Take two
-`ezz-bill-take-two.mp4` (30 s) follows the owner's note: Gmail import, Smart Split, Subscriptions, Warranties, the concierge (Support Hub) and Money Leaks, each on the app's own screen. Page: `take-two/film.html`; music: `music/leak2.mjs` (`--seconds 31.85`, trimmed to 30 s); effects: `music/sfx-plan2.json`.
+`ezz-bill-take-two.mp4` (30 s) follows the owner's note: Gmail import, Smart Split, Subscriptions, Warranties, the concierge (Support Hub) and Money Leaks, each on the app's own screen. Page: `film-take-two.html` (render with `FILM=film-take-two.html W=1080 H=1920 bash ~/.claude/skills/take-one/scripts/render-parallel.sh 60 30 out/picture2.mp4 3`); music: `music/leak2.mjs` (`--seconds 31.85`, trimmed to 30 s); effects: `music/sfx-plan2.json`.
