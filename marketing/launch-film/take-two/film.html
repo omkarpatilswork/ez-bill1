@@ -1,0 +1,195 @@
+<!doctype html><html><head><meta charset="utf-8"><title>EZZ BILL launch film, take two</title>
+<style>
+@font-face{font-family:Inter;font-weight:500;src:url(node_modules/@fontsource/inter/files/inter-latin-ext-500-normal.woff2);unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+@font-face{font-family:Inter;font-weight:500;src:url(node_modules/@fontsource/inter/files/inter-latin-500-normal.woff2);unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:Inter;font-weight:600;src:url(node_modules/@fontsource/inter/files/inter-latin-ext-600-normal.woff2);unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+@font-face{font-family:Inter;font-weight:600;src:url(node_modules/@fontsource/inter/files/inter-latin-600-normal.woff2);unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:Inter;font-weight:700;src:url(node_modules/@fontsource/inter/files/inter-latin-ext-700-normal.woff2);unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+@font-face{font-family:Inter;font-weight:700;src:url(node_modules/@fontsource/inter/files/inter-latin-700-normal.woff2);unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:Inter;font-weight:800;src:url(node_modules/@fontsource/inter/files/inter-latin-ext-800-normal.woff2);unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+@font-face{font-family:Inter;font-weight:800;src:url(node_modules/@fontsource/inter/files/inter-latin-800-normal.woff2);unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+html,body{margin:0;background:#0b0d0c}canvas{display:block;height:100vh;width:auto;margin:0 auto}
+</style>
+<script src="springs.js"></script></head><body><canvas id="c"></canvas><script>
+/* EZZ BILL launch film, 9:16, 24.5 s. Every frame is a pure function of t.
+   BAN LIST (directed-look.md): no glow orbs or colour clouds, no purple/blue gradients, no drifting particles,
+   no generic rounded cards standing in for the product (the product pieces are the app's own captures),
+   no everything-pops-with-overshoot, no karaoke boxes, no full stops on screen, no one layout for every beat.
+   The app screens are real captures of the app's own code running on demo data (assets/real, 5x).
+   Take two: rupee-scale chart, cropped leak card, bills as a stack, lifted button, centred payoff with a 12-month count. */
+const W=1080,H=1920,c=document.getElementById('c');c.width=W;c.height=H;let g=c.getContext('2d');const G0=g;
+const OFF=document.createElement('canvas');OFF.width=W;OFF.height=H;const OG=OFF.getContext('2d');   // the payoff is drawn here, then pushed in as one picture (no glyph snapping)
+
+   // 17.08: the count lands on ₹32,952 with its glint (a designed hit)
+const C={bg:'#0E1110',card:'#171C1A',raised:'#1B2220',line:'#2A322F',ink:'#F4F4F1',mute:'#83958F',dim:'#5E6F69',green:'#31815C',ok:'#2E9E6A',gold:'#E6AC19',red:'#BB2A2A',redT:'#E05252'};
+const T={collapse:3.72,drop:4.0,notice:4.35,bills:7.0,chart:10.5,focus:12.9,tap:14.0,press:14.6,detail:14.95,keep:16.0,end:20.0};
+const U=(t,p='snappy')=>Spring.unit(Math.max(0,t),p);
+const clamp=(x,a=0,b=1)=>Math.max(a,Math.min(b,x));
+const lerp=(a,b,k)=>a+(b-a)*k;
+const easeOut=k=>1-Math.pow(1-clamp(k),3), easeIn=k=>Math.pow(clamp(k),3), easeIO=k=>{k=clamp(k);return k<.5?4*k*k*k:1-Math.pow(-2*k+2,3)/2};
+const rr=(x,y,w,h,r)=>{g.beginPath();g.roundRect(x,y,w,h,r)};
+const font=(px,wt=800)=>{g.font=`${wt} ${px}px Inter`};
+const text=(s,x,y,px,col,wt=800,al='left',track=null)=>{font(px,wt);g.fillStyle=col;g.textAlign=al;g.textBaseline='alphabetic';g.letterSpacing=(track==null?(px>=80?-0.025*px:0):track)+'px';g.fillText(s,x,y);g.letterSpacing='0px'};
+const goldGrad=(x0,x1,sweep=-1)=>{const gr=g.createLinearGradient(x0,0,x1,0);gr.addColorStop(0,'#EBBC47');gr.addColorStop(.55,'#CF9B17');gr.addColorStop(1,'#E69019');
+  if(sweep>-0.2&&sweep<1.2){const a=clamp(sweep-0.12),b=clamp(sweep),d=clamp(sweep+0.12);gr.addColorStop(a,'#E2A824');gr.addColorStop(b,'#FFE7A3');gr.addColorStop(d,'#D99A1A')}return gr};
+const icon=(paths,x,y,s,col,lw=2)=>{g.save();g.translate(x,y);g.scale(s/24,s/24);g.strokeStyle=col;g.lineWidth=lw;g.lineCap='round';g.lineJoin='round';paths.forEach(d=>g.stroke(new Path2D(d)));g.restore()};
+const MAIL=['M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z','m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7'];
+const CAMERA=['M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z','M15 13a3 3 0 1 1-6 0 3 3 0 0 1 6 0z'];
+const RECEIPT=['M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z','M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8','M12 17.5v-11'];
+const inr=n=>'₹'+Math.round(n).toLocaleString('en-IN');
+
+/* ---------- assets: real app captures (demo data) ---------- */
+const IMG={};const load=(k,src)=>new Promise(r=>{const i=new Image();i.onload=()=>{IMG[k]=i;r()};i.onerror=()=>{console.error('missing '+src);r()};i.src=src});
+const ASSETS={imp:'assets/real/screen-import.png',split:'assets/real/screen-split.png',subs:'assets/real/screen-subs.png',war:'assets/real/screen-warranty.png',sup:'assets/real/screen-support.png',hero:'assets/real/leak-hero.png',lk:'assets/real/leaks-screen.png'};
+const HERO_CROP=870;
+window.FILM_DURATION=30.0;
+window.CUTS=[4.0,26.0];
+const T2={collapse:3.72,drop:4.0,split:8.0,subs:11.5,war:15.0,conc:18.5,leak:22.0,end:26.0};
+/* ---------- headline: one place top-left for the setup beats; fades up, never clipped ---------- */
+const HX=84,HY=[352,476];let HS=112;
+const HEADS=[
+  {t0:-1,t1:2.0,l:[['UPI solved',C.ink],['payments',C.ink]]},
+  {t0:2.0,t1:3.84,l:[['Nothing solved',C.ink],['what comes after',C.gold]]},
+  {t0:4.3,t1:7.95,l:[['EZZ BILL pulls','gold'],['bills from Gmail',C.ink]]},
+  {t0:8.0,t1:11.45,l:[['Split by item,',C.ink],['not by guess',C.gold]]},
+  {t0:11.5,t1:14.95,l:[['Catch every',C.ink],['subscription',C.gold]]},
+  {t0:15.0,t1:18.45,l:[['Warranties,',C.ink],['kept for you',C.gold]]},
+  {t0:18.5,t1:21.95,l:[['A concierge for',C.ink],['help & support',C.gold]]},
+  {t0:22.0,t1:25.9,l:[['And see where',C.ink],['money leaks',C.redT]]},
+];
+function fitHeads(){font(100,800);g.letterSpacing='-2.5px';let m=0;HEADS.forEach(h=>h.l.forEach(([s])=>m=Math.max(m,g.measureText(s).width)));g.letterSpacing='0px';HS=Math.min(112,Math.floor(100*900/m))}
+function heads(t){
+  for(const h of HEADS){if(t<h.t0||t>h.t1)continue;const out=easeIn((t-(h.t1-0.18))/0.18);
+    h.l.forEach(([s,col],i)=>{const k=easeOut((t-h.t0-0.1*i)/0.32);if(k<=0)return;
+      g.globalAlpha=k*(1-out);text(s,HX,HY[i]+(1-k)*34-out*24,HS,col==='gold'?goldGrad(HX,HX+560):col);g.globalAlpha=1})}
+}
+
+/* ---------- 1-2: Gmail receipt notifications arrive faster and faster (no SMS) ---------- */
+const NOTES=[[-1.5,'Swiggy','₹486.00','Order receipt'],[-1.2,'Urban Company','₹1,499.00','Service receipt'],[-.9,'Zomato','₹529.00','Order receipt'],[-.6,'Uber','₹284.00','Trip receipt'],[-.3,'Spotify','₹119.00','Subscription renewed'],
+ [.25,'Swiggy','₹358.00','Order receipt'],[.75,'Zepto','₹489.00','Order receipt'],[1.0,'Rapido','₹89.00','Ride receipt'],[1.25,'YouTube Premium','₹149.00','Subscription renewed'],
+ [1.5,'Ola','₹245.00','Trip receipt'],[1.75,'Prime Video','₹299.00','Subscription renewed'],[2.0,'Blinkit','₹986.00','Order receipt'],[2.25,'Netflix','₹649.00','Subscription renewed'],
+ [2.5,'Swiggy','₹612.00','Order receipt'],[2.75,'Airtel','₹599.00','Recharge successful'],[3.0,'Disney+ Hotstar','₹299.00','Subscription renewed'],[3.125,'Zomato','₹744.00','Order receipt'],
+ [3.25,'Blue Tokai Coffee','₹412.00','Payment receipt'],[3.375,'Myntra','₹2,499.00','Order confirmed'],[3.5,'Amazon','₹1,899.00','Order confirmed'],[3.5625,'Zepto','₹642.00','Order receipt'],[3.625,'Uber','₹312.00','Trip receipt']];
+function note(n,x,y,s,a){const [,who,amt,sub]=n,w=912,h=156;
+  g.save();g.globalAlpha=a;g.translate(x,y);g.scale(s,s);
+  rr(-w/2,-h/2,w,h,36);g.fillStyle='#E9ECE8';g.fill();
+  rr(-w/2+26,-48,96,96,26);g.fillStyle='#FFFFFF';g.fill();g.strokeStyle='#D3D9D5';g.lineWidth=2;g.stroke();icon(MAIL,-w/2+26+22,-26,52,'#D9452B',2.2);
+  text(who,-w/2+148,-6,46,'#121514',700);text(amt,w/2-32,-6,46,'#121514',700,'right');
+  text('Gmail · '+sub,-w/2+148,44,34,'#56625D',500);g.restore()}
+function pile(t){
+  const col=clamp((t-T2.collapse)/(T2.drop-T2.collapse)),gap=176;
+  g.save();g.beginPath();g.rect(0,548,W,H-548);g.clip();
+  NOTES.forEach((n,idx)=>{if(n[0]>t+0.0001)return;
+    let slot=0;for(let j=idx+1;j<NOTES.length;j++)slot+=U(t-NOTES[j][0],'snappy');
+    const born=U(t-n[0],'snappy');const cz=1+0.025*clamp(t/3.7);
+    let x=540,y=640+slot*gap-(1-born)*gap,s=cz;y=900+(y-900)*cz;
+    let a=clamp(1-(y-1360)/120)*clamp((y-540)/110);          // fades in under the top edge instead of a hard line
+    if(col>0){const k=easeIn(col);x=lerp(x,540,k);y=lerp(y,1250,k);s*=lerp(1,0.04,k);a*=1-k*0.5}
+    if(a>0.01)note(n,x,y,s,a)});
+  g.restore();
+}
+
+function leakCard(t,t0,a=1){const im=IMG.hero;if(!im)return;const k=U(t-t0,'camera');
+  const w0=912*lerp(0.4,1,k),push=1+0.06*clamp((t-t0-0.12)/3.88);
+  const f=w0/im.width*push,cw=im.width*f,ch=HERO_CROP*f,cx=540,cy=830+(1-k)*30,x=cx-cw/2,y=cy-ch/2;
+  g.save();g.globalAlpha=a*clamp(k*2.5);rr(x,y,cw,ch,24*5*f);g.clip();g.drawImage(im,0,0,im.width,HERO_CROP,x,y,cw,ch);g.restore();
+  g.save();g.globalAlpha=a*clamp(k*2.5);rr(x+1,y+1,cw-2,ch-2,24*5*f);g.strokeStyle='rgba(187,42,42,0.45)';g.lineWidth=2;g.stroke();g.restore();g.globalAlpha=1}
+function chip(kind,xr,y,a){const lab=kind==='mail'?'Gmail · read-only':'Receipt scan';font(40,600);const w=g.measureText(lab).width+112,h=78,x=xr-w;
+  g.globalAlpha=a;rr(x,y,w,h,39);g.fillStyle=kind==='mail'?'#F4F4F1':'#1F3A2D';g.fill();
+  icon(kind==='mail'?MAIL:CAMERA,x+24,y+19,40,kind==='mail'?'#D9452B':'#9FD8BC',2.2);
+  text(lab,x+78,y+53,40,kind==='mail'?'#1D2320':C.ink,600);g.globalAlpha=1}
+function finger(x,y,t0,t){const k=t-t0;if(k<-0.45||k>0.4)return;
+  const appear=clamp((k+0.45)/0.42),press=k>=0?Math.exp(-k*6):0,lift=clamp((k-0.18)/0.2);
+  const dx=(1-easeOut(appear))*90,dy=(1-easeOut(appear))*140,r=46*(1-0.18*press);g.globalAlpha=appear*(1-lift);g.beginPath();g.arc(x+dx,y+dy,r,0,7);g.fillStyle='rgba(244,244,241,0.28)';g.fill();g.lineWidth=4;g.strokeStyle='rgba(244,244,241,0.95)';g.stroke();
+  if(k>0){g.globalAlpha=0.6*(1-clamp(k/0.5));g.strokeStyle='#F4F4F1';g.lineWidth=5;g.beginPath();g.arc(x,y,62+k*220,0,7);g.stroke()}g.globalAlpha=1}
+
+
+/* ---------- a phone holding one of the app's real screens ---------- */
+const PH={w:760,top:640,scr:724};
+function phone(im,t,t0,anchor,zoom,scroll=0,a=1){if(!im)return null;const k=U(t-t0,'snappy');
+  const f0=PH.scr/im.width,sx=540-PH.scr/2,sy=PH.top+64-scroll*f0;
+  const nx=sx+anchor.x*f0,ny=PH.top+64+anchor.y*f0,z=zoom,rise=(1-k)*700;
+  g.save();g.globalAlpha=a*clamp(k*3);g.translate(nx,ny+rise);g.scale(z,z);g.translate(-nx,-ny);
+  const bx=540-PH.w/2,by=PH.top-18;rr(bx,by,PH.w,1500,96);g.fillStyle='#050606';g.fill();g.strokeStyle='#33403B';g.lineWidth=3;g.stroke();
+  g.save();rr(sx,PH.top,PH.scr,1460,80);g.clip();g.fillStyle=C.bg;g.fillRect(sx,PH.top,PH.scr,1460);
+  g.drawImage(im,sx,sy,PH.scr,im.height*f0);
+  g.fillStyle=C.bg;g.fillRect(sx,PH.top,PH.scr,62);
+  text('9:41',sx+64,PH.top+44,28,C.ink,600,'left',0);rr(540-74,PH.top+14,148,40,20);g.fillStyle='#000';g.fill();
+  g.fillStyle=C.ink;rr(sx+PH.scr-96,PH.top+24,44,20,6);g.fill();
+  g.restore();g.restore();g.globalAlpha=1;
+  return (px,py)=>[nx+(sx+px*f0-nx)*z,ny+rise+(sy+py*f0-ny)*z];
+}
+
+/* ---------- a window onto part of a real screen, lifted out of the phone ---------- */
+function windowOnto(im,sx0,sy0,sw,sh,dx,dy,dw,a=1,fe=0){if(!im)return;const f=dw/sw,dh=sh*f;
+  g.save();g.globalAlpha=a;rr(dx,dy,dw,dh,28);g.clip();g.drawImage(im,sx0,sy0,sw,sh,dx,dy,dw,dh);
+  if(fe>0){const gt=g.createLinearGradient(0,dy,0,dy+fe);gt.addColorStop(0,C.bg);gt.addColorStop(1,'rgba(14,17,16,0)');g.fillStyle=gt;g.fillRect(dx,dy,dw,fe);
+    const gb=g.createLinearGradient(0,dy+dh-fe,0,dy+dh);gb.addColorStop(0,'rgba(14,17,16,0)');gb.addColorStop(1,C.bg);g.fillStyle=gb;g.fillRect(dx,dy+dh-fe,dw,fe)}
+  g.restore();g.globalAlpha=1}
+
+/* 4-8: Gmail synced */
+function shotGmail(t){const out=easeIn((t-(T2.split-0.3))/0.3);if(out>=1)return;
+  const zp=clamp((t-4.0)/4.0),z=1+0.26*(zp*(2-zp));
+  g.save();g.translate(0,out*90);
+  phone(IMG.imp,t,3.55,{x:1075,y:300},z,0,1-out);
+  g.restore();const kc=U(t-5.0,'snappy');if(kc>0)chip('mail',84+460,530+(1-kc)*16,clamp(kc*1.5)*(1-out))}
+
+/* 8-11.5: Smart Split, row by row, then who pays what */
+function shotSplit(t){const im=IMG.split;if(!im||t<T2.split-0.05)return;const kin=U(t-T2.split,'camera'),out=easeIn((t-(T2.subs-0.3))/0.3);if(out>=1)return;
+  const rowH=450,revealH=[8.3,8.6,8.9,9.2].reduce((acc,x)=>acc+rowH*U(t-x,'snappy'),0);
+  const pan=easeIO((t-9.5)/0.9),top=lerp(1100,2470,pan),sh=lerp(Math.min(revealH+20,1800),1700,pan);
+  const dw=912,dy=600+(1-kin)*200;
+  const cz=1+0.05*clamp((t-T2.split)/3.5);g.save();g.translate(-out*320,0);g.translate(540,900);g.scale(cz,cz);g.translate(-540,-900);
+  windowOnto(im,80,top,1990,Math.max(10,sh),84,dy,dw,clamp(kin*2)*(1-out),pan>0&&pan<1?70:0);g.restore()}
+
+/* 11.5-15: Subscriptions found in the inbox */
+function shotSubs(t){const im=IMG.subs;if(!im||t<T2.subs-0.05)return;const kin=U(t-T2.subs,'camera'),out=easeIn((t-(T2.war-0.3))/0.3);if(out>=1)return;
+  const a=clamp(kin*2)*(1-out),dx=84+(1-kin)*260;
+  windowOnto(im,80,400,1990,960,dx,600,912,a);
+  const sc=easeIO((t-12.3)/2.5)*1300;
+  windowOnto(im,80,1600+sc,1990,1500,dx,1070,912,a*clamp((t-T2.subs-0.35)/0.3),90)}
+
+/* 15-18.5: Warranties land */
+function shotWar(t){const im=IMG.war;if(!im||t<T2.war-0.05)return;const out=easeIn((t-(T2.conc-0.3))/0.3);if(out>=1)return;
+  const gz=1+0.07*clamp((t-15.5)/3.0);g.save();g.translate(540,1030);g.scale(gz,gz);g.translate(-540,-1030);
+  [[1520,720,15.3,-1.2],[2325,720,15.8,1.0]].forEach(([sy,sh,t0,tilt],i)=>{const k=U(t-t0,'snappy');if(k<=0)return;
+    const dw=912,dh=sh*dw/1990,cy=i===0?820:1220,y=cy-dh/2+(1-k)*180,cz=1+0.02*clamp((t-t0)/3);
+    g.save();g.translate(540,cy);g.rotate((1-k)*tilt*Math.PI/180*3);g.scale(cz,cz);g.translate(-540,-cy);
+    windowOnto(im,80,sy,1990,sh,84,y,dw,clamp(k*2)*(1-out));g.restore()});g.restore()}
+
+/* 18.5-22: the concierge: the Support Hub scrolls, one merchant tapped */
+function shotConc(t){const out=easeIn((t-(T2.leak-0.3))/0.3);if(out>=1)return;
+  const zq=clamp((t-18.9)/3.3),z=1+0.24*(zq*(2-zq));
+  g.save();g.translate(0,out*90);
+  phone(IMG.sup,t,T2.conc,{x:1075,y:1400},z,0,1-out);
+  g.restore()}
+/* ---------- 8: end card ---------- */
+function endCard(t){const k=t-T2.end;if(k<0)return;
+  const ks=U(k,'heavy'),a=clamp(k/0.2);
+  g.globalAlpha=a;const ts=230*lerp(0.7,1,ks);rr(540-ts/2,600-ts/2,ts,ts,ts*0.25);g.fillStyle=C.green;g.fill();icon(RECEIPT,540-ts*0.28,600-ts*0.28,ts*0.56,'#FFFFFF',2);
+  const k2=clamp((k-0.1)/0.3);g.globalAlpha=easeOut(k2);text('EZZ BILL',540,920+(1-easeOut(k2))*30,176,goldGrad(160,920,(k-1.2)/0.9),800,'center',-5);
+  const k3=clamp((k-0.25)/0.3);g.globalAlpha=easeOut(k3);text('Every bill, handled',540,1060,66,C.ink,600,'center',0);
+  const k4=clamp((k-0.35)/0.3);g.globalAlpha=easeOut(k4);const pulse=1+0.045*U(k-2.0,'playful')*Math.exp(-Math.max(0,k-2.0)*2.2);
+  font(84,800);const lw=(g.measureText('ezzbill.com').width+120)*pulse,lh=140*pulse;
+  rr(540-lw/2,1240-lh/2,lw,lh,lh/2);g.fillStyle=C.green;g.fill();text('ezzbill.com',540,1240+30*pulse,84*pulse,'#FFFFFF',800,'center',-1);g.globalAlpha=1}
+
+function demoLabel(t){const a=clamp((25.7-t)/0.3);if(a<=0)return;g.globalAlpha=a;text('Demo data',84,214,32,C.dim,600,'left',0);g.globalAlpha=1}
+
+
+window.renderFrame=t=>{g=G0;g.setTransform(1,0,0,1,0,0);g.globalAlpha=1;g.globalCompositeOperation='source-over';g.filter='none';g.letterSpacing='0px';
+  g.fillStyle=C.bg;g.fillRect(0,0,W,H);
+  if(t>=3.5&&t<T2.split)shotGmail(t);
+  if(t<T2.drop)pile(t);
+  if(t>=T2.split-0.06&&t<T2.subs)shotSplit(t);
+  if(t>=T2.subs-0.06&&t<T2.war)shotSubs(t);
+  if(t>=T2.war-0.06&&t<T2.conc)shotWar(t);
+  if(t>=T2.conc-0.06&&t<T2.leak)shotConc(t);
+  if(t>=T2.leak-0.06&&t<T2.end){const out=easeIn((t-(T2.end-0.3))/0.3);leakCard(t,T2.leak,1-out);
+    const kr=U(t-23.0,'camera');if(kr>0){const sc=easeIO((t-23.4)/2.4)*260;windowOnto(IMG.lk,80,2560+sc,1990,1020,84,1090+(1-kr)*120,912,clamp(kr*2)*(1-out),60)}}
+  if(t>=T2.end){const cz=1+0.03*clamp((t-T2.end)/4);g.save();g.translate(540,940);g.scale(cz,cz);g.translate(-540,-940);endCard(t);g.restore()}
+  if(t<T2.end)heads(t);
+  demoLabel(t);
+};
+Promise.all([...Object.entries(ASSETS).map(([k,s])=>load(k,s)),...[500,600,700,800].map(w=>document.fonts.load(w+' 60px Inter','₹A'))])
+ .then(()=>document.fonts.ready).then(()=>{fitHeads();window.READY=true;if(navigator.webdriver)return;let s=performance.now();const loop=n=>{window.renderFrame(((n-s)/1000)%window.FILM_DURATION);requestAnimationFrame(loop)};requestAnimationFrame(loop)});
+</script></body></html>

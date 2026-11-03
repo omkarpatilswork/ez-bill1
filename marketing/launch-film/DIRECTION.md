@@ -43,3 +43,15 @@ Round 2 → v3: the leak arrives inside a phone on the app's real Money Leaks sc
 > "The app features like - sync gmail to auto fetch your bills, smart itemized item split, track your subscriptions, store your warranties, concierge for help and support are also important infact more than money leaks"
 
 Direction change for take two: the film carries the product's range (Gmail sync, itemised split, subscriptions, warranties, support), with Money Leaks as one beat, not the whole story.
+
+## Take two (owner's note: show the range of features)
+Storyboard approved: Gmail sync → Smart Split → Subscriptions → Warranties → concierge (Support Hub) → Money Leaks → end card "Every bill, handled", 30 s. Captured from the app's own code on demo data (Import Bills, Smart Split, Subscriptions, Warranties, Support Hub).
+
+| Review | Hook | 360px | Motion | Variety | Composition | Data | Sound | Overall | Verdict |
+|---|---|---|---|---|---|---|---|---|---|
+| T2 r1 | 6 | 7 | 7 | 5 | 6 | 7 | 7 | 6 | RETURN |
+| T2 r2 (after fixes) | 6 | 7 | 6 | 4 | 5 | 8 | 8 | 5 | RETURN |
+
+r1 → r2 fixes: headline now matches the screen ("pulls bills from Gmail", not "syncs"); taps that led nowhere removed; receipts pour onto the rising phone; window edges fade instead of slicing rows; subscription start dates varied; margins aligned; leak divider removed; the app's "Where Your Money Leaks" rows under the leak card.
+Stalled (6 → 5): delivered to the owner with the open problems rather than a third round. Reviewer's main point: the same headline-plus-crop frame repeats for every feature.
+App-side findings worth passing on: the logo icon (lucide "receipt") shows a $ sign on a rupee product (lucide has "receipt-indian-rupee"); the Import Bills screen shows "Auto-sync is off" and a dollar AI-cost estimate to users.
