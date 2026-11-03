@@ -92,7 +92,6 @@ export default function MonthlySummary() {
       .from('expenses')
       .select('*')
       .eq('user_id', user.id)
-      .neq('status', 'draft')
       .gte('expense_date', monthStart)
       .lte('expense_date', monthEnd)
       .order('expense_date', { ascending: false })
