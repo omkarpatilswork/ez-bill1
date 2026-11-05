@@ -385,3 +385,36 @@
   .receipt-unroll { animation: none; }
   .receipt-sheen::after { animation: none; opacity: 0; }
 }
+
+/* ━━━ Mobile density: smaller type & tighter screens on phones ━━━ */
+@media (max-width: 640px) {
+  /* Scales every rem-based font size, padding and gap ~6% tighter */
+  html {
+    font-size: 15px;
+  }
+
+  /* Cap the largest display sizes so heroes don't eat the small screen */
+  .text-5xl,
+  .text-4xl {
+    font-size: 1.75rem !important;
+    line-height: 1.15 !important;
+  }
+  .text-3xl {
+    font-size: 1.45rem !important;
+    line-height: 1.2 !important;
+  }
+  .text-2xl {
+    font-size: 1.25rem !important;
+    line-height: 1.25 !important;
+  }
+  .text-xl {
+    font-size: 1.1rem !important;
+    line-height: 1.35 !important;
+  }
+
+  /* Tighter card interiors on phones */
+  .glass-card,
+  .glass-card-hover {
+    border-radius: 1rem;
+  }
+}
