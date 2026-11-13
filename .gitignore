@@ -45,3 +45,6 @@ eval/bills/
 
 # Local tool installs (scripts/dev/install-pg-tools.sh)
 .tools/
+
+# Screenshots written by scripts/screens/capture.mjs
+scripts/screens/out/
