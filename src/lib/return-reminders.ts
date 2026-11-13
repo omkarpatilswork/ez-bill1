@@ -31,6 +31,10 @@ function writeAll(map: Record<string, ReturnReminder>) {
   }
 }
 
+export function listReminders(): ReturnReminder[] {
+  return Object.values(readAll());
+}
+
 export function getReminder(expenseId: string): ReturnReminder | null {
   return readAll()[expenseId] || null;
 }
