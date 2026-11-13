@@ -12,8 +12,12 @@
  *   LLM_API_KEY         required. A Gemini API key by default.
  *   LLM_PROVIDER        "gemini" (default) or "openai-compatible".
  *   LLM_BASE_URL        openai-compatible only. Default https://api.openai.com/v1.
- *   LLM_MODEL           model for every tier. Gemini default: "gemini-flash-latest",
- *                       Google's rolling alias for its current Flash model.
+ *   LLM_MODEL           model for every tier. Gemini default: "gemini-3.6-flash".
+ *   LLM_MODEL_FALLBACKS comma-separated models tried in order when the chosen one is
+ *                       overloaded, rate-limited, failing or gone (HTTP 429, 5xx, 404).
+ *                       Gemini default: "gemini-3.5-flash,gemini-flash-lite-latest" (the
+ *                       last is Google's rolling alias, so something always resolves).
+ *                       Set to "none" to switch fallbacks off.
  *   LLM_MODEL_TEXT      override for text-only extraction (email bodies, SMS, statements).
  *   LLM_MODEL_VISION    override for photos and PDFs of bills and warranty cards.
  *   LLM_MODEL_CHAT      override for Ask AI, merchant support and subscription pricing.
@@ -55,15 +59,25 @@ export interface LlmConfig {
   baseUrl: string;
   models: Record<Tier, string>;
   fallbackModel: string | null;
+  fallbacks: string[];
 }
 
 type Env = (name: string) => string | undefined;
 
 const GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta";
+// Checked 13 Nov 2026 against the live API: gemini-flash-latest, 3.8 and 3.7 Flash were
+// returning 503 "high demand"; 3.6 and 3.5 Flash answered in ~1.5 s; gemini-2.5-flash
+// returned 404 "no longer available to new users".
 const DEFAULT_MODEL: Record<Provider, string> = {
-  gemini: "gemini-flash-latest",
+  gemini: "gemini-3.6-flash",
   "openai-compatible": "gpt-5-mini",
 };
+const DEFAULT_FALLBACKS: Record<Provider, string[]> = {
+  gemini: ["gemini-3.5-flash", "gemini-flash-lite-latest"],
+  "openai-compatible": [],
+};
+/** Statuses that mean "try another model": rate limit/quota, server trouble, model gone. */
+const RETRY_STATUSES = new Set([404, 429, 500, 502, 503, 504]);
 
 const denoEnv: Env = (name) =>
   (globalThis as { Deno?: { env: { get(n: string): string | undefined } } }).Deno?.env.get(name);
@@ -85,7 +99,15 @@ export function llmConfig(env: Env = denoEnv): LlmConfig {
       chat: nonEmpty(env("LLM_MODEL_CHAT")) ?? base,
     },
     fallbackModel: nonEmpty(env("LLM_MODEL_FALLBACK")) ?? null,
+    fallbacks: parseFallbacks(env("LLM_MODEL_FALLBACKS"), DEFAULT_FALLBACKS[provider]),
   };
+}
+
+function parseFallbacks(raw: string | undefined, defaults: string[]): string[] {
+  const v = nonEmpty(raw);
+  if (!v) return defaults;
+  if (v.toLowerCase() === "none") return [];
+  return v.split(",").map((m) => m.trim()).filter(Boolean);
 }
 
 /** True when an API key is set, i.e. AI calls can be attempted. */
@@ -120,7 +142,23 @@ export async function chatCompletion(
   if (!cfg.apiKey) {
     return jsonError(500, "LLM_API_KEY is not configured");
   }
-  const model = req.model ?? cfg.models[req.tier];
+  // An explicit model (extract-receipt's 400 retry) is tried alone; otherwise the tier's
+  // model, then the fallbacks, moving on only for statuses in RETRY_STATUSES.
+  const candidates = req.model
+    ? [req.model]
+    : [...new Set([cfg.models[req.tier], ...cfg.fallbacks])];
+  let res: Response | undefined;
+  for (const [i, model] of candidates.entries()) {
+    res = await callModel(cfg, model, req, doFetch);
+    if (res.ok || !RETRY_STATUSES.has(res.status) || i === candidates.length - 1) return res;
+    console.warn(`llm: ${model} returned ${res.status}; trying ${candidates[i + 1]}`);
+    await res.body?.cancel();
+  }
+  return res!;
+}
+
+async function callModel(cfg: LlmConfig, model: string, req: ChatRequest, doFetch: typeof fetch): Promise<Response> {
+  const apiKey = cfg.apiKey!;
   const native = cfg.provider === "gemini" && !req.stream && !req.tools && hasInlineMedia(req.messages);
   console.log(`llm: ${cfg.provider}${native ? " (native)" : ""} model=${model} tier=${req.tier}`);
 
@@ -133,7 +171,7 @@ export async function chatCompletion(
     }
     const res = await doFetch(`${GEMINI_BASE}/models/${encodeURIComponent(model)}:generateContent`, {
       method: "POST",
-      headers: { "x-goog-api-key": cfg.apiKey, "Content-Type": "application/json" },
+      headers: { "x-goog-api-key": apiKey, "Content-Type": "application/json" },
       body: JSON.stringify(body),
     });
     if (!res.ok) return res;
@@ -151,7 +189,7 @@ export async function chatCompletion(
   if (req.response_format) body.response_format = req.response_format;
   return doFetch(`${cfg.baseUrl}/chat/completions`, {
     method: "POST",
-    headers: { Authorization: `Bearer ${cfg.apiKey}`, "Content-Type": "application/json" },
+    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
 }
