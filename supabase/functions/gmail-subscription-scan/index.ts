@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import { chatCompletion, isLlmConfigured } from '../_shared/llm.ts';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -585,10 +586,9 @@ serve(async (req) => {
     }
 
     // AI enrichment: for any subscription where we still don't have an amount,
-    // ask Lovable AI to look up the typical monthly INR price for that service.
-    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+    // ask the AI model for the typical monthly INR price for that service.
     const needsEnrichment = results.filter(r => r.last_amount == null);
-    if (LOVABLE_API_KEY && needsEnrichment.length > 0) {
+    if (isLlmConfigured() && needsEnrichment.length > 0) {
       try {
         const list = needsEnrichment.map(r => ({
           key: r.service_key,
@@ -597,20 +597,13 @@ serve(async (req) => {
           cycle: r.billing_cycle,
         }));
         const prompt = `For each subscription service below, return its typical consumer monthly price in INR (Indian Rupees) for an individual plan. If the service bills yearly, divide by 12. Return ONLY valid JSON, no prose:\n{"prices":[{"key":"<key>","monthly_inr":<number>,"category":"<refined category like OTT/SaaS/Music/Cloud/AI/Telecom/Membership/Fitness/Gaming/Education/News/Other>"}]}\n\nServices:\n${JSON.stringify(list)}`;
-        const aiRes = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-              Authorization: `Bearer ${LOVABLE_API_KEY}`,
-          },
-          body: JSON.stringify({
-            model: 'google/gemini-3-flash-preview',
-            messages: [
-              { role: 'system', content: 'You are a pricing database. Output JSON only.' },
-              { role: 'user', content: prompt },
-            ],
-            response_format: { type: 'json_object' },
-          }),
+        const aiRes = await chatCompletion({
+          tier: 'chat',
+          messages: [
+            { role: 'system', content: 'You are a pricing database. Output JSON only.' },
+            { role: 'user', content: prompt },
+          ],
+          response_format: { type: 'json_object' },
         });
         if (aiRes.ok) {
           const aiData = await aiRes.json();

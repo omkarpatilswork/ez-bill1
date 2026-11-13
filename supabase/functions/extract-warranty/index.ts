@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { chatCompletion, isLlmConfigured } from "../_shared/llm.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -45,8 +46,7 @@ serve(async (req) => {
     const { file_base64, file_type, text_content, source_hint } = await req.json();
     if (!file_base64 && !text_content) return jsonResponse({ error: "file_base64 or text_content is required" }, 400);
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
+    if (!isLlmConfigured()) throw new Error("LLM_API_KEY is not configured");
 
     const isTextMode = !file_base64 && !!text_content;
     const mimeType = file_type || "image/png";
@@ -96,24 +96,20 @@ Rules:
           { type: "text", text: "Extract warranty info. Read any QR code URL visible. Fill in brand claim guidance. Return only JSON." },
         ];
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userContent },
-        ],
-      }),
+    const response = await chatCompletion({
+      tier: isTextMode ? "text" : "vision",
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userContent },
+      ],
     });
 
     if (!response.ok) {
       const errText = await response.text().catch(() => "");
-      console.error("AI gateway error:", response.status, errText);
+      console.error("AI provider error:", response.status, errText);
       let message = "AI extraction failed. Please fill in the details manually.";
       if (response.status === 429) message = "AI is busy. Try again in a moment.";
-      if (response.status === 402) message = "AI credits exhausted. Add funds in Settings → Workspace → Usage.";
+      if (response.status === 402) message = "AI reading is unavailable right now. Please fill in the details manually.";
       return jsonResponse({ error: message, fallback: true, upstream_status: response.status });
     }
 

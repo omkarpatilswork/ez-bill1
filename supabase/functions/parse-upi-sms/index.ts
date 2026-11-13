@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { chatCompletion, isLlmConfigured } from "../_shared/llm.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -18,8 +19,7 @@ serve(async (req) => {
       });
     }
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
+    if (!isLlmConfigured()) {
       return new Response(JSON.stringify({ error: "AI service not configured" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -49,53 +49,46 @@ Handle common formats:
 
 Return ONLY valid JSON, no markdown.`;
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: `Parse the following UPI SMS message(s) and return a JSON array of transactions:\n\n${sms_text}` },
-        ],
-        tools: [
-          {
-            type: "function",
-            function: {
-              name: "extract_upi_transactions",
-              description: "Extract UPI transactions from SMS text",
-              parameters: {
-                type: "object",
-                properties: {
-                  transactions: {
-                    type: "array",
-                    items: {
-                      type: "object",
-                      properties: {
-                        merchant_name: { type: "string" },
-                        amount: { type: "number" },
-                        date: { type: "string", description: "YYYY-MM-DD format" },
-                        upi_id: { type: "string" },
-                        transaction_id: { type: "string" },
-                        bank_name: { type: "string" },
-                        payment_status: { type: "string", enum: ["success", "failed", "pending"] },
-                        description: { type: "string" },
-                      },
-                      required: ["merchant_name", "amount", "date", "payment_status", "description"],
+    const response = await chatCompletion({
+      tier: "text",
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: `Parse the following UPI SMS message(s) and return a JSON array of transactions:\n\n${sms_text}` },
+      ],
+      tools: [
+        {
+          type: "function",
+          function: {
+            name: "extract_upi_transactions",
+            description: "Extract UPI transactions from SMS text",
+            parameters: {
+              type: "object",
+              properties: {
+                transactions: {
+                  type: "array",
+                  items: {
+                    type: "object",
+                    properties: {
+                      merchant_name: { type: "string" },
+                      amount: { type: "number" },
+                      date: { type: "string", description: "YYYY-MM-DD format" },
+                      upi_id: { type: "string" },
+                      transaction_id: { type: "string" },
+                      bank_name: { type: "string" },
+                      payment_status: { type: "string", enum: ["success", "failed", "pending"] },
+                      description: { type: "string" },
                     },
+                    required: ["merchant_name", "amount", "date", "payment_status", "description"],
                   },
                 },
-                required: ["transactions"],
-                additionalProperties: false,
               },
+              required: ["transactions"],
+              additionalProperties: false,
             },
           },
-        ],
-        tool_choice: { type: "function", function: { name: "extract_upi_transactions" } },
-      }),
+        },
+      ],
+      tool_choice: { type: "function", function: { name: "extract_upi_transactions" } },
     });
 
     if (!response.ok) {
@@ -106,13 +99,13 @@ Return ONLY valid JSON, no markdown.`;
         });
       }
       if (response.status === 402) {
-        return new Response(JSON.stringify({ error: "AI credits exhausted. Please add funds." }), {
+        return new Response(JSON.stringify({ error: "AI reading is unavailable right now. Please try again later." }), {
           status: 402,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
       const errorText = await response.text();
-      console.error("AI gateway error:", response.status, errorText);
+      console.error("AI provider error:", response.status, errorText);
       return new Response(JSON.stringify({ error: "AI processing failed" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },

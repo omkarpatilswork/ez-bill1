@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { chatCompletion, fallbackModelFor, isLlmConfigured } from "../_shared/llm.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -47,9 +48,8 @@ serve(async (req) => {
       return jsonResponse({ error: "Either file_base64+file_type or text_content is required" }, 400);
     }
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
-      throw new Error("LOVABLE_API_KEY is not configured");
+    if (!isLlmConfigured()) {
+      throw new Error("LLM_API_KEY is not configured");
     }
 
     const isTextMode = !file_base64 && !!text_content;
@@ -109,10 +109,8 @@ Rules:
 - Smart discount: if you see offers, coupons, or items with reduced/struck prices, extract the total discount amount.
 - Return ONLY the JSON object. No markdown, no explanation.`;
 
-    const isPdf = mimeType === "application/pdf";
-
-    // Text emails → fast text model. PDFs → GPT-5-mini. Images → Gemini Flash.
-    const model = isTextMode ? "google/gemini-2.5-flash" : (isPdf ? "openai/gpt-5-mini" : "google/gemini-2.5-flash");
+    // Email bodies → text tier. Photos and PDFs → vision tier. Models are set in _shared/llm.ts.
+    const tier = isTextMode ? "text" : "vision";
 
     const userContent: any = isTextMode
       ? `Extract ALL bill details from this email body. ${source_hint ? `Source hint: ${source_hint}. ` : ""}\n\nSPECIAL CASES — return {"amount": null} if the email is any of:\n- order CANCELLED / CANCELLATION / cancellation confirmation\n- refund initiated/issued/processed\n- return initiated/received/approved\n- shipping/delivery status update with no total amount\n- marketing / OTP / newsletter / wishlist / out-for-delivery notice\n\nFor Amazon.in order confirmations ("Your Amazon.in order of <product> has been placed" / "Order placed: ..."):\n- merchant_name MUST be "Amazon" (the aggregator field can hold "Amazon" too)\n- bill_invoice_number = the Amazon Order ID (format like 123-1234567-1234567 or "Order #...")\n- line_items = each product with name + quantity (default 1) + unit_price + total_price\n- amount = Order Total / Grand Total / "Total Before Tax" + tax (prefer Order Total)\n- date_time = order placed date\n- category = "Shopping"\n\nFor Swiggy/Zomato/Uber/Ola/Rapido/BookMyShow/MakeMyTrip/District/Instamart/Blinkit/Zepto emails: extract items, quantities, taxes and totals.\n\nReturn only JSON.\n\n--- EMAIL BODY ---\n${String(text_content).slice(0, 12000)}`
@@ -121,49 +119,25 @@ Rules:
           { type: "text", text: "Extract ALL bill details including every line item, tax, payment method, and merchant info. Return only JSON." },
         ];
 
-    console.log("Using model:", model, "for mime type:", mimeType);
+    const messages = [
+      { role: "system" as const, content: systemPrompt },
+      { role: "user" as const, content: userContent },
+    ];
+    let response = await chatCompletion({ tier, messages });
 
-    let response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model,
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userContent },
-        ],
-      }),
-    });
-
-    // Fallback: if primary model fails for PDF, try the other model
-    if (!response.ok && response.status === 400) {
-      const fallbackModel = isPdf ? "google/gemini-2.5-pro" : "openai/gpt-5-mini";
+    // Fallback: if the model rejects the input, retry once with LLM_MODEL_FALLBACK (when set)
+    const fallbackModel = fallbackModelFor(tier);
+    if (!response.ok && response.status === 400 && fallbackModel) {
       console.log("Primary model failed, falling back to:", fallbackModel);
-      response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${LOVABLE_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: fallbackModel,
-          messages: [
-            { role: "system", content: systemPrompt },
-            { role: "user", content: userContent },
-          ],
-        }),
-      });
+      response = await chatCompletion({ tier, model: fallbackModel, messages });
     }
 
     if (!response.ok) {
       const errText = await response.text().catch(() => "");
-      console.error("AI gateway error:", response.status, errText);
+      console.error("AI provider error:", response.status, errText);
       let message = "AI extraction failed. Please fill in the details manually.";
       if (response.status === 429) message = "AI is busy right now. Please try again in a moment or fill in details manually.";
-      if (response.status === 402) message = "AI credits exhausted for this workspace. Please add funds in Settings → Workspace → Usage, or fill in details manually.";
+      if (response.status === 402) message = "AI bill reading is unavailable right now. Please fill in the details manually.";
       // Return 200 with a fallback flag so the client shows a toast instead of crashing with a runtime error overlay.
       return jsonResponse({ error: message, fallback: true, upstream_status: response.status });
     }

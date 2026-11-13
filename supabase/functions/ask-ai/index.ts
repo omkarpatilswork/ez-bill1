@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { chatCompletion, isLlmConfigured } from "../_shared/llm.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -89,8 +90,7 @@ serve(async (req) => {
     }
     const userId = user.id;
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
+    if (!isLlmConfigured()) throw new Error("LLM_API_KEY is not configured");
 
     const { action, messages } = await req.json();
     const { expenses, profile } = await getUserExpenses(userId);
@@ -111,19 +111,12 @@ Rules:
     if (action === "suggestions") {
       const suggestionsPrompt = `Based on the user's expense data, generate exactly 4 short question suggestions (max 8 words each) that would be useful for this user to ask. Return ONLY a JSON array of 4 strings, nothing else.`;
 
-      const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${LOVABLE_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: "google/gemini-3-flash-preview",
-          messages: [
-            { role: "system", content: systemPrompt },
-            { role: "user", content: suggestionsPrompt },
-          ],
-        }),
+      const res = await chatCompletion({
+        tier: "chat",
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: suggestionsPrompt },
+        ],
       });
 
       if (!res.ok) {
@@ -161,26 +154,19 @@ Rules:
     }
 
     // Streaming chat
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
-        messages: [{ role: "system", content: systemPrompt }, ...(messages || [])],
-        stream: true,
-      }),
+    const response = await chatCompletion({
+      tier: "chat",
+      messages: [{ role: "system", content: systemPrompt }, ...(messages || [])],
+      stream: true,
     });
 
     if (!response.ok) {
       const t = await response.text().catch(() => "");
-      console.error("AI gateway error:", response.status, t);
+      console.error("AI provider error:", response.status, t);
 
       let fallbackMessage = "⚠️ The AI assistant is temporarily unavailable. Please try again in a moment.";
       if (response.status === 402) {
-        fallbackMessage = "⚠️ AI credits have been exhausted for this workspace. Please add funds in **Settings → Workspace → Usage** to continue using Ask AI.";
+        fallbackMessage = "⚠️ Ask AI is unavailable right now. Please try again later.";
       } else if (response.status === 429) {
         fallbackMessage = "⚠️ Too many requests right now. Please wait a few seconds and try again.";
       }

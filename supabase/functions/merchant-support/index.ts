@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { chatCompletion, isLlmConfigured } from "../_shared/llm.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -122,9 +123,8 @@ serve(async (req) => {
       );
     }
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
-      console.error("merchant-support error: LOVABLE_API_KEY is not configured");
+    if (!isLlmConfigured()) {
+      console.error("merchant-support error: LLM_API_KEY is not configured");
       return new Response(JSON.stringify(buildFallbackSupportData({
         merchantName: merchant_name,
         merchantAddress: merchant_address,
@@ -217,23 +217,16 @@ For warranty/returns, use these category defaults ONLY if exact policy unknown (
 - Restaurant/Food delivery: Refund within 24h for quality issues
 - Fuel: No returns applicable`;
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
-        messages: [
-          { role: "user", content: prompt },
-        ],
-      }),
+    const response = await chatCompletion({
+      tier: "chat",
+      messages: [
+        { role: "user", content: prompt },
+      ],
     });
 
     if (!response.ok) {
       const errText = await response.text();
-      console.error("AI gateway error:", response.status, errText);
+      console.error("AI provider error:", response.status, errText);
       const fallbackSource = response.status === 402
         ? "system fallback: credits exhausted"
         : response.status === 429

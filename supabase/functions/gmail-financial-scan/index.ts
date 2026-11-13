@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import { chatCompletion, isLlmConfigured } from "../_shared/llm.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -82,8 +83,7 @@ function extractTextBody(payload: any): string {
 }
 
 async function aiClassifyAndExtract(docType: string, subject: string, from: string, body: string) {
-  const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-  if (!LOVABLE_API_KEY) return null;
+  if (!isLlmConfigured()) return null;
   const sysPrompt = `You extract structured fields from Indian financial emails. Return ONLY valid JSON for doc_type "${docType}":
 
 - credit_card_statement: { "issuer": string, "card_last4": string, "total_amount": number|null, "min_due": number|null, "due_date": "YYYY-MM-DD"|null, "period_start": "YYYY-MM-DD"|null, "period_end": "YYYY-MM-DD"|null, "statement_date": "YYYY-MM-DD"|null }
@@ -94,13 +94,9 @@ async function aiClassifyAndExtract(docType: string, subject: string, from: stri
 Use null/empty string when not found. Currency is always INR unless clearly otherwise. NO markdown, NO commentary.`;
   const userPrompt = `Subject: ${subject}\nFrom: ${from}\n\nEmail body:\n${body}`;
   try {
-    const r = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages: [{ role: "system", content: sysPrompt }, { role: "user", content: userPrompt }],
-      }),
+    const r = await chatCompletion({
+      tier: "text",
+      messages: [{ role: "system", content: sysPrompt }, { role: "user", content: userPrompt }],
     });
     if (!r.ok) return null;
     const j = await r.json();
