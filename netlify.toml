@@ -7,6 +7,11 @@
 
 [build.environment]
   NODE_VERSION = "22"
+  # Public values (same as the committed .env). Repeated here because uploads through
+  # the Netlify connector leave out dotfiles, and a build without them is a blank page.
+  VITE_SUPABASE_PROJECT_ID = "zagglgrotxdfhoylacob"
+  VITE_SUPABASE_URL = "https://zagglgrotxdfhoylacob.supabase.co"
+  VITE_SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InphZ2dsZ3JvdHhkZmhveWxhY29iIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ1NTAxMjYsImV4cCI6MjExMDEyNjEyNn0.2p4EVJthNdJ5X4wIXyvtQQjzW1aMOlAOPB1mNVmHXNQ"
 
 # Vite fingerprints everything under /assets, so it can be cached forever.
 [[headers]]
