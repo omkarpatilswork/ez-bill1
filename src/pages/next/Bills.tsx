@@ -4,7 +4,6 @@ import { useQueryClient } from '@tanstack/react-query';
 import * as Dialog from '@radix-ui/react-dialog';
 import { ArrowUpDown, Check, Copy, Search, SlidersHorizontal, X } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import AppShell from '@/components/next/AppShell';
 import BillListRow from '@/components/next/BillListRow';
 import { useCapture } from '@/components/next/capture-context';
 import SEO from '@/components/SEO';
@@ -165,7 +164,7 @@ export default function Bills() {
   const copiesToRemove = duplicates.filter((g) => removeGroups.has(g.key)).flatMap((g) => g.bills.slice(1).map((b) => b.id));
 
   return (
-    <AppShell>
+    <>
       <SEO title="Bills" description="Every bill, searchable by shop and by item." path="/expenses" />
 
       <div className="max-w-[860px]">
@@ -320,7 +319,7 @@ export default function Bills() {
           {working ? 'Removing' : `Remove ${plural(copiesToRemove.length, 'copy', 'copies')}`}
         </button>
       </Sheet>
-    </AppShell>
+    </>
   );
 }
 

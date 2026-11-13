@@ -5,7 +5,6 @@ import { ArrowDown, ArrowRight, ArrowUp, ChevronRight, Repeat, RotateCcw, Shield
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useBills, type Bill } from '@/hooks/useBills';
-import AppShell from '@/components/next/AppShell';
 import { useCapture } from '@/components/next/capture-context';
 import BillListRow from '@/components/next/BillListRow';
 import DisplayAmount from '@/components/next/DisplayAmount';
@@ -152,7 +151,7 @@ export default function Home() {
   const monthName = now.toLocaleDateString('en-IN', { month: 'long' });
 
   return (
-    <AppShell>
+    <>
       <SEO title="Home" description="Every bill in one place, and where the money went." path="/" />
 
       {billsQuery.isError ? (
@@ -270,7 +269,7 @@ export default function Home() {
           )}
         </div>
       )}
-    </AppShell>
+    </>
   );
 }
 

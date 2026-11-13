@@ -1,5 +1,5 @@
-import { useState, type ReactNode } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Suspense, useState, type ReactNode } from 'react';
+import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, BarChart3, House, LockKeyhole, LogOut, Moon, Plus, ReceiptText, Search, Settings, ShieldCheck, Store, Sun, UserRound,
   type LucideIcon,
@@ -12,7 +12,7 @@ import { useTheme } from '@/hooks/useTheme';
 import { cn } from '@/lib/utils';
 import { Wordmark } from './Logo';
 import CaptureSheet from './CaptureSheet';
-import { CaptureContext } from './capture-context';
+import { CaptureContext, ShellActionsContext } from './capture-context';
 
 interface Destination {
   label: string;
@@ -81,25 +81,28 @@ function AccountMenu({ children, side }: { children: ReactNode; side: 'top' | 'b
   );
 }
 
-interface AppShellProps {
-  children: ReactNode;
-  /** On a phone, replace the wordmark with a back link (detail screens). */
-  back?: { to: string; label: string };
-  /** Buttons for the right side of the phone top bar on detail screens. */
-  actions?: ReactNode;
-}
+/** A bill's own page gets a back link on a phone instead of the wordmark. */
+const BILL_PAGE = /^\/expenses\/[0-9a-f-]{36}$/i;
 
-export default function AppShell({ children, back, actions }: AppShellProps) {
+/**
+ * The frame every signed-in screen sits in. It stays mounted while screens
+ * change inside it, so the navigation never flickers and each screen's code
+ * is fetched only when it is opened.
+ */
+export default function AppShell() {
   const { profile, user } = useAuth();
   const [captureOpen, setCaptureOpen] = useState(false);
   const { pathname } = useLocation();
   const section = SECTIONS.find((tabs) => tabs.some((t) => t.to === pathname));
+  const back = BILL_PAGE.test(pathname) ? { to: '/expenses', label: 'Bills' } : null;
+  const [actionsSlot, setActionsSlot] = useState<HTMLElement | null>(null);
   const name = profile?.full_name || profile?.display_name || '';
   const initials = initialsOf(name);
   const today = new Date().toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' });
 
   return (
     <CaptureContext.Provider value={() => setCaptureOpen(true)}>
+    <ShellActionsContext.Provider value={actionsSlot}>
     <div className="ez-app min-h-screen lg:pl-[248px]">
       {/* ---------- desktop rail ---------- */}
       <aside className="fixed inset-y-0 left-0 z-40 hidden w-[248px] flex-col border-r border-line-soft bg-surface px-4 pb-4 pt-6 lg:flex">
@@ -158,7 +161,9 @@ export default function AppShell({ children, back, actions }: AppShellProps) {
           <Link to="/" aria-label="EZZ BILL home"><Wordmark /></Link>
         )}
         <div className="flex items-center gap-2">
-          {back ? actions : (
+          {/* A screen puts its own buttons here with <ShellActions>. */}
+          <div ref={setActionsSlot} className="flex items-center gap-2 empty:hidden" />
+          {back ? null : (
             <>
               <Link to="/expenses?search=1" aria-label="Search" className="grid h-10 w-10 place-items-center rounded-full border border-line-soft text-dim hover:text-fg">
                 <Search className="h-[18px] w-[18px]" />
@@ -185,7 +190,9 @@ export default function AppShell({ children, back, actions }: AppShellProps) {
             ))}
           </nav>
         )}
-        {children}
+        <Suspense fallback={<div className="grid place-items-center py-32" aria-busy="true" aria-label="Loading"><span className="h-6 w-6 animate-spin rounded-full border-2 border-line border-t-brand" /></div>}>
+          <Outlet />
+        </Suspense>
       </main>
 
       {/* ---------- phone tab bar ---------- */}
@@ -204,6 +211,7 @@ export default function AppShell({ children, back, actions }: AppShellProps) {
 
       <CaptureSheet open={captureOpen} onOpenChange={setCaptureOpen} />
     </div>
+    </ShellActionsContext.Provider>
     </CaptureContext.Provider>
   );
 }

@@ -1,45 +1,54 @@
-import { useEffect } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/hooks/useTheme";
 import ProtectedRoute from "@/components/layout/ProtectedRoute";
-import AppLayout from "@/components/layout/AppLayout";
+import LegacyScreen from "@/components/layout/AppLayout";
+import AppShell from "@/components/next/AppShell";
 import Login from "./pages/Login";
-import Signup from "./pages/Signup";
-import NewExpense from "./pages/expenses/NewExpense";
-import MerchantSupport from "./pages/expenses/MerchantSupport";
-import SplitBill from "./pages/expenses/SplitBill";
-import Analytics from "./pages/expenses/Analytics";
-import AskAI from "./pages/AskAI";
-import EmailBills from "./pages/expenses/EmailBills";
-import BulkUpload from "./pages/expenses/BulkUpload";
-import Profile from "./pages/Profile";
-import Settings from "./pages/Settings";
-import Onboarding from "./pages/Onboarding";
-import TermsAndConditions from "./pages/TermsAndConditions";
-import PrivacyPolicy from "./pages/PrivacyPolicy";
-import MoneyLeaks from "./pages/MoneyLeaks";
-import Subscriptions from "./pages/Subscriptions";
-import MonthlySummary from "./pages/MonthlySummary";
-import FinancialDocs from "./pages/FinancialDocs";
-import Security from "./pages/Security";
-import Warranties from "./pages/Warranties";
-import Splits from "./pages/Splits";
-import SplitFriendDetail from "./pages/SplitFriendDetail";
-import Support from "./pages/Support";
-import ClaimTag from "./pages/ClaimTag";
-import StaffTables from "./pages/StaffTables";
-import NfcAirdrop from "./pages/NfcAirdrop";
-import NotFound from "./pages/NotFound";
 import Home from "./pages/next/Home";
-import BillDetail from "./pages/next/BillDetail";
-import Bills from "./pages/next/Bills";
 import { checkDueReminders } from "@/lib/return-reminders";
 
+// Sign-in and Home are in the first download. Every other screen is fetched when it is opened.
+const Bills = lazy(() => import("./pages/next/Bills"));
+const BillDetail = lazy(() => import("./pages/next/BillDetail"));
+const Signup = lazy(() => import("./pages/Signup"));
+const NewExpense = lazy(() => import("./pages/expenses/NewExpense"));
+const MerchantSupport = lazy(() => import("./pages/expenses/MerchantSupport"));
+const SplitBill = lazy(() => import("./pages/expenses/SplitBill"));
+const Analytics = lazy(() => import("./pages/expenses/Analytics"));
+const AskAI = lazy(() => import("./pages/AskAI"));
+const EmailBills = lazy(() => import("./pages/expenses/EmailBills"));
+const BulkUpload = lazy(() => import("./pages/expenses/BulkUpload"));
+const Profile = lazy(() => import("./pages/Profile"));
+const Settings = lazy(() => import("./pages/Settings"));
+const Onboarding = lazy(() => import("./pages/Onboarding"));
+const TermsAndConditions = lazy(() => import("./pages/TermsAndConditions"));
+const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
+const MoneyLeaks = lazy(() => import("./pages/MoneyLeaks"));
+const Subscriptions = lazy(() => import("./pages/Subscriptions"));
+const MonthlySummary = lazy(() => import("./pages/MonthlySummary"));
+const FinancialDocs = lazy(() => import("./pages/FinancialDocs"));
+const Security = lazy(() => import("./pages/Security"));
+const Warranties = lazy(() => import("./pages/Warranties"));
+const Splits = lazy(() => import("./pages/Splits"));
+const SplitFriendDetail = lazy(() => import("./pages/SplitFriendDetail"));
+const Support = lazy(() => import("./pages/Support"));
+const ClaimTag = lazy(() => import("./pages/ClaimTag"));
+const StaffTables = lazy(() => import("./pages/StaffTables"));
+const NfcAirdrop = lazy(() => import("./pages/NfcAirdrop"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+
 const queryClient = new QueryClient();
+
+const Loading = () => (
+  <div className="ez-app grid min-h-screen place-items-center" aria-busy="true" aria-label="Loading">
+    <span className="h-6 w-6 animate-spin rounded-full border-2 border-line border-t-brand" />
+  </div>
+);
 
 const App = () => {
   useEffect(() => {
@@ -54,38 +63,52 @@ const App = () => {
       <Toaster />
       <Sonner />
       <BrowserRouter>
+        <Suspense fallback={<Loading />}>
         <Routes>
+          {/* Outside the app shell */}
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
           <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
           <Route path="/terms" element={<TermsAndConditions />} />
           <Route path="/privacy" element={<PrivacyPolicy />} />
-          <Route path="/security" element={<ProtectedRoute><AppLayout><Security /></AppLayout></ProtectedRoute>} />
           <Route path="/t/:tagId" element={<ClaimTag />} />
-          <Route path="/staff" element={<ProtectedRoute><AppLayout><StaffTables /></AppLayout></ProtectedRoute>} />
-          <Route path="/nfc-airdrop" element={<ProtectedRoute><AppLayout><NfcAirdrop /></AppLayout></ProtectedRoute>} />
-          <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>} />
-          <Route path="/expenses/new" element={<ProtectedRoute><AppLayout><NewExpense /></AppLayout></ProtectedRoute>} />
-          <Route path="/expenses/:id" element={<ProtectedRoute><BillDetail /></ProtectedRoute>} />
-          <Route path="/expenses/:id/support" element={<ProtectedRoute><AppLayout><MerchantSupport /></AppLayout></ProtectedRoute>} />
-          <Route path="/expenses/:id/split" element={<ProtectedRoute><AppLayout><SplitBill /></AppLayout></ProtectedRoute>} />
-          <Route path="/expenses" element={<ProtectedRoute><Bills /></ProtectedRoute>} />
-          <Route path="/analytics" element={<ProtectedRoute><AppLayout><Analytics /></AppLayout></ProtectedRoute>} />
-          <Route path="/email-bills" element={<ProtectedRoute><AppLayout><EmailBills /></AppLayout></ProtectedRoute>} />
-          <Route path="/bulk-upload" element={<ProtectedRoute><AppLayout><BulkUpload /></AppLayout></ProtectedRoute>} />
-          <Route path="/ask-ai" element={<ProtectedRoute><AppLayout><AskAI /></AppLayout></ProtectedRoute>} />
-          <Route path="/profile" element={<ProtectedRoute><AppLayout><Profile /></AppLayout></ProtectedRoute>} />
-          <Route path="/settings" element={<ProtectedRoute><AppLayout><Settings /></AppLayout></ProtectedRoute>} />
-          <Route path="/money-leaks" element={<ProtectedRoute><AppLayout><MoneyLeaks /></AppLayout></ProtectedRoute>} />
-          <Route path="/subscriptions" element={<ProtectedRoute><AppLayout><Subscriptions /></AppLayout></ProtectedRoute>} />
-          <Route path="/summary" element={<ProtectedRoute><AppLayout><MonthlySummary /></AppLayout></ProtectedRoute>} />
-          <Route path="/financial-docs" element={<ProtectedRoute><AppLayout><FinancialDocs /></AppLayout></ProtectedRoute>} />
-          <Route path="/warranties" element={<ProtectedRoute><AppLayout><Warranties /></AppLayout></ProtectedRoute>} />
-          <Route path="/splits" element={<ProtectedRoute><AppLayout><Splits /></AppLayout></ProtectedRoute>} />
-          <Route path="/splits/friend/:friendKey" element={<ProtectedRoute><AppLayout><SplitFriendDetail /></AppLayout></ProtectedRoute>} />
-          <Route path="/support" element={<ProtectedRoute><AppLayout><Support /></AppLayout></ProtectedRoute>} />
+
+          {/* Signed-in screens share one shell: Home, Bills, Insights, Vault and Add a bill */}
+          <Route element={<ProtectedRoute><AppShell /></ProtectedRoute>}>
+            {/* Rebuilt in the Ink & Paper design */}
+            <Route path="/" element={<Home />} />
+            <Route path="/expenses" element={<Bills />} />
+            <Route path="/expenses/:id" element={<BillDetail />} />
+
+            {/* Not rebuilt yet: brand colours and fonts, old layouts */}
+            <Route element={<LegacyScreen />}>
+              <Route path="/expenses/new" element={<NewExpense />} />
+              <Route path="/expenses/:id/support" element={<MerchantSupport />} />
+              <Route path="/expenses/:id/split" element={<SplitBill />} />
+              <Route path="/analytics" element={<Analytics />} />
+              <Route path="/email-bills" element={<EmailBills />} />
+              <Route path="/bulk-upload" element={<BulkUpload />} />
+              <Route path="/ask-ai" element={<AskAI />} />
+              <Route path="/profile" element={<Profile />} />
+              <Route path="/settings" element={<Settings />} />
+              <Route path="/security" element={<Security />} />
+              <Route path="/money-leaks" element={<MoneyLeaks />} />
+              <Route path="/subscriptions" element={<Subscriptions />} />
+              <Route path="/summary" element={<MonthlySummary />} />
+              <Route path="/financial-docs" element={<FinancialDocs />} />
+              <Route path="/warranties" element={<Warranties />} />
+              <Route path="/splits" element={<Splits />} />
+              <Route path="/splits/friend/:friendKey" element={<SplitFriendDetail />} />
+              <Route path="/support" element={<Support />} />
+              <Route path="/staff" element={<StaffTables />} />
+              <Route path="/nfc-airdrop" element={<NfcAirdrop />} />
+            </Route>
+          </Route>
+
+          <Route path="/next" element={<Navigate to="/" replace />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
+        </Suspense>
       </BrowserRouter>
     </TooltipProvider>
     </ThemeProvider>

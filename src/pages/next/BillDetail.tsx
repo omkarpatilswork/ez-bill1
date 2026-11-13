@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import AppShell from '@/components/next/AppShell';
+import { ShellActions } from '@/components/next/shell-actions';
 import Slip from '@/components/next/Slip';
 import SEO from '@/components/SEO';
 import { useToast } from '@/hooks/use-toast';
@@ -95,19 +95,19 @@ export default function BillDetail() {
 
   if (query.isLoading) {
     return (
-      <AppShell back={{ to: '/expenses', label: 'Bills' }}>
+      <>
         <div className="pt-6 lg:pt-12" aria-busy="true" aria-label="Loading this bill">
           <div className="h-3 w-28 rounded-full bg-surface-3" />
           <div className="mt-5 h-10 w-64 rounded-2xl bg-surface-2" />
           <div className="mt-8 h-80 w-full max-w-[380px] rounded-2xl bg-surface-2" />
         </div>
-      </AppShell>
+      </>
     );
   }
 
   if (query.isError || !bill) {
     return (
-      <AppShell back={{ to: '/expenses', label: 'Bills' }}>
+      <>
         <div className="mx-auto max-w-md pt-24 text-center">
           <h1 className="ez-display text-[34px] text-fg">{query.isError ? 'This bill did not load.' : 'This bill is not here.'}</h1>
           <p className="mt-3 text-dim">{query.isError ? 'Check your connection, then try again.' : 'It may have been deleted, or the link is wrong.'}</p>
@@ -117,7 +117,7 @@ export default function BillDetail() {
               : <Link to="/expenses" className="ez-btn ez-btn--ghost">All bills</Link>}
           </div>
         </div>
-      </AppShell>
+      </>
     );
   }
 
@@ -146,7 +146,8 @@ export default function BillDetail() {
   const keepable = KEEPABLE.includes(category) || !!reminder;
 
   return (
-    <AppShell back={{ to: '/expenses', label: 'Bills' }} actions={menu}>
+    <>
+      <ShellActions>{menu}</ShellActions>
       <SEO title={merchant} description={`Bill from ${merchant}`} path={`/expenses/${bill.id}`} />
 
       <div className="grid grid-cols-1 lg:grid-cols-[400px_minmax(0,1fr)] lg:gap-x-20 lg:pt-12">
@@ -289,7 +290,7 @@ export default function BillDetail() {
           </AlertDialog.Content>
         </AlertDialog.Portal>
       </AlertDialog.Root>
-    </AppShell>
+    </>
   );
 }
 
