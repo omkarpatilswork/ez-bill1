@@ -96,7 +96,7 @@ function estimateScanCost(days: number) {
   const warrantyAiCalls = warrantyEmails;
 
   const totalAiCalls = billAiCalls + subAiCalls + warrantyAiCalls;
-  // Lovable AI: Gemini Flash ≈ $0.0003 per call avg (vision + text mix).
+  // AI (Gemini Flash) ≈ $0.0003 per call avg (vision + text mix).
   const aiCreditsUsd = totalAiCalls * 0.0003;
   // Cloud (edge function + DB) ≈ $0.00005 per email processed.
   const cloudCreditsUsd = (billEmails + warrantyEmails + subAiCalls * 20) * 0.00005;

@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { lovable } from '@/integrations/lovable';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -181,8 +180,11 @@ export default function ClaimTag() {
   const handleGoogle = async () => {
     setAuthSubmitting(true);
     try {
-      const result = await lovable.auth.signInWithOAuth('google', { redirect_uri: window.location.href });
-      if (result.error) toast({ title: 'Google sign-in failed', description: String(result.error), variant: 'destructive' });
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: { redirectTo: window.location.href },
+      });
+      if (error) toast({ title: 'Google sign-in failed', description: error.message, variant: 'destructive' });
     } catch {
       toast({ title: 'Google sign-in failed', description: 'Please try again.', variant: 'destructive' });
     } finally {
