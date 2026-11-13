@@ -42,3 +42,6 @@ eval/bills/
 
 # Secret values for `supabase secrets set --env-file` (also covered by *.local)
 .env.secrets*
+
+# Local tool installs (scripts/dev/install-pg-tools.sh)
+.tools/
