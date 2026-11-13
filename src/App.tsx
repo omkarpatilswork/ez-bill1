@@ -37,6 +37,8 @@ import ClaimTag from "./pages/ClaimTag";
 import StaffTables from "./pages/StaffTables";
 import NfcAirdrop from "./pages/NfcAirdrop";
 import NotFound from "./pages/NotFound";
+import NextHome from "./pages/next/Home";
+import NextBillDetail from "./pages/next/BillDetail";
 import { checkDueReminders } from "@/lib/return-reminders";
 
 const queryClient = new QueryClient();
@@ -84,6 +86,9 @@ const App = () => {
           <Route path="/splits" element={<ProtectedRoute><AppLayout><Splits /></AppLayout></ProtectedRoute>} />
           <Route path="/splits/friend/:friendKey" element={<ProtectedRoute><AppLayout><SplitFriendDetail /></AppLayout></ProtectedRoute>} />
           <Route path="/support" element={<ProtectedRoute><AppLayout><Support /></AppLayout></ProtectedRoute>} />
+          {/* Redesigned reference screens ("Ink & Paper"). They replace "/" and "/expenses/:id" once approved. */}
+          <Route path="/next" element={<ProtectedRoute><NextHome /></ProtectedRoute>} />
+          <Route path="/next/bills/:id" element={<ProtectedRoute><NextBillDetail /></ProtectedRoute>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
