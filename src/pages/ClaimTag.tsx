@@ -44,8 +44,11 @@ export default function ClaimTag() {
 
   const [extracting, setExtracting] = useState(false);
   const [extracted, setExtracted] = useState<ExtractedData | null>(null);
+  const [serverExtracted, setServerExtracted] = useState<ExtractedData | null>(null);
   const [imageBase64, setImageBase64] = useState<string | null>(null);
   const [imageType, setImageType] = useState('image/jpeg');
+  const [imageFailed, setImageFailed] = useState(false);
+  const downloadStarted = useRef(false);
 
   const [saving, setSaving] = useState(false);
   const [savedExpenseId, setSavedExpenseId] = useState<string | null>(null);
@@ -74,25 +77,46 @@ export default function ClaimTag() {
       setSignedUrl(data.bill.signed_url);
       setFallbackAmount(data.bill.amount ?? null);
       setMerchantName(data.bill.merchant_name || '');
+      const ex = data.bill.extracted;
+      if (ex && typeof ex === 'object' && !Array.isArray(ex)) setServerExtracted(ex as ExtractedData);
       setStatus('ready');
     })();
   }, [tagId]);
 
-  // 2. Once we have a photo, read it and extract structured details — this
-  // runs regardless of sign-in state, so the preview appears instantly.
+  // 2a. Download the photo straight away: the signed URL only lives 5 minutes, and
+  // the claim copies the photo into the guest's own receipts.
   useEffect(() => {
-    if (status !== 'ready' || !signedUrl || extracted || extracting) return;
+    if (status !== 'ready' || !signedUrl || downloadStarted.current) return;
+    downloadStarted.current = true;
     (async () => {
-      setExtracting(true);
       try {
         const res = await fetch(signedUrl);
         const blob = await res.blob();
-        const type = blob.type || 'image/jpeg';
-        const base64 = await blobToBase64(blob);
-        setImageBase64(base64);
-        setImageType(type);
+        setImageType(blob.type || 'image/jpeg');
+        setImageBase64(await blobToBase64(blob));
+      } catch {
+        setImageFailed(true);
+      }
+    })();
+  }, [status, signedUrl]);
+
+  // 2b. Bill details. Normally they were read when staff sent the bill, so they arrive
+  // with the tag lookup and show at once. If not, the photo is read here, but only
+  // after sign-in (extract-receipt serves signed-in users); until then the page shows
+  // the total staff typed in.
+  useEffect(() => {
+    if (status !== 'ready' || extracted || extracting) return;
+    if (serverExtracted) { setExtracted(serverExtracted); return; }
+    if (!user) return;
+    if (!imageBase64) {
+      if (imageFailed) setExtracted({}); // fall back to whatever staff typed in
+      return;
+    }
+    (async () => {
+      setExtracting(true);
+      try {
         const { data, error } = await supabase.functions.invoke('extract-receipt', {
-          body: { file_base64: base64, file_type: type },
+          body: { file_base64: imageBase64, file_type: imageType },
         });
         if (!error && data && !data.error) setExtracted(data);
         else setExtracted({}); // fall back to whatever staff typed in
@@ -102,7 +126,7 @@ export default function ClaimTag() {
         setExtracting(false);
       }
     })();
-  }, [status, signedUrl, extracted, extracting]);
+  }, [status, extracted, extracting, serverExtracted, user, imageBase64, imageType, imageFailed]);
 
   // 3. Once we're signed in AND extraction has settled, save automatically —
   // that's the whole point: tap, and it's just there.

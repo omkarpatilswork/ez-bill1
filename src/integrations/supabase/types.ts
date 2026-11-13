@@ -838,6 +838,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           expense_id: string | null
+          extracted: Json | null
           file_path: string
           id: string
           merchant_name: string | null
@@ -850,6 +851,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           expense_id?: string | null
+          extracted?: Json | null
           file_path: string
           id?: string
           merchant_name?: string | null
@@ -862,6 +864,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           expense_id?: string | null
+          extracted?: Json | null
           file_path?: string
           id?: string
           merchant_name?: string | null

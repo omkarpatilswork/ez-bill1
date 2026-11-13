@@ -1,8 +1,7 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { serve } from "../_shared/cors.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
@@ -67,7 +66,7 @@ serve(async (req) => {
 
     const { data: signed, error: signErr } = await admin.storage
       .from("pending-receipts")
-      .createSignedUrl(pending.file_path, 300); // 5 minutes, just long enough to fetch + extract
+      .createSignedUrl(pending.file_path, 300); // 5 minutes, just long enough to fetch the photo
 
     if (signErr) throw signErr;
 
@@ -80,6 +79,8 @@ serve(async (req) => {
         signed_url: signed?.signedUrl || null,
         amount: pending.amount,
         merchant_name: pending.merchant_name || tag.merchant_name,
+        // Read from the photo when staff sent it; null if that has not finished.
+        extracted: pending.extracted ?? null,
       },
     });
   } catch (e) {

@@ -52,6 +52,33 @@ function timeAgo(iso: string): string {
   return `${Math.round(mins / 60)}h ago`;
 }
 
+function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve((reader.result as string).split(',')[1]);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+// Read the bill once, now, while staff are signed in, and store the result on the
+// pending bill. resolve-tag hands it to the guest who taps, so their page shows the
+// details without calling the AI before they sign in. Runs in the background: the
+// staff screen does not wait for it. If it fails or is not done in time, the guest's
+// page reads the photo itself after they sign in.
+async function readBillForTap(pendingId: string, file: File) {
+  try {
+    const base64 = await fileToBase64(file);
+    const { data, error } = await supabase.functions.invoke('extract-receipt', {
+      body: { file_base64: base64, file_type: file.type || 'image/jpeg' },
+    });
+    if (error || !data || data.error) return;
+    await supabase.from('tag_pending_bills').update({ extracted: data }).eq('id', pendingId);
+  } catch {
+    // Best effort; see above.
+  }
+}
+
 export default function StaffTables() {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -150,13 +177,14 @@ export default function StaffTables() {
       const { error: upErr } = await supabase.storage.from('pending-receipts').upload(filePath, file);
       if (upErr) throw upErr;
 
-      const { error: insErr } = await supabase.from('tag_pending_bills').insert({
+      const { data: inserted, error: insErr } = await supabase.from('tag_pending_bills').insert({
         tag_id: sheetTag.tag_id,
         file_path: filePath,
         amount: Number(amount),
         created_by: user.id,
-      });
+      }).select('id').single();
       if (insErr) throw insErr;
+      void readBillForTap(inserted.id, file);
 
       if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(60);
       toast({ title: 'Bill sent', description: `${sheetTag.label} is ready to tap.` });
