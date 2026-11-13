@@ -138,7 +138,7 @@ export default function Home() {
       const end = reminderEndDate(r);
       const due = daysUntil(end, now);
       if (due < 0 || due > 7) continue;
-      list.push({ key: `return-${r.expense_id}`, icon: RotateCcw, title: `Return window closes ${inDays(due)}`, detail: `${r.merchant} · until ${shortDate(end)}`, to: `/next/bills/${r.expense_id}`, due });
+      list.push({ key: `return-${r.expense_id}`, icon: RotateCcw, title: `Return window closes ${inDays(due)}`, detail: `${r.merchant} · until ${shortDate(end)}`, to: `/expenses/${r.expense_id}`, due });
     }
     for (const w of warrantiesQuery.data ?? []) {
       if (!w.expiry_date) continue;
@@ -168,7 +168,7 @@ export default function Home() {
 
   return (
     <AppShell>
-      <SEO title="Home" description="Every bill in one place, and where the money went." path="/next" />
+      <SEO title="Home" description="Every bill in one place, and where the money went." path="/" />
 
       {billsQuery.isError ? (
         <Notice title="Your bills did not load." body="Check your connection, then try again.">
@@ -308,7 +308,7 @@ function LatestBill({ bill, now }: { bill: Bill; now: Date }) {
         <p id="latest-label" className="ez-label">Latest bill</p>
         <p className="ez-num truncate text-[12.5px] text-dim">{when}{source && ` · ${source}`}</p>
       </div>
-      <Link to={`/next/bills/${bill.id}`} aria-label={`Open the bill from ${bill.merchant || bill.title}`}
+      <Link to={`/expenses/${bill.id}`} aria-label={`Open the bill from ${bill.merchant || bill.title}`}
         className="mx-auto mt-4 block max-w-[340px] transition-transform duration-300 ease-brand hover:-translate-y-1 lg:max-w-none">
         <Slip print merchant={bill.merchant || bill.title} sub={[parsed.address && parsed.address.length <= 28 ? parsed.address : null, parsed.table].filter(Boolean).join(' · ') || null}
           items={parsed.items} maxItems={3} total={Number(bill.amount)} symbol={getCurrencySymbol(bill.currency || 'INR')}

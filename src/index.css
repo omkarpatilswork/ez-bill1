@@ -4,109 +4,87 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+ * The shadcn tokens, mapped onto the Ink & Paper palette (src/styles/ink.css),
+ * so screens that still use bg-background, text-primary and friends carry the
+ * brand colours until each one is rebuilt with the ez-* pieces.
+ */
 @layer base {
   :root {
-    --background: 160 10% 6%;
-    --foreground: 60 10% 95%;
-
-    --card: 160 10% 10%;
-    --card-foreground: 60 10% 95%;
-
-    --popover: 160 10% 10%;
-    --popover-foreground: 60 10% 95%;
-
-    --primary: 152 45% 35%;
-    --primary-foreground: 60 10% 98%;
-
-    --secondary: 160 10% 15%;
-    --secondary-foreground: 60 10% 90%;
-
-    --muted: 160 8% 14%;
-    --muted-foreground: 160 8% 55%;
-
-    --accent: 43 80% 50%;
-    --accent-foreground: 160 10% 6%;
-
-    --destructive: 0 63% 45%;
-    --destructive-foreground: 60 10% 98%;
-
-    --success: 152 55% 40%;
-    --success-foreground: 60 10% 98%;
-
-    --warning: 43 80% 50%;
-    --warning-foreground: 160 10% 6%;
-
-    --info: 199 70% 45%;
-    --info-foreground: 60 10% 98%;
-
-    --gold: 43 80% 50%;
-    --gold-foreground: 160 10% 6%;
-
-    --border: 160 8% 18%;
-    --input: 160 8% 18%;
-    --ring: 152 45% 35%;
-
+    --background: 154 26% 5.3%; /* #0A110E */
+    --foreground: 96 14% 92.7%; /* #ECEFEA */
+    --card: 147 23% 7.6%; /* #0F1813 */
+    --card-foreground: 96 14% 92.7%; /* #ECEFEA */
+    --popover: 147 23% 7.6%; /* #0F1813 */
+    --popover-foreground: 96 14% 92.7%; /* #ECEFEA */
+    --primary: 153 47% 46.7%; /* #3FAF7D */
+    --primary-foreground: 148 65% 4.5%; /* #04130B */
+    --secondary: 145 23% 10.2%; /* #142019 */
+    --secondary-foreground: 96 14% 92.7%; /* #ECEFEA */
+    --muted: 145 23% 10.2%; /* #142019 */
+    --muted-foreground: 144 6% 66.3%; /* #A4AEA8 */
+    --accent: 152 24% 12.4%; /* #182720 */
+    --accent-foreground: 96 14% 92.7%; /* #ECEFEA */
+    --destructive: 4 77% 61.0%; /* #E8584F */
+    --destructive-foreground: 148 65% 4.5%; /* #04130B */
+    --success: 153 47% 46.7%; /* #3FAF7D */
+    --success-foreground: 148 65% 4.5%; /* #04130B */
+    --warning: 41 75% 55.9%; /* #E3AE3A */
+    --warning-foreground: 148 65% 4.5%; /* #04130B */
+    --info: 144 6% 66.3%; /* #A4AEA8 */
+    --info-foreground: 148 65% 4.5%; /* #04130B */
+    --gold: 41 75% 55.9%; /* #E3AE3A */
+    --gold-foreground: 148 65% 4.5%; /* #04130B */
+    --border: 152 18% 16.3%; /* #22312A */
+    --input: 152 18% 16.3%; /* #22312A */
+    --ring: 153 47% 46.7%; /* #3FAF7D */
+    --sidebar-background: 154 26% 5.3%; /* #0A110E */
+    --sidebar-foreground: 144 6% 66.3%; /* #A4AEA8 */
+    --sidebar-primary: 153 47% 46.7%; /* #3FAF7D */
+    --sidebar-primary-foreground: 148 65% 4.5%; /* #04130B */
+    --sidebar-accent: 145 23% 10.2%; /* #142019 */
+    --sidebar-accent-foreground: 96 14% 92.7%; /* #ECEFEA */
+    --sidebar-border: 150 19% 12.5%; /* #1A2620 */
+    --sidebar-ring: 153 47% 46.7%; /* #3FAF7D */
     --radius: 0.75rem;
-
-    --sidebar-background: 160 10% 8%;
-    --sidebar-foreground: 60 10% 85%;
-    --sidebar-primary: 152 45% 35%;
-    --sidebar-primary-foreground: 60 10% 98%;
-    --sidebar-accent: 160 10% 14%;
-    --sidebar-accent-foreground: 60 10% 90%;
-    --sidebar-border: 160 8% 16%;
-    --sidebar-ring: 152 45% 35%;
   }
 
   .light {
-    --background: 60 10% 97%;
-    --foreground: 160 10% 10%;
-
-    --card: 0 0% 100%;
-    --card-foreground: 160 10% 10%;
-
-    --popover: 0 0% 100%;
-    --popover-foreground: 160 10% 10%;
-
-    --primary: 152 45% 32%;
-    --primary-foreground: 0 0% 100%;
-
-    --secondary: 160 10% 92%;
-    --secondary-foreground: 160 10% 20%;
-
-    --muted: 160 8% 93%;
-    --muted-foreground: 160 8% 40%;
-
-    --accent: 36 85% 32%;
-    --accent-foreground: 0 0% 100%;
-
-    --destructive: 0 63% 45%;
-    --destructive-foreground: 0 0% 100%;
-
-    --success: 152 55% 35%;
-    --success-foreground: 0 0% 100%;
-
-    --warning: 36 85% 35%;
-    --warning-foreground: 0 0% 100%;
-
-    --info: 199 70% 45%;
-    --info-foreground: 0 0% 100%;
-
-    --gold: 36 85% 32%;
-    --gold-foreground: 160 10% 6%;
-
-    --border: 160 8% 88%;
-    --input: 160 8% 88%;
-    --ring: 152 45% 32%;
-
-    --sidebar-background: 0 0% 99%;
-    --sidebar-foreground: 160 10% 20%;
-    --sidebar-primary: 152 45% 32%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 160 10% 94%;
-    --sidebar-accent-foreground: 160 10% 20%;
-    --sidebar-border: 160 8% 90%;
-    --sidebar-ring: 152 45% 32%;
+    --background: 45 32% 92.5%; /* #F2EFE6 */
+    --foreground: 50 9% 12.9%; /* #24231E */
+    --card: 45 44% 96.5%; /* #FAF8F2 */
+    --card-foreground: 50 9% 12.9%; /* #24231E */
+    --popover: 45 44% 96.5%; /* #FAF8F2 */
+    --popover-foreground: 50 9% 12.9%; /* #24231E */
+    --primary: 153 48% 33.1%; /* #2C7D59 */
+    --primary-foreground: 0 0% 100.0%; /* #FFFFFF */
+    --secondary: 44 25% 88.4%; /* #E9E5DA */
+    --secondary-foreground: 50 9% 12.9%; /* #24231E */
+    --muted: 44 25% 88.4%; /* #E9E5DA */
+    --muted-foreground: 46 7% 38.2%; /* #68655B */
+    --accent: 44 25% 88.4%; /* #E9E5DA */
+    --accent-foreground: 50 9% 12.9%; /* #24231E */
+    --destructive: 4 56% 40.4%; /* #A1342D */
+    --destructive-foreground: 0 0% 100.0%; /* #FFFFFF */
+    --success: 154 55% 27.1%; /* #1F6B4A */
+    --success-foreground: 0 0% 100.0%; /* #FFFFFF */
+    --warning: 42 100% 27.1%; /* #8A6100 */
+    --warning-foreground: 0 0% 100.0%; /* #FFFFFF */
+    --info: 46 7% 38.2%; /* #68655B */
+    --info-foreground: 0 0% 100.0%; /* #FFFFFF */
+    --gold: 42 100% 27.1%; /* #8A6100 */
+    --gold-foreground: 0 0% 100.0%; /* #FFFFFF */
+    --border: 44 19% 80.2%; /* #D6D1C3 */
+    --input: 44 19% 80.2%; /* #D6D1C3 */
+    --ring: 153 48% 33.1%; /* #2C7D59 */
+    --sidebar-background: 45 32% 92.5%; /* #F2EFE6 */
+    --sidebar-foreground: 46 7% 38.2%; /* #68655B */
+    --sidebar-primary: 153 48% 33.1%; /* #2C7D59 */
+    --sidebar-primary-foreground: 0 0% 100.0%; /* #FFFFFF */
+    --sidebar-accent: 44 25% 88.4%; /* #E9E5DA */
+    --sidebar-accent-foreground: 50 9% 12.9%; /* #24231E */
+    --sidebar-border: 45 22% 85.5%; /* #E2DED2 */
+    --sidebar-ring: 153 48% 33.1%; /* #2C7D59 */
   }
 }
 
@@ -122,12 +100,19 @@
 
   body {
     @apply bg-background text-foreground antialiased;
-    font-feature-settings: "cv11", "ss01";
+    font-family: "Schibsted Grotesk", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
     text-rendering: optimizeLegibility;
   }
 
-  h1, h2, h3 {
-    letter-spacing: -0.02em;
+  /* Page titles are set in the display face, which has one weight. */
+  h1 {
+    font-family: "Gloock", "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+    font-weight: 400;
+    letter-spacing: -0.01em;
+  }
+
+  h2, h3 {
+    letter-spacing: -0.01em;
   }
 
   ::selection {
@@ -154,178 +139,65 @@
   }
 }
 
-/* ── Liquid Glass Utilities ── */
-.glass {
-  background: hsla(160, 12%, 14%, 0.45);
-  backdrop-filter: blur(24px) saturate(1.5);
-  -webkit-backdrop-filter: blur(24px) saturate(1.5);
-  border: 1px solid hsla(160, 10%, 40%, 0.15);
-  box-shadow:
-    inset 0 1px 0 0 hsla(0, 0%, 100%, 0.06),
-    0 4px 24px -4px hsla(0, 0%, 0%, 0.3);
-}
-.light .glass {
-  background: hsla(0, 0%, 100%, 0.7);
-  border-color: hsla(160, 10%, 60%, 0.2);
-  box-shadow:
-    inset 0 1px 0 0 hsla(0, 0%, 100%, 0.8),
-    0 4px 24px -4px hsla(0, 0%, 0%, 0.08);
-}
+/* Gloock has no bold: keep utilities from faking one on page titles. */
+h1.font-medium, h1.font-semibold, h1.font-bold, h1.font-extrabold { font-weight: 400; }
 
-.glass-card {
-  background: hsla(160, 12%, 12%, 0.5);
-  backdrop-filter: blur(28px) saturate(1.6);
-  -webkit-backdrop-filter: blur(28px) saturate(1.6);
-  border: 1px solid hsla(160, 10%, 40%, 0.12);
-  box-shadow:
-    inset 0 1px 0 0 hsla(0, 0%, 100%, 0.05),
-    inset 0 -1px 0 0 hsla(0, 0%, 0%, 0.1),
-    0 8px 32px -8px hsla(0, 0%, 0%, 0.4);
+/*
+ * Older screens were built from "glass" cards with blur, glow and gold
+ * gradients. The brand is flat ink with hairlines, so these names now give
+ * that, and every screen that still uses them follows.
+ */
+.glass,
+.glass-card,
+.glass-card-hover,
+.glass-button,
+.sub-tile {
+  background: rgb(var(--ez-surface-2));
+  border: 1px solid rgb(var(--ez-line-soft));
 }
-.light .glass-card {
-  background: hsla(0, 0%, 100%, 0.75);
-  border-color: hsla(160, 10%, 70%, 0.25);
-  box-shadow:
-    inset 0 1px 0 0 hsla(0, 0%, 100%, 0.9),
-    0 4px 20px -6px hsla(0, 0%, 0%, 0.08);
-}
-
-.glass-card-hover {
-  background: hsla(160, 12%, 12%, 0.5);
-  backdrop-filter: blur(28px) saturate(1.6);
-  -webkit-backdrop-filter: blur(28px) saturate(1.6);
-  border: 1px solid hsla(160, 10%, 40%, 0.12);
-  box-shadow:
-    inset 0 1px 0 0 hsla(0, 0%, 100%, 0.05),
-    inset 0 -1px 0 0 hsla(0, 0%, 0%, 0.1),
-    0 8px 32px -8px hsla(0, 0%, 0%, 0.4);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-.light .glass-card-hover {
-  background: hsla(0, 0%, 100%, 0.75);
-  border-color: hsla(160, 10%, 70%, 0.25);
-  box-shadow:
-    inset 0 1px 0 0 hsla(0, 0%, 100%, 0.9),
-    0 4px 20px -6px hsla(0, 0%, 0%, 0.08);
-}
-
-.glass-card-hover:hover,
-.glass-card-hover:active {
-  background: hsla(160, 14%, 16%, 0.55);
-  border-color: hsla(152, 45%, 35%, 0.2);
-  box-shadow:
-    inset 0 1px 0 0 hsla(0, 0%, 100%, 0.08),
-    0 12px 40px -8px hsla(152, 45%, 35%, 0.15);
-}
-.light .glass-card-hover:hover,
-.light .glass-card-hover:active {
-  background: hsla(0, 0%, 100%, 0.9);
-  border-color: hsla(152, 45%, 35%, 0.3);
-  box-shadow:
-    0 8px 30px -6px hsla(152, 45%, 35%, 0.12);
-}
-
+.glass-card-hover,
 .glass-button {
-  background: hsla(160, 12%, 18%, 0.5);
-  backdrop-filter: blur(16px) saturate(1.4);
-  -webkit-backdrop-filter: blur(16px) saturate(1.4);
-  border: 1px solid hsla(160, 10%, 40%, 0.12);
-  box-shadow:
-    inset 0 1px 0 0 hsla(0, 0%, 100%, 0.06),
-    0 2px 8px -2px hsla(0, 0%, 0%, 0.3);
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: background-color 0.2s var(--ez-ease), border-color 0.2s var(--ez-ease), transform 0.2s var(--ez-ease);
 }
-.light .glass-button {
-  background: hsla(0, 0%, 100%, 0.6);
-  border-color: hsla(160, 10%, 70%, 0.3);
-  box-shadow:
-    inset 0 1px 0 0 hsla(0, 0%, 100%, 0.8),
-    0 2px 6px -2px hsla(0, 0%, 0%, 0.06);
-}
-
+.glass-card-hover:hover,
+.glass-card-hover:active,
 .glass-button:hover {
-  background: hsla(160, 14%, 22%, 0.6);
-  border-color: hsla(160, 10%, 50%, 0.2);
+  background: rgb(var(--ez-surface-3));
+  border-color: rgb(var(--ez-line));
 }
-.light .glass-button:hover {
-  background: hsla(0, 0%, 100%, 0.85);
-  border-color: hsla(160, 10%, 60%, 0.35);
-}
-
 .glass-button:active {
   transform: scale(0.97);
 }
-
-/* Gold gradient text */
-.text-gold-gradient {
-  background: linear-gradient(135deg, hsl(43, 80%, 60%), hsl(43, 80%, 45%), hsl(35, 80%, 50%));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+.sub-tile.sub-tile-active {
+  background: rgb(var(--ez-surface-3));
+  border-color: rgb(var(--ez-brand) / 0.4);
 }
 
-/* Smooth scrollbar */
+/* Was a gold gradient. Gold is for numbers only, so titles are plain text. */
+.text-gold-gradient {
+  color: rgb(var(--ez-fg));
+}
+
 ::-webkit-scrollbar {
   width: 4px;
 }
-
 ::-webkit-scrollbar-track {
   background: transparent;
 }
-
 ::-webkit-scrollbar-thumb {
-  background: hsla(160, 8%, 30%, 0.5);
+  background: rgb(var(--ez-line));
   border-radius: 4px;
 }
-
 ::-webkit-scrollbar-thumb:hover {
-  background: hsla(160, 8%, 40%, 0.6);
+  background: rgb(var(--ez-faint));
 }
 
-/* Liquid glass shimmer for hero elements */
-@keyframes liquid-shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
-}
-
-.liquid-shimmer {
-  background: linear-gradient(
-    90deg,
-    hsla(160, 10%, 20%, 0) 0%,
-    hsla(0, 0%, 100%, 0.04) 50%,
-    hsla(160, 10%, 20%, 0) 100%
-  );
-  background-size: 200% 100%;
-  animation: liquid-shimmer 4s ease-in-out infinite;
-}
-
-/* ── Light mode overrides for hardcoded dark surfaces ── */
-.light .bottom-nav-surface {
-  background: hsla(0, 0%, 100%, 0.85) !important;
-  border-top: 1px solid hsla(160, 10%, 80%, 0.4) !important;
-  box-shadow: inset 0 1px 0 0 hsla(0,0%,100%,0.9), 0 -4px 24px -4px hsla(0,0%,0%,0.08) !important;
-}
-
-.light .bottom-sheet-surface {
-  background: hsla(0, 0%, 100%, 0.95) !important;
-  color: hsl(var(--foreground));
-}
-
-/* Dialog / Sheet / Drawer / AlertDialog overlays — soften in light mode */
-.light [data-radix-popper-content-wrapper] ~ * .bg-black\/80,
+/* Dialog and sheet overlays: softer on paper */
 .light .bg-black\/80 {
-  background-color: hsla(160, 10%, 30%, 0.45) !important;
+  background-color: rgba(36, 35, 30, 0.45) !important;
 }
 
-/* Gold gradient text — darker, readable variant for light mode */
-.light .text-gold-gradient {
-  background: linear-gradient(135deg, hsl(36, 90%, 32%), hsl(30, 90%, 28%), hsl(24, 90%, 30%));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-/* Chat bubble markdown prose — invert mapping for light mode */
+/* Chat bubble markdown: follow the theme in light mode */
 .light .prose-invert {
   color: hsl(var(--foreground));
 }
@@ -334,29 +206,6 @@
 }
 .light .prose-invert :where(a):not(:where([class~="not-prose"] *)) {
   color: hsl(var(--primary));
-}
-
-/* Drop shadow used by bottom nav active icon — re-tint in light mode */
-.light .drop-shadow-\[0_0_8px_hsla\(43\,80\%\,50\%\,0\.6\)\] {
-  filter: drop-shadow(0 0 6px hsla(36, 85%, 35%, 0.45));
-}
-
-/* Subscription tiles */
-.sub-tile {
-  background: linear-gradient(135deg, hsla(160, 8%, 14%, 0.45), hsla(160, 8%, 9%, 0.30));
-  backdrop-filter: blur(20px) saturate(1.4);
-  -webkit-backdrop-filter: blur(20px) saturate(1.4);
-  box-shadow: inset 0 1px 0 0 hsla(0, 0%, 100%, 0.04);
-}
-.sub-tile.sub-tile-active {
-  background: linear-gradient(135deg, hsla(160, 30%, 18%, 0.55), hsla(160, 12%, 10%, 0.35));
-}
-.light .sub-tile {
-  background: linear-gradient(135deg, hsla(0, 0%, 100%, 0.85), hsla(160, 10%, 96%, 0.7));
-  box-shadow: inset 0 1px 0 0 hsla(0, 0%, 100%, 0.9), 0 2px 10px -4px hsla(0,0%,0%,0.06);
-}
-.light .sub-tile.sub-tile-active {
-  background: linear-gradient(135deg, hsla(152, 35%, 92%, 0.9), hsla(152, 30%, 86%, 0.7));
 }
 
 /* ━━━ NFC paper receipt ━━━ */

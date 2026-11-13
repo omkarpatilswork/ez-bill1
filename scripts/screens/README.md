@@ -22,6 +22,6 @@ Images land in `scripts/screens/out/` (git-ignored), or in the folder given as
 the first argument. Set `CHROMIUM_PATH` to use a Chromium that is already
 installed instead of the one Playwright downloads.
 
-Screens covered: `/next` (Home) and `/next/bills/:id` (Bill detail), plus the
+Screens covered: `/` (Home) and `/expenses/:id` (Bill detail), plus the
 "Add a bill" sheet and a shopping bill that shows the Return window and
 Warranty vault rows.

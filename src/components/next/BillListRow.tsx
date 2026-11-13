@@ -11,7 +11,7 @@ export default function BillListRow({ bill }: { bill: Expense }) {
   const Icon = CATEGORY_ICON[category];
   const source = SOURCE_LABEL[parseBillDescription(bill.description).source];
   return (
-    <Link to={`/next/bills/${bill.id}`} className="group -mx-2 flex items-center gap-3.5 rounded-2xl px-2 py-2.5 hover:bg-surface-2">
+    <Link to={`/expenses/${bill.id}`} className="group -mx-2 flex items-center gap-3.5 rounded-2xl px-2 py-2.5 hover:bg-surface-2">
       <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-line-soft bg-surface-2 text-dim group-hover:border-line">
         <Icon className="h-[18px] w-[18px]" strokeWidth={1.75} />
       </span>

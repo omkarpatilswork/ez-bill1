@@ -148,7 +148,7 @@ export default function BillDetail() {
 
   return (
     <AppShell back={{ to: '/expenses', label: 'Bills' }} actions={menu}>
-      <SEO title={merchant} description={`Bill from ${merchant}`} path={`/next/bills/${bill.id}`} />
+      <SEO title={merchant} description={`Bill from ${merchant}`} path={`/expenses/${bill.id}`} />
 
       <div className="grid grid-cols-1 lg:grid-cols-[400px_minmax(0,1fr)] lg:gap-x-20 lg:pt-12">
         {/* ---------- what it is ---------- */}

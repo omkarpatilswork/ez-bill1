@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from 'react';
-import { Link, NavLink, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
-  ArrowLeft, BarChart3, House, LogOut, Moon, Plus, ReceiptText, Search, Settings, ShieldCheck, Sun, UserRound,
+  ArrowLeft, BarChart3, House, LockKeyhole, LogOut, Moon, Plus, ReceiptText, Search, Settings, ShieldCheck, Store, Sun, UserRound,
   type LucideIcon,
 } from 'lucide-react';
 import {
@@ -18,19 +18,25 @@ interface Destination {
   label: string;
   to: string;
   icon: LucideIcon;
-  end?: boolean;
+  /** Every route that belongs to this place, so it stays lit on sub-pages. */
+  owns: (path: string) => boolean;
 }
 
-/**
- * Four places and one button. The same four on a phone and on a desktop.
- * Bills, Insights and Vault point at the current pages until those screens
- * are redesigned.
- */
+const under = (...roots: string[]) => (path: string) => roots.some((r) => path === r || path.startsWith(`${r}/`));
+
+/** Four places and one button. The same four on a phone and on a desktop. */
 const DESTINATIONS: Destination[] = [
-  { label: 'Home', to: '/next', icon: House, end: true },
-  { label: 'Bills', to: '/expenses', icon: ReceiptText },
-  { label: 'Insights', to: '/money-leaks', icon: BarChart3 },
-  { label: 'Vault', to: '/warranties', icon: ShieldCheck },
+  { label: 'Home', to: '/', icon: House, owns: (p) => p === '/' },
+  { label: 'Bills', to: '/expenses', icon: ReceiptText, owns: under('/expenses', '/splits', '/bulk-upload', '/email-bills', '/nfc-airdrop') },
+  { label: 'Insights', to: '/money-leaks', icon: BarChart3, owns: under('/money-leaks', '/analytics', '/summary', '/ask-ai') },
+  { label: 'Vault', to: '/warranties', icon: ShieldCheck, owns: under('/warranties', '/subscriptions', '/financial-docs') },
+];
+
+/** The pages inside each place. Shown as a row of tabs on those pages. */
+const SECTIONS: { label: string; to: string }[][] = [
+  [{ label: 'All bills', to: '/expenses' }, { label: 'Splits', to: '/splits' }],
+  [{ label: 'Money Leaks', to: '/money-leaks' }, { label: 'Spending', to: '/analytics' }, { label: 'Monthly Summary', to: '/summary' }, { label: 'Ask AI', to: '/ask-ai' }],
+  [{ label: 'Warranty vault', to: '/warranties' }, { label: 'Subscriptions', to: '/subscriptions' }, { label: 'Documents', to: '/financial-docs' }],
 ];
 
 const MENU_ITEM = 'cursor-pointer gap-2.5 rounded-lg px-2.5 py-2 text-[14px] text-fg focus:bg-surface-3 focus:text-fg';
@@ -55,6 +61,13 @@ function AccountMenu({ children, side }: { children: ReactNode; side: 'top' | 'b
         <DropdownMenuItem className={MENU_ITEM} onSelect={() => navigate('/settings')}>
           <Settings className="h-4 w-4 text-dim" /> Settings
         </DropdownMenuItem>
+        <DropdownMenuItem className={MENU_ITEM} onSelect={() => navigate('/security')}>
+          <LockKeyhole className="h-4 w-4 text-dim" /> Security
+        </DropdownMenuItem>
+        <DropdownMenuItem className={MENU_ITEM} onSelect={() => navigate('/staff')}>
+          <Store className="h-4 w-4 text-dim" /> Staff tables
+        </DropdownMenuItem>
+        <DropdownMenuSeparator className="bg-line-soft" />
         <DropdownMenuItem className={MENU_ITEM} onSelect={(e) => { e.preventDefault(); toggleTheme(); }}>
           {theme === 'dark' ? <Sun className="h-4 w-4 text-dim" /> : <Moon className="h-4 w-4 text-dim" />}
           {theme === 'dark' ? 'Light theme' : 'Dark theme'}
@@ -79,6 +92,8 @@ interface AppShellProps {
 export default function AppShell({ children, back, actions }: AppShellProps) {
   const { profile, user } = useAuth();
   const [captureOpen, setCaptureOpen] = useState(false);
+  const { pathname } = useLocation();
+  const section = SECTIONS.find((tabs) => tabs.some((t) => t.to === pathname));
   const name = profile?.full_name || profile?.display_name || '';
   const initials = initialsOf(name);
   const today = new Date().toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' });
@@ -88,27 +103,26 @@ export default function AppShell({ children, back, actions }: AppShellProps) {
     <div className="ez-app min-h-screen lg:pl-[248px]">
       {/* ---------- desktop rail ---------- */}
       <aside className="fixed inset-y-0 left-0 z-40 hidden w-[248px] flex-col border-r border-line-soft bg-surface px-4 pb-4 pt-6 lg:flex">
-        <Link to="/next" className="px-2" aria-label="EZZ BILL home"><Wordmark /></Link>
+        <Link to="/" className="px-2" aria-label="EZZ BILL home"><Wordmark /></Link>
 
         <button type="button" onClick={() => setCaptureOpen(true)} className="ez-btn ez-btn--primary mt-8 w-full">
           <Plus className="h-[18px] w-[18px]" strokeWidth={2.25} /> Add a bill
         </button>
 
         <nav className="mt-6 space-y-1" aria-label="Main">
-          {DESTINATIONS.map((d) => (
-            <NavLink key={d.label} to={d.to} end={d.end}
-              className={({ isActive }) => cn(
-                'group flex h-11 items-center gap-3 rounded-xl px-3 text-[15px] font-medium',
-                isActive ? 'bg-surface-3 text-fg' : 'text-dim hover:bg-surface-2 hover:text-fg',
-              )}>
-              {({ isActive }) => (
-                <>
-                  <d.icon className={cn('h-[19px] w-[19px]', isActive ? 'text-brand-text' : 'text-faint group-hover:text-dim')} strokeWidth={1.75} />
-                  {d.label}
-                </>
-              )}
-            </NavLink>
-          ))}
+          {DESTINATIONS.map((d) => {
+            const active = d.owns(pathname);
+            return (
+              <Link key={d.label} to={d.to} aria-current={active ? 'page' : undefined}
+                className={cn(
+                  'group flex h-11 items-center gap-3 rounded-xl px-3 text-[15px] font-medium',
+                  active ? 'bg-surface-3 text-fg' : 'text-dim hover:bg-surface-2 hover:text-fg',
+                )}>
+                <d.icon className={cn('h-[19px] w-[19px]', active ? 'text-brand-text' : 'text-faint group-hover:text-dim')} strokeWidth={1.75} />
+                {d.label}
+              </Link>
+            );
+          })}
         </nav>
 
         <AccountMenu side="top">
@@ -141,7 +155,7 @@ export default function AppShell({ children, back, actions }: AppShellProps) {
             <ArrowLeft className="h-5 w-5" /> {back.label}
           </Link>
         ) : (
-          <Link to="/next" aria-label="EZZ BILL home"><Wordmark /></Link>
+          <Link to="/" aria-label="EZZ BILL home"><Wordmark /></Link>
         )}
         <div className="flex items-center gap-2">
           {back ? actions : (
@@ -157,19 +171,34 @@ export default function AppShell({ children, back, actions }: AppShellProps) {
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-[1180px] px-4 pb-32 sm:px-6 lg:px-10 lg:pb-20">{children}</main>
+      <main className="mx-auto w-full max-w-[1180px] px-4 pb-32 sm:px-6 lg:px-10 lg:pb-20">
+        {section && (
+          <nav aria-label="In this section" className="-mx-4 flex gap-1.5 overflow-x-auto px-4 pt-2 [scrollbar-width:none] sm:mx-0 sm:px-0 lg:pt-8">
+            {section.map((t) => (
+              <Link key={t.to} to={t.to} aria-current={t.to === pathname ? 'page' : undefined}
+                className={cn(
+                  'flex h-9 shrink-0 items-center rounded-full px-3.5 text-[14px] font-medium',
+                  t.to === pathname ? 'bg-surface-3 text-fg' : 'text-dim hover:text-fg',
+                )}>
+                {t.label}
+              </Link>
+            ))}
+          </nav>
+        )}
+        {children}
+      </main>
 
       {/* ---------- phone tab bar ---------- */}
       <nav aria-label="Main" className="fixed inset-x-0 bottom-0 z-40 border-t border-line-soft bg-surface/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-md lg:hidden">
         <div className="mx-auto grid h-16 max-w-md grid-cols-5 items-center px-1">
-          {DESTINATIONS.slice(0, 2).map((d) => <Tab key={d.label} {...d} />)}
+          {DESTINATIONS.slice(0, 2).map((d) => <Tab key={d.label} destination={d} active={d.owns(pathname)} />)}
           <div className="grid place-items-center">
             <button type="button" onClick={() => setCaptureOpen(true)} aria-label="Add a bill"
               className="-mt-7 grid h-[58px] w-[58px] place-items-center rounded-full bg-brand text-on-brand ring-[5px] ring-surface transition-transform duration-200 hover:bg-brand-hover active:scale-95">
               <Plus className="h-7 w-7" strokeWidth={2.25} />
             </button>
           </div>
-          {DESTINATIONS.slice(2).map((d) => <Tab key={d.label} {...d} />)}
+          {DESTINATIONS.slice(2).map((d) => <Tab key={d.label} destination={d} active={d.owns(pathname)} />)}
         </div>
       </nav>
 
@@ -179,15 +208,15 @@ export default function AppShell({ children, back, actions }: AppShellProps) {
   );
 }
 
-function Tab({ label, to, icon: Icon, end }: Destination) {
+function Tab({ destination: { label, to, icon: Icon }, active }: { destination: Destination; active: boolean }) {
   return (
-    <NavLink to={to} end={end}
-      className={({ isActive }) => cn(
+    <Link to={to} aria-current={active ? 'page' : undefined}
+      className={cn(
         'flex h-full flex-col items-center justify-center gap-1 text-[11px] font-semibold tracking-[.01em]',
-        isActive ? 'text-brand-text' : 'text-faint hover:text-dim',
+        active ? 'text-brand-text' : 'text-faint hover:text-dim',
       )}>
       <Icon className="h-[22px] w-[22px]" strokeWidth={1.75} />
       {label}
-    </NavLink>
+    </Link>
   );
 }

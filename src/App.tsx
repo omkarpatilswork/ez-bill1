@@ -9,10 +9,8 @@ import ProtectedRoute from "@/components/layout/ProtectedRoute";
 import AppLayout from "@/components/layout/AppLayout";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
-import Dashboard from "./pages/Dashboard";
 import NewExpense from "./pages/expenses/NewExpense";
 import MyExpenses from "./pages/expenses/MyExpenses";
-import ExpenseDetail from "./pages/expenses/ExpenseDetail";
 import MerchantSupport from "./pages/expenses/MerchantSupport";
 import SplitBill from "./pages/expenses/SplitBill";
 import Analytics from "./pages/expenses/Analytics";
@@ -37,8 +35,8 @@ import ClaimTag from "./pages/ClaimTag";
 import StaffTables from "./pages/StaffTables";
 import NfcAirdrop from "./pages/NfcAirdrop";
 import NotFound from "./pages/NotFound";
-import NextHome from "./pages/next/Home";
-import NextBillDetail from "./pages/next/BillDetail";
+import Home from "./pages/next/Home";
+import BillDetail from "./pages/next/BillDetail";
 import { checkDueReminders } from "@/lib/return-reminders";
 
 const queryClient = new QueryClient();
@@ -66,9 +64,9 @@ const App = () => {
           <Route path="/t/:tagId" element={<ClaimTag />} />
           <Route path="/staff" element={<ProtectedRoute><AppLayout><StaffTables /></AppLayout></ProtectedRoute>} />
           <Route path="/nfc-airdrop" element={<ProtectedRoute><AppLayout><NfcAirdrop /></AppLayout></ProtectedRoute>} />
-          <Route path="/" element={<ProtectedRoute><AppLayout><Dashboard /></AppLayout></ProtectedRoute>} />
+          <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>} />
           <Route path="/expenses/new" element={<ProtectedRoute><AppLayout><NewExpense /></AppLayout></ProtectedRoute>} />
-          <Route path="/expenses/:id" element={<ProtectedRoute><AppLayout><ExpenseDetail /></AppLayout></ProtectedRoute>} />
+          <Route path="/expenses/:id" element={<ProtectedRoute><BillDetail /></ProtectedRoute>} />
           <Route path="/expenses/:id/support" element={<ProtectedRoute><AppLayout><MerchantSupport /></AppLayout></ProtectedRoute>} />
           <Route path="/expenses/:id/split" element={<ProtectedRoute><AppLayout><SplitBill /></AppLayout></ProtectedRoute>} />
           <Route path="/expenses" element={<ProtectedRoute><AppLayout><MyExpenses /></AppLayout></ProtectedRoute>} />
@@ -86,9 +84,6 @@ const App = () => {
           <Route path="/splits" element={<ProtectedRoute><AppLayout><Splits /></AppLayout></ProtectedRoute>} />
           <Route path="/splits/friend/:friendKey" element={<ProtectedRoute><AppLayout><SplitFriendDetail /></AppLayout></ProtectedRoute>} />
           <Route path="/support" element={<ProtectedRoute><AppLayout><Support /></AppLayout></ProtectedRoute>} />
-          {/* Redesigned reference screens ("Ink & Paper"). They replace "/" and "/expenses/:id" once approved. */}
-          <Route path="/next" element={<ProtectedRoute><NextHome /></ProtectedRoute>} />
-          <Route path="/next/bills/:id" element={<ProtectedRoute><NextBillDetail /></ProtectedRoute>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

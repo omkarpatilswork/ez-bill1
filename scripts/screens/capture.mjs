@@ -4,7 +4,7 @@
  * any request to a Supabase host that is not mocked is blocked.
  *
  *   npx vite --host 127.0.0.1 --port 8080      (in one terminal)
- *   node scripts/screens/capture.mjs [outDir]   (in another)
+ *   node scripts/screens/capture.mjs [outDir] [--all]   (in another)
  *
  * Needs Playwright with Chromium (`npx playwright install chromium` once).
  */
@@ -21,7 +21,8 @@ const { chromium } = require('playwright');
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const BASE = process.env.BASE_URL || 'http://127.0.0.1:8080';
-const OUT = path.resolve(process.argv[2] || path.join(here, 'out'));
+const ALL = process.argv.includes('--all');
+const OUT = path.resolve(process.argv.slice(2).find((a) => !a.startsWith('--')) || path.join(here, 'out'));
 mkdirSync(OUT, { recursive: true });
 
 // The auth storage key is named after the configured project, so read it from .env.
@@ -110,7 +111,8 @@ for (const theme of ['dark', 'light']) {
 
     const page = await context.newPage();
     await page.clock.setFixedTime(new Date(NOW));
-    page.on('console', (m) => { if (m.type() === 'error') problems.push(`${theme}/${size} ${m.text().slice(0, 200)}`); });
+    // A blocked request (an edge function or a write) logs a load failure: that is the mock working, not a fault.
+    page.on('console', (m) => { if (m.type() === 'error' && !m.text().includes('net::ERR_FAILED')) problems.push(`${theme}/${size} ${m.text().slice(0, 200)}`); });
     page.on('pageerror', (e) => problems.push(`${theme}/${size} ${String(e).slice(0, 200)}`));
 
     const shoot = async (name, route, { full = false, before } = {}) => {
@@ -124,15 +126,22 @@ for (const theme of ['dark', 'light']) {
       if (full) await page.setViewportSize(viewport);
     };
 
-    await shoot('home', '/next');
-    await shoot('bill', `/next/bills/${BLUE_TOKAI_ID}`);
+    await shoot('home', '/');
+    await shoot('bill', `/expenses/${BLUE_TOKAI_ID}`);
     if (size === 'mobile') {
-      await shoot('home-full', '/next', { full: true });
-      await shoot('bill-full', `/next/bills/${BLUE_TOKAI_ID}`, { full: true });
-      await shoot('bill-shopping-full', `/next/bills/${CROMA_ID}`, { full: true });
-      await shoot('capture', '/next', { before: () => page.getByRole('button', { name: 'Add a bill' }).click() });
+      await shoot('home-full', '/', { full: true });
+      await shoot('bill-full', `/expenses/${BLUE_TOKAI_ID}`, { full: true });
+      await shoot('bill-shopping-full', `/expenses/${CROMA_ID}`, { full: true });
+      await shoot('capture', '/', { before: () => page.getByRole('button', { name: 'Add a bill' }).click() });
     } else {
-      await shoot('bill-shopping', `/next/bills/${CROMA_ID}`);
+      await shoot('bill-shopping', `/expenses/${CROMA_ID}`);
+    }
+    // --all: every other main screen too, to check the ones not rebuilt yet.
+    if (ALL) {
+      for (const route of ['/expenses', '/splits', '/money-leaks', '/analytics', '/summary', '/ask-ai', '/warranties', '/subscriptions',
+        '/financial-docs', '/expenses/new', '/bulk-upload', '/email-bills', '/settings', '/profile', '/security', '/nfc-airdrop', '/staff']) {
+        await shoot(`all${route.replaceAll('/', '-')}`, route);
+      }
     }
     await context.close();
   }

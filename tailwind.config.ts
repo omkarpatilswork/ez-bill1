@@ -18,6 +18,9 @@ export default {
       },
       fontFamily: {
         // Ink & Paper type (see src/styles/ink.css). Opt-in until the redesign is rolled out.
+        // The defaults too, so font-sans and font-mono on older screens are the brand faces.
+        sans: ['"Schibsted Grotesk"', "ui-sans-serif", "system-ui", "-apple-system", '"Segoe UI"', "sans-serif"],
+        mono: ['"IBM Plex Mono"', "ui-monospace", '"SFMono-Regular"', "Consolas", "monospace"],
         display: ['"Gloock"', '"Iowan Old Style"', '"Palatino Linotype"', "Georgia", "serif"],
         grotesk: ['"Schibsted Grotesk"', "ui-sans-serif", "system-ui", "-apple-system", '"Segoe UI"', "sans-serif"],
         plex: ['"IBM Plex Mono"', "ui-monospace", '"SFMono-Regular"', "Consolas", "monospace"],
