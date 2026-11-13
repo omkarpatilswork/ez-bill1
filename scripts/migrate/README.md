@@ -16,6 +16,8 @@ them in `backups/` (git-ignored) or outside the repo, and never commit them.
 | 2. Schema | `node scripts/migrate/apply-migrations.mjs <ref>` (records history like `supabase db push`) |
 | 3. Convert data | `scripts/migrate/export-to-sql.py backups/export.dump backups/restore [--without-files]` |
 | 4. Load + verify | `node scripts/migrate/restore-data.mjs <ref> backups/restore` |
+| 5. Backfill + integrity report | `node scripts/migrate/run-sql.mjs <ref> scripts/migrate/post-restore.sql` (adds the profiles/roles the live database's missing sign-up trigger never created; every count but users/bills should be 0) |
+| 6. Functions | `SUPABASE_ACCESS_TOKEN=sbp_<40 zeros in a cloud session> npx supabase functions deploy --remote=<ref> --use-api --yes` |
 
 `restore-data.mjs` refuses to run if the project already has users or bills, loads in
 one transaction with triggers off (so the sign-up trigger does not create duplicate

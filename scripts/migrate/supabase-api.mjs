@@ -7,9 +7,19 @@
 //
 // For tests, SUPABASE_SQL_LOCAL=<psql database name> runs the SQL with local psql
 // instead (PGHOST/PGPORT/PGUSER as usual), and the project ref is ignored.
-import { execFileSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
 
 const API = "https://api.supabase.com/v1";
+
+// Behind an HTTPS proxy (Claude cloud sessions), Node's fetch only uses it when
+// NODE_USE_ENV_PROXY is set at startup, so re-run the calling script with it set.
+if (process.env.HTTPS_PROXY && !process.env.NODE_USE_ENV_PROXY && !process.env.SUPABASE_SQL_LOCAL) {
+  const r = spawnSync(process.execPath, process.argv.slice(1), {
+    stdio: "inherit",
+    env: { ...process.env, NODE_USE_ENV_PROXY: "1", NODE_NO_WARNINGS: "1" },
+  });
+  process.exit(r.status ?? 1);
+}
 
 /**
  * Run `query` (one or more statements). Resolves to the rows of the last statement,
