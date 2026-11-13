@@ -1,3 +1,4 @@
+-- Moved from drizzle/migrations/0002_security_fix_nfc_and_category_rls.sql. Lovable applied it to the live database through Drizzle on 2026-10-31.
 -- ================= expense_categories: scope user-created rows to their owner =================
 ALTER TABLE public.expense_categories ADD COLUMN IF NOT EXISTS created_by uuid;
 
@@ -58,3 +59,4 @@ CREATE POLICY "Staff upload own pending receipts"
     bucket_id = 'pending-receipts'
     AND (storage.foldername(name))[1] = (select auth.uid())::text
   );
+

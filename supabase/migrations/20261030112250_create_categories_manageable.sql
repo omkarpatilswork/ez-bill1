@@ -1,3 +1,4 @@
+-- Moved from drizzle/migrations/0001_create_categories_manageable.sql. Lovable applied it to the live database through Drizzle on 2026-10-30.
 -- Template demo policy: any signed-in user may manage the shared expense categories.
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.expense_categories TO authenticated;
 GRANT ALL ON public.expense_categories TO service_role;
