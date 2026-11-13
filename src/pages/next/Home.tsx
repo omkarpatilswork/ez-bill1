@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { ArrowDown, ArrowRight, ArrowUp, ChevronRight, Repeat, RotateCcw, ShieldCheck, type LucideIcon } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { useBills, type Bill } from '@/hooks/useBills';
 import AppShell from '@/components/next/AppShell';
 import { useCapture } from '@/components/next/capture-context';
 import BillListRow from '@/components/next/BillListRow';
@@ -15,14 +16,10 @@ import { formatAmount, parseBillDescription, SOURCE_LABEL } from '@/lib/bill-for
 import { getCurrencySymbol } from '@/lib/countries';
 import { computeLeaks, leakGrade, type MoneyProfile } from '@/lib/leak-engine';
 import { listReminders, reminderEndDate } from '@/lib/return-reminders';
-import type { Expense } from '@/lib/types';
 import { cn } from '@/lib/utils';
-
-type Bill = Expense & { expense_categories?: { name: string } | null };
 
 const DAY = 24 * 60 * 60 * 1000;
 const RECENT_COUNT = 8;
-const NO_BILLS: Bill[] = [];
 
 /** YYYY-MM-DD in the person's own timezone. */
 const dayKey = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -55,18 +52,8 @@ export default function Home() {
   const { user, profile } = useAuth();
   const now = useMemo(() => new Date(), []);
 
-  const billsQuery = useQuery({
-    queryKey: ['bills', user?.id],
-    enabled: !!user,
-    queryFn: async () => {
-      const { data, error } = await supabase.from('expenses').select('*, expense_categories(name)')
-        .eq('user_id', user!.id)
-        .order('expense_date', { ascending: false })
-        .order('created_at', { ascending: false });
-      if (error) throw error;
-      return (data ?? []) as unknown as Bill[];
-    },
-  });
+  const billsQuery = useBills();
+  const { bills } = billsQuery;
 
   const subsQuery = useQuery({
     queryKey: ['subscriptions-due', user?.id],
@@ -93,8 +80,6 @@ export default function Home() {
       return data ?? [];
     },
   });
-
-  const bills = billsQuery.data ?? NO_BILLS;
 
   const spend = useMemo(() => {
     const from = startOfDay(new Date(now.getTime() - 30 * DAY));

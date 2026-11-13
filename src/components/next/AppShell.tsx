@@ -139,7 +139,7 @@ export default function AppShell({ children, back, actions }: AppShellProps) {
       {/* ---------- desktop top bar ---------- */}
       <header className="sticky top-0 z-30 hidden h-[68px] items-center border-b border-line-soft bg-surface/90 backdrop-blur-md lg:flex">
         <div className="mx-auto flex w-full max-w-[1180px] items-center justify-between gap-6 px-10">
-          <Link to="/expenses" className="flex h-10 w-full max-w-[440px] items-center gap-3 rounded-full border border-line-soft bg-surface-2 px-4 text-[14px] text-faint hover:border-line">
+          <Link to="/expenses?search=1" className="flex h-10 w-full max-w-[440px] items-center gap-3 rounded-full border border-line-soft bg-surface-2 px-4 text-[14px] text-faint hover:border-line">
             <Search className="h-4 w-4" />
             <span className="flex-1">Search bills, merchants, items</span>
             <kbd className="ez-num rounded-md border border-line px-1.5 py-0.5 text-[11px] text-faint">Ctrl K</kbd>
@@ -160,7 +160,7 @@ export default function AppShell({ children, back, actions }: AppShellProps) {
         <div className="flex items-center gap-2">
           {back ? actions : (
             <>
-              <Link to="/expenses" aria-label="Search" className="grid h-10 w-10 place-items-center rounded-full border border-line-soft text-dim hover:text-fg">
+              <Link to="/expenses?search=1" aria-label="Search" className="grid h-10 w-10 place-items-center rounded-full border border-line-soft text-dim hover:text-fg">
                 <Search className="h-[18px] w-[18px]" />
               </Link>
               <AccountMenu side="bottom">

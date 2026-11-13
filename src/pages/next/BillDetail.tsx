@@ -12,6 +12,7 @@ import AppShell from '@/components/next/AppShell';
 import Slip from '@/components/next/Slip';
 import SEO from '@/components/SEO';
 import { useToast } from '@/hooks/use-toast';
+import { deleteBills } from '@/lib/bill-actions';
 import { billCategory, type BroadCategory } from '@/lib/bill-category';
 import { checkBillMath, formatAmount, parseBillDescription, SOURCE_LABEL, type BillSource } from '@/lib/bill-format';
 import { getCurrencySymbol } from '@/lib/countries';
@@ -63,9 +64,7 @@ export default function BillDetail() {
   const handleDelete = async () => {
     if (!bill) return;
     setDeleting(true);
-    await supabase.from('processed_emails').delete().eq('expense_id', bill.id);
-    await supabase.from('expense_receipts').delete().eq('expense_id', bill.id);
-    const { error } = await supabase.from('expenses').delete().eq('id', bill.id);
+    const error = await deleteBills([bill.id]);
     setDeleting(false);
     if (error) {
       toast({ title: 'This bill was not deleted', description: 'Check your connection and try again.', variant: 'destructive' });

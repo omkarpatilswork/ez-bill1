@@ -10,7 +10,6 @@ import AppLayout from "@/components/layout/AppLayout";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import NewExpense from "./pages/expenses/NewExpense";
-import MyExpenses from "./pages/expenses/MyExpenses";
 import MerchantSupport from "./pages/expenses/MerchantSupport";
 import SplitBill from "./pages/expenses/SplitBill";
 import Analytics from "./pages/expenses/Analytics";
@@ -37,6 +36,7 @@ import NfcAirdrop from "./pages/NfcAirdrop";
 import NotFound from "./pages/NotFound";
 import Home from "./pages/next/Home";
 import BillDetail from "./pages/next/BillDetail";
+import Bills from "./pages/next/Bills";
 import { checkDueReminders } from "@/lib/return-reminders";
 
 const queryClient = new QueryClient();
@@ -69,7 +69,7 @@ const App = () => {
           <Route path="/expenses/:id" element={<ProtectedRoute><BillDetail /></ProtectedRoute>} />
           <Route path="/expenses/:id/support" element={<ProtectedRoute><AppLayout><MerchantSupport /></AppLayout></ProtectedRoute>} />
           <Route path="/expenses/:id/split" element={<ProtectedRoute><AppLayout><SplitBill /></AppLayout></ProtectedRoute>} />
-          <Route path="/expenses" element={<ProtectedRoute><AppLayout><MyExpenses /></AppLayout></ProtectedRoute>} />
+          <Route path="/expenses" element={<ProtectedRoute><Bills /></ProtectedRoute>} />
           <Route path="/analytics" element={<ProtectedRoute><AppLayout><Analytics /></AppLayout></ProtectedRoute>} />
           <Route path="/email-bills" element={<ProtectedRoute><AppLayout><EmailBills /></AppLayout></ProtectedRoute>} />
           <Route path="/bulk-upload" element={<ProtectedRoute><AppLayout><BulkUpload /></AppLayout></ProtectedRoute>} />

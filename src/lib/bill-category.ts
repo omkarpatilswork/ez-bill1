@@ -1,9 +1,9 @@
 /**
  * Which broad category a bill belongs to, for the redesigned screens.
  *
- * Same buckets and the same rules as the three older copies (BillRow,
- * MyExpenses, MonthlySummary; see AGENTS.md). Those move onto this module
- * when the category mapping is reworked; until then, change all four together.
+ * Same buckets and the same rules as the two older copies (BillRow and
+ * MonthlySummary; see AGENTS.md). Those move onto this module when the
+ * category mapping is reworked; until then, change all three together.
  */
 import { smartCategoryFromMerchant } from '@/lib/smart-category';
 import { parseBillDescription } from '@/lib/bill-format';

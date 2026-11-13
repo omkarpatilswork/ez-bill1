@@ -40,6 +40,15 @@ const session = {
   user,
 };
 
+// Extra rows for one shot only (the duplicates review), so the demo world's totals stay as documented.
+let extraBills = [];
+const croma = bills.find((b) => b.id === CROMA_ID);
+const swiggy = bills.find((b) => b.merchant === 'Swiggy');
+const DUPLICATES = [
+  { ...croma, id: 'b111e000-0000-4000-8000-0000000000d1', created_at: '2026-10-16T18:40:00+05:30', description: croma.description.replace('[scan]', 'From email: Your Croma invoice') },
+  { ...swiggy, id: 'b111e000-0000-4000-8000-0000000000d2', created_at: `${swiggy.expense_date}T22:05:00+05:30` },
+];
+
 const TABLES = {
   expenses: bills,
   profiles: [profile],
@@ -68,7 +77,7 @@ async function mockSupabase(context) {
 
     if (url.pathname.startsWith('/rest/v1/') && req.method() === 'GET') {
       const table = url.pathname.slice('/rest/v1/'.length);
-      let rows = TABLES[table] ?? [];
+      let rows = table === 'expenses' ? [...bills, ...extraBills] : TABLES[table] ?? [];
       for (const [key, value] of url.searchParams) {
         if (value.startsWith('eq.')) rows = rows.filter((r) => String(r[key]) === value.slice(3));
       }
@@ -128,6 +137,16 @@ for (const theme of ['dark', 'light']) {
 
     await shoot('home', '/');
     await shoot('bill', `/expenses/${BLUE_TOKAI_ID}`);
+    await shoot('bills', '/expenses');
+    await shoot('bills-search', '/expenses?q=cappuccino');
+    await shoot('bills-select', '/expenses', { before: async () => {
+      await page.getByRole('button', { name: 'Select', exact: true }).click();
+      await page.getByRole('checkbox').nth(1).click();
+      await page.getByRole('checkbox').nth(3).click();
+    } });
+    extraBills = DUPLICATES;
+    await shoot('bills-duplicates', '/expenses?checkDupes=1');
+    extraBills = [];
     if (size === 'mobile') {
       await shoot('home-full', '/', { full: true });
       await shoot('bill-full', `/expenses/${BLUE_TOKAI_ID}`, { full: true });
@@ -138,7 +157,7 @@ for (const theme of ['dark', 'light']) {
     }
     // --all: every other main screen too, to check the ones not rebuilt yet.
     if (ALL) {
-      for (const route of ['/expenses', '/splits', '/money-leaks', '/analytics', '/summary', '/ask-ai', '/warranties', '/subscriptions',
+      for (const route of ['/splits', '/money-leaks', '/analytics', '/summary', '/ask-ai', '/warranties', '/subscriptions',
         '/financial-docs', '/expenses/new', '/bulk-upload', '/email-bills', '/settings', '/profile', '/security', '/nfc-airdrop', '/staff']) {
         await shoot(`all${route.replaceAll('/', '-')}`, route);
       }
