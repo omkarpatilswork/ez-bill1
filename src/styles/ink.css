@@ -1,0 +1,196 @@
+/*
+ * Ink & Paper: the EZZ BILL brand system for the redesigned screens.
+ *
+ * Every surface is ink, the only light thing is paper (the receipt), and
+ * emerald is the one accent. Gold and leak red are for numbers only.
+ *
+ * Everything here is opt-in: tokens are new variables (--ez-*) and the
+ * classes start with "ez-", so screens that have not been redesigned yet
+ * keep their current look.
+ */
+
+/* ---------- fonts (self-hosted, SIL OFL; see public/fonts/LICENSE.txt) ---------- */
+@font-face { font-family: "Gloock"; font-style: normal; font-weight: 400; font-display: swap;
+  src: url(/fonts/gloock-latin-400-normal.woff2) format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: "Gloock"; font-style: normal; font-weight: 400; font-display: swap;
+  src: url(/fonts/gloock-latin-ext-400-normal.woff2) format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+@font-face { font-family: "Schibsted Grotesk"; font-style: normal; font-weight: 400 900; font-display: swap;
+  src: url(/fonts/schibsted-grotesk-latin-wght-normal.woff2) format("woff2-variations");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: "Schibsted Grotesk"; font-style: normal; font-weight: 400 900; font-display: swap;
+  src: url(/fonts/schibsted-grotesk-latin-ext-wght-normal.woff2) format("woff2-variations");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+@font-face { font-family: "IBM Plex Mono"; font-style: normal; font-weight: 400; font-display: swap;
+  src: url(/fonts/ibm-plex-mono-latin-400-normal.woff2) format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: "IBM Plex Mono"; font-style: normal; font-weight: 400; font-display: swap;
+  src: url(/fonts/ibm-plex-mono-latin-ext-400-normal.woff2) format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+@font-face { font-family: "IBM Plex Mono"; font-style: normal; font-weight: 500; font-display: swap;
+  src: url(/fonts/ibm-plex-mono-latin-500-normal.woff2) format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: "IBM Plex Mono"; font-style: normal; font-weight: 500; font-display: swap;
+  src: url(/fonts/ibm-plex-mono-latin-ext-500-normal.woff2) format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+
+/* ---------- tokens ----------
+   Values are "R G B" so Tailwind can add opacity: bg-brand/10.
+   Dark is the brand as specified. Light is its inverse: the page becomes
+   paper, text becomes paper-ink, and a receipt is a brighter sheet lifted
+   off the page by its shadow. */
+:root {
+  --ez-surface: 10 17 14;        /* ink       #0A110E */
+  --ez-surface-2: 15 24 19;      /* ink-2     #0F1813  cards, inputs */
+  --ez-surface-3: 20 32 25;      /* ink-3     #142019  raised, hover */
+  --ez-line: 34 49 42;           /* line      #22312A */
+  --ez-line-soft: 26 38 32;      /* line-soft #1A2620 */
+  --ez-fg: 236 239 234;          /* text      #ECEFEA */
+  --ez-dim: 164 174 168;         /* dim       #A4AEA8 */
+  --ez-faint: 111 122 116;       /* faint     #6F7A74  captions only */
+  --ez-brand: 63 175 125;        /* emerald   #3FAF7D */
+  --ez-brand-hover: 79 192 142;  /*           #4FC08E */
+  --ez-brand-pressed: 44 125 89; /*           #2C7D59 */
+  --ez-on-brand: 4 19 11;        /*           #04130B */
+  --ez-brand-text: 63 175 125;   /* emerald used as text or icon */
+  --ez-gilt: 227 174 58;         /* gold      #E3AE3A  numbers only */
+  --ez-leak: 232 88 79;          /* leak red  #E8584F  numbers only */
+  --ez-paper: 242 239 230;       /* paper     #F2EFE6 */
+  --ez-paper-ink: 36 35 30;      /*           #24231E */
+  --ez-paper-dim: 109 106 96;    /*           #6D6A60 */
+  --ez-paper-rule: 167 163 151;  /* dashed rules on paper */
+  --ez-slip-shadow: drop-shadow(0 22px 28px rgba(0, 0, 0, .55));
+  --ez-ease: cubic-bezier(.22, .7, .2, 1);
+}
+.light {
+  --ez-surface: 242 239 230;     /* paper */
+  --ez-surface-2: 250 248 242;
+  --ez-surface-3: 233 229 218;
+  --ez-line: 214 209 195;
+  --ez-line-soft: 226 222 210;
+  --ez-fg: 36 35 30;             /* paper-ink */
+  --ez-dim: 104 101 91;
+  --ez-faint: 130 126 114;
+  --ez-brand-text: 31 107 74;    /* emerald darkened to stay readable on paper */
+  --ez-gilt: 138 97 0;
+  --ez-leak: 161 52 45;
+  --ez-paper: 255 253 248;
+  --ez-paper-rule: 190 186 174;
+  --ez-slip-shadow: drop-shadow(0 16px 20px rgba(36, 35, 30, .2)) drop-shadow(0 0 .6px rgba(36, 35, 30, .55));
+}
+
+@layer components {
+  /* Root of a redesigned screen. Sets type and colour for everything inside. */
+  .ez-app {
+    background: rgb(var(--ez-surface));
+    color: rgb(var(--ez-fg));
+    font-family: "Schibsted Grotesk", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-size: 15px;
+    line-height: 1.5;
+    font-feature-settings: normal;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  .ez-app ::selection { background: rgb(var(--ez-brand) / .32); color: rgb(var(--ez-fg)); }
+  .ez-app :focus-visible { outline: 2px solid rgb(var(--ez-brand)); outline-offset: 3px; border-radius: 8px; }
+  .ez-app h1, .ez-app h2, .ez-app h3 { letter-spacing: 0; font-weight: 400; }
+
+  /* Uppercase mono label in emerald: the brand's section marker. */
+  .ez-label {
+    font-family: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Consolas, monospace;
+    font-size: 12px; line-height: 1; font-weight: 500;
+    letter-spacing: .14em; text-transform: uppercase;
+    color: rgb(var(--ez-brand-text));
+  }
+  .ez-label--quiet { color: rgb(var(--ez-faint)); }
+
+  /* Numbers: mono with tabular figures so columns of rupees line up. */
+  .ez-num {
+    font-family: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Consolas, monospace;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -.01em;
+  }
+
+  /* Headlines, card titles and big rupee totals. */
+  .ez-display {
+    font-family: "Gloock", "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+    font-weight: 400; line-height: 1.02; letter-spacing: -.01em;
+  }
+
+  .ez-wordmark {
+    font-family: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Consolas, monospace;
+    font-weight: 500; letter-spacing: .18em; line-height: 1;
+  }
+
+  /* Pill buttons. */
+  .ez-btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    min-height: 44px; padding: 0 20px; border-radius: 999px; border: 1px solid transparent;
+    font-weight: 600; font-size: 15px; line-height: 1; white-space: nowrap; cursor: pointer;
+    transition: transform .2s var(--ez-ease), background-color .2s var(--ez-ease), border-color .2s var(--ez-ease), color .2s var(--ez-ease);
+  }
+  .ez-btn:active { transform: scale(.97); }
+  .ez-btn--primary { background: rgb(var(--ez-brand)); color: rgb(var(--ez-on-brand)); }
+  .ez-btn--primary:hover { background: rgb(var(--ez-brand-hover)); }
+  .ez-btn--primary:active { background: rgb(var(--ez-brand-pressed)); }
+  .ez-btn--ghost { border-color: rgb(var(--ez-line)); color: rgb(var(--ez-fg)); background: transparent; }
+  .ez-btn--ghost:hover { border-color: rgb(var(--ez-brand) / .45); background: rgb(var(--ez-surface-3)); }
+  .ez-btn--sm { min-height: 36px; padding: 0 14px; font-size: 13.5px; }
+
+  /* Card: flat ink-2 with a hairline. No glass, no glow. */
+  .ez-card {
+    background: rgb(var(--ez-surface-2));
+    border: 1px solid rgb(var(--ez-line-soft));
+    border-radius: 18px;
+  }
+
+  /* ---------- the thermal slip ----------
+     The wrapper carries the shadow (a mask would clip a box-shadow);
+     the slip itself is paper with a torn zig-zag foot cut by a CSS mask. */
+  .ez-slip-wrap { filter: var(--ez-slip-shadow); }
+  .ez-slip {
+    --tooth-w: 14px; --tooth-h: 8px;
+    background: rgb(var(--ez-paper));
+    color: rgb(var(--ez-paper-ink));
+    font-family: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Consolas, monospace;
+    font-size: 13px; line-height: 1.6;
+    font-variant-numeric: tabular-nums;
+    padding: 22px 20px calc(22px + var(--tooth-h));
+    -webkit-mask:
+      linear-gradient(#000 0 0) top / 100% calc(100% - var(--tooth-h)) no-repeat,
+      conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) bottom / var(--tooth-w) var(--tooth-h) repeat-x;
+    mask:
+      linear-gradient(#000 0 0) top / 100% calc(100% - var(--tooth-h)) no-repeat,
+      conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) bottom / var(--tooth-w) var(--tooth-h) repeat-x;
+  }
+  .ez-slip__merchant { text-align: center; font-weight: 500; font-size: 14px; letter-spacing: .1em; text-transform: uppercase; }
+  .ez-slip__sub { text-align: center; color: rgb(var(--ez-paper-dim)); font-size: 12px; }
+  .ez-slip__rule { border: 0; border-top: 1.5px dashed rgb(var(--ez-paper-rule)); margin: 14px 0; }
+  .ez-slip__row { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+  .ez-slip__row > :first-child { min-width: 0; }
+  .ez-slip__row > :last-child { flex-shrink: 0; text-align: right; }
+  .ez-slip__dim { color: rgb(var(--ez-paper-dim)); }
+  .ez-slip__total { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; font-weight: 500; letter-spacing: .06em; }
+  .ez-slip__total b {
+    font-family: "Gloock", "Iowan Old Style", Georgia, serif; font-weight: 400; letter-spacing: 0;
+    font-size: 30px; line-height: 1;
+  }
+
+  /* ---------- motion: one fade-up, plus one "print" moment for a slip ---------- */
+  .ez-rise { animation: ez-rise .5s var(--ez-ease) both; }
+  .ez-print { animation: ez-print .7s var(--ez-ease) both; transform-origin: top center; }
+}
+
+@keyframes ez-rise {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes ez-print {
+  from { opacity: 0; clip-path: inset(0 0 100% 0); transform: translateY(-8px); }
+  to { opacity: 1; clip-path: inset(0 0 0 0); transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ez-rise, .ez-print { animation: none; }
+  .ez-btn { transition: none; }
+}

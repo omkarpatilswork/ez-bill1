@@ -13,7 +13,43 @@ export default {
       },
     },
     extend: {
+      transitionTimingFunction: {
+        brand: "cubic-bezier(.22, .7, .2, 1)",
+      },
+      fontFamily: {
+        // Ink & Paper type (see src/styles/ink.css). Opt-in until the redesign is rolled out.
+        display: ['"Gloock"', '"Iowan Old Style"', '"Palatino Linotype"', "Georgia", "serif"],
+        grotesk: ['"Schibsted Grotesk"', "ui-sans-serif", "system-ui", "-apple-system", '"Segoe UI"', "sans-serif"],
+        plex: ['"IBM Plex Mono"', "ui-monospace", '"SFMono-Regular"', "Consolas", "monospace"],
+      },
       colors: {
+        // Ink & Paper tokens (see src/styles/ink.css). They flip with the .light class.
+        surface: {
+          DEFAULT: "rgb(var(--ez-surface) / <alpha-value>)",
+          2: "rgb(var(--ez-surface-2) / <alpha-value>)",
+          3: "rgb(var(--ez-surface-3) / <alpha-value>)",
+        },
+        line: {
+          DEFAULT: "rgb(var(--ez-line) / <alpha-value>)",
+          soft: "rgb(var(--ez-line-soft) / <alpha-value>)",
+        },
+        fg: "rgb(var(--ez-fg) / <alpha-value>)",
+        dim: "rgb(var(--ez-dim) / <alpha-value>)",
+        faint: "rgb(var(--ez-faint) / <alpha-value>)",
+        brand: {
+          DEFAULT: "rgb(var(--ez-brand) / <alpha-value>)",
+          hover: "rgb(var(--ez-brand-hover) / <alpha-value>)",
+          pressed: "rgb(var(--ez-brand-pressed) / <alpha-value>)",
+          text: "rgb(var(--ez-brand-text) / <alpha-value>)",
+        },
+        "on-brand": "rgb(var(--ez-on-brand) / <alpha-value>)",
+        gilt: "rgb(var(--ez-gilt) / <alpha-value>)",
+        leak: "rgb(var(--ez-leak) / <alpha-value>)",
+        paper: {
+          DEFAULT: "rgb(var(--ez-paper) / <alpha-value>)",
+          ink: "rgb(var(--ez-paper-ink) / <alpha-value>)",
+          dim: "rgb(var(--ez-paper-dim) / <alpha-value>)",
+        },
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",

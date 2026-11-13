@@ -1,0 +1,9 @@
+Fonts in this folder are self-hosted copies of open-source typefaces,
+each licensed under the SIL Open Font License, Version 1.1
+(https://openfontlicense.org):
+
+  Gloock             - Copyright The Gloock Project Authors (https://github.com/duartp/gloock)
+  Schibsted Grotesk  - Copyright The Schibsted Grotesk Project Authors (https://github.com/schibsted/schibsted-grotesk)
+  IBM Plex Mono      - Copyright IBM Corp. (https://github.com/IBM/plex)
+
+Files are the latin and latin-ext subsets (the rupee sign is in latin-ext).
