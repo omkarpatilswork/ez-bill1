@@ -22,3 +22,23 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Supabase CLI local state
+supabase/.temp
+supabase/.branches
+
+# Netlify CLI local state
+.netlify
+
+# Database exports, backups and restored files: they hold user data. Never commit.
+backups/
+*.dump
+*.backup
+*.pgdump
+*.sql.gz
+
+# Phase 2 evaluation bills (real bills; the repo is public)
+eval/bills/
+
+# Secret values for `supabase secrets set --env-file` (also covered by *.local)
+.env.secrets*
