@@ -14,3 +14,12 @@ describe('fitWithin', () => {
     expect(fitWithin(2000, 2000)).toEqual({ width: 2000, height: 2000 });
   });
 });
+
+describe('storageName', () => {
+  it('gives the file the extension of what it now is', async () => {
+    const { storageName } = await import('./image-prep');
+    expect(storageName('IMG_2520.HEIC', 'image/jpeg')).toBe('IMG_2520.jpg');
+    expect(storageName('Swiggy order #12 (1).pdf', 'application/pdf')).toBe('Swiggy-order-12-1-.pdf');
+    expect(storageName('', 'image/png')).toBe('bill.png');
+  });
+});

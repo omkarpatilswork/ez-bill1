@@ -71,3 +71,30 @@ export async function prepareForReading(file: File): Promise<ReadyFile> {
     return untouched();
   }
 }
+
+/** iPhone photos arrive as HEIC, which neither the browser nor the reader can open. Others pass through. */
+export async function toJpegIfHeic(file: File): Promise<File> {
+  if (!/\.hei[cf]$/i.test(file.name) && !/hei[cf]/i.test(file.type)) return file;
+  try {
+    const heic2any = (await import('heic2any')).default;
+    const blob = await heic2any({ blob: file, toType: 'image/jpeg', quality: JPEG_QUALITY }) as Blob;
+    return new File([blob], file.name.replace(/\.hei[cf]$/i, '.jpg'), { type: 'image/jpeg' });
+  } catch {
+    return file;
+  }
+}
+
+/** The prepared file as bytes, to store exactly what was read. */
+export function readyToBlob(ready: ReadyFile): Blob {
+  const binary = atob(ready.base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);
+  return new Blob([bytes], { type: ready.type });
+}
+
+/** A storage-safe name whose extension matches what the file now is. */
+export function storageName(original: string, type: string): string {
+  const base = (original.replace(/\.[a-z0-9]{2,5}$/i, '') || 'bill').replace(/[^a-zA-Z0-9._-]+/g, '-').slice(0, 60);
+  const ext = type === 'application/pdf' ? 'pdf' : type === 'image/png' ? 'png' : type === 'image/webp' ? 'webp' : 'jpg';
+  return `${base}.${ext}`;
+}

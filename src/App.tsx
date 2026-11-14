@@ -16,13 +16,12 @@ import { checkDueReminders } from "@/lib/return-reminders";
 const Bills = lazy(() => import("./pages/next/Bills"));
 const BillDetail = lazy(() => import("./pages/next/BillDetail"));
 const Signup = lazy(() => import("./pages/Signup"));
-const NewExpense = lazy(() => import("./pages/expenses/NewExpense"));
+const AddBill = lazy(() => import("./pages/next/AddBill"));
 const MerchantSupport = lazy(() => import("./pages/expenses/MerchantSupport"));
 const SplitBill = lazy(() => import("./pages/expenses/SplitBill"));
 const Spending = lazy(() => import("./pages/next/Spending"));
 const AskAI = lazy(() => import("./pages/AskAI"));
 const EmailBills = lazy(() => import("./pages/expenses/EmailBills"));
-const BulkUpload = lazy(() => import("./pages/expenses/BulkUpload"));
 const Profile = lazy(() => import("./pages/Profile"));
 const Settings = lazy(() => import("./pages/Settings"));
 const Onboarding = lazy(() => import("./pages/Onboarding"));
@@ -82,17 +81,17 @@ const App = () => {
             <Route path="/analytics" element={<Spending />} />
             <Route path="/money-leaks" element={<MoneyLeaks />} />
             <Route path="/summary" element={<MonthlySummary />} />
+            <Route path="/expenses/new" element={<AddBill />} />
+            <Route path="/bulk-upload" element={<Navigate to="/expenses/new?mode=upload" replace />} />
             <Route path="/warranties" element={<WarrantyVault />} />
             <Route path="/subscriptions" element={<Subscriptions />} />
             <Route path="/financial-docs" element={<Documents />} />
 
             {/* Not rebuilt yet: brand colours and fonts, old layouts */}
             <Route element={<LegacyScreen />}>
-              <Route path="/expenses/new" element={<NewExpense />} />
               <Route path="/expenses/:id/support" element={<MerchantSupport />} />
               <Route path="/expenses/:id/split" element={<SplitBill />} />
               <Route path="/email-bills" element={<EmailBills />} />
-              <Route path="/bulk-upload" element={<BulkUpload />} />
               <Route path="/ask-ai" element={<AskAI />} />
               <Route path="/profile" element={<Profile />} />
               <Route path="/settings" element={<Settings />} />

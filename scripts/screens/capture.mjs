@@ -42,6 +42,15 @@ const session = {
 
 // Extra rows for one shot only (the duplicates review), so the demo world's totals stay as documented.
 let extraBills = [];
+// For the "Add a bill" shots: what the pretend reader answers, and a bill to leave out so it can be added afresh.
+let reading = null;
+let hiddenBill = null;
+const BLUE_TOKAI_READING = {
+  merchant_name: 'Blue Tokai Coffee', aggregator: 'Not Found', merchant_address: 'Koregaon Park, Pune', amount: 412, subtotal: 392.38, tax_amount: 19.62,
+  tax_details: 'CGST 2.5% + SGST 2.5%', discount: null, date_time: '2026-10-19 13:20:00', bill_invoice_number: 'Not Found', payment_method: 'UPI',
+  category: 'Food & Dining', currency: 'INR',
+  line_items: [{ name: 'Cappuccino', quantity: 2, unit_price: 160, total_price: 320 }, { name: 'Almond Croissant', quantity: 1, unit_price: 92, total_price: 92 }],
+};
 const croma = bills.find((b) => b.id === CROMA_ID);
 const swiggy = bills.find((b) => b.merchant === 'Swiggy');
 const DUPLICATES = [
@@ -76,9 +85,11 @@ async function mockSupabase(context) {
     if (url.pathname.startsWith('/storage/v1/object/sign/')) return json({ signedURL: `${url.pathname.replace('/storage/v1', '')}?token=demo` });
     if (url.pathname.startsWith('/storage/v1/')) return route.fulfill({ status: 200, contentType: 'image/png', body: PIXEL });
 
+    if (url.pathname === '/functions/v1/extract-receipt' && reading) return json(reading);
+
     if (url.pathname.startsWith('/rest/v1/') && req.method() === 'GET') {
       const table = url.pathname.slice('/rest/v1/'.length);
-      let rows = table === 'expenses' ? [...bills, ...extraBills] : TABLES[table] ?? [];
+      let rows = table === 'expenses' ? [...bills, ...extraBills].filter((b) => b.id !== hiddenBill) : TABLES[table] ?? [];
       for (const [key, value] of url.searchParams) {
         if (value.startsWith('eq.')) rows = rows.filter((r) => String(r[key]) === value.slice(3));
       }
@@ -154,6 +165,24 @@ for (const theme of ['dark', 'light']) {
     await shoot('subscriptions', '/subscriptions');
     await shoot('subscription-edit', '/subscriptions', { before: () => page.getByRole('button', { name: /Netflix/ }).click() });
     await shoot('documents', '/financial-docs');
+    // Add a bill: the demo bill's own slip stands in for the photo, and a pretend reader answers.
+    await page.goto(`${BASE}/expenses/${BLUE_TOKAI_ID}`, { waitUntil: 'networkidle' });
+    const photo = await page.locator('.ez-slip-wrap').first().screenshot();
+    const add = (file) => async () => {
+      await page.locator('input[type=file]').last().setInputFiles(file);
+      await page.getByRole('heading', { name: /Check the bill|Type in what you see/ }).waitFor();
+    };
+    reading = BLUE_TOKAI_READING; hiddenBill = BLUE_TOKAI_ID;
+    await shoot('add-check', '/expenses/new?mode=upload', { full: true, before: add({ name: 'bill-table-3.png', mimeType: 'image/png', buffer: photo }) });
+    // The same bill again: it is already here, so the screen says so before anything is saved.
+    hiddenBill = null;
+    await shoot('add-duplicate', '/expenses/new?mode=upload', { full: true, before: add({ name: 'bill-table-3.png', mimeType: 'image/png', buffer: photo }) });
+    // A misread total: the lines no longer add up to it.
+    reading = { ...BLUE_TOKAI_READING, amount: 421 };
+    await shoot('add-mismatch', '/expenses/new?mode=upload', { full: true, before: add({ name: 'bill-table-3.png', mimeType: 'image/png', buffer: photo }) });
+    reading = null;
+    await shoot('add-typed', '/expenses/new', { full: size === 'mobile' });
+    await shoot('add-correct', `/expenses/new?edit=${CROMA_ID}`, { full: size === 'mobile' });
     await shoot('bills-select', '/expenses', { before: async () => {
       await page.getByRole('button', { name: 'Select', exact: true }).click();
       await page.getByRole('checkbox').nth(1).click();
@@ -172,7 +201,7 @@ for (const theme of ['dark', 'light']) {
     }
     // --all: every other main screen too, to check the ones not rebuilt yet.
     if (ALL) {
-      for (const route of ['/splits', '/ask-ai', '/expenses/new', '/bulk-upload', '/email-bills', '/settings', '/profile', '/security', '/nfc-airdrop', '/staff']) {
+      for (const route of ['/splits', '/ask-ai', '/email-bills', '/settings', '/profile', '/security', '/nfc-airdrop', '/staff']) {
         await shoot(`all${route.replaceAll('/', '-')}`, route);
       }
     }
