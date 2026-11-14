@@ -1,0 +1,72 @@
+/**
+ * Gets a file ready to be read as a bill.
+ *
+ * Phone photos are often 3 to 11 MB. The reader rejects anything over 7 MB,
+ * and a big upload is slow on mobile data, so photos are shrunk in the
+ * browser first: at most MAX_EDGE pixels on the long side, JPEG at 85%.
+ * PDFs and anything the browser cannot decode are passed through untouched.
+ *
+ * scripts/eval/run.mjs --max-edge applies the same treatment, so the effect
+ * on accuracy is measured rather than assumed.
+ */
+
+export const MAX_EDGE = 2000;
+export const JPEG_QUALITY = 0.85;
+/** Small images are already fine: do not re-encode them. */
+const LEAVE_ALONE_BYTES = 900 * 1024;
+
+export interface ReadyFile {
+  /** Base64 without the data-URL prefix, as the functions expect. */
+  base64: string;
+  type: string;
+}
+
+/** The size that fits inside `max` on the long side, keeping the shape. Never enlarges. */
+export function fitWithin(width: number, height: number, max = MAX_EDGE): { width: number; height: number } {
+  const long = Math.max(width, height);
+  if (!(long > max)) return { width, height };
+  const scale = max / long;
+  return { width: Math.max(1, Math.round(width * scale)), height: Math.max(1, Math.round(height * scale)) };
+}
+
+function readAsBase64(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result).split(',')[1] ?? '');
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(blob);
+  });
+}
+
+function typeOf(file: File): string {
+  if (file.type) return file.type;
+  return file.name.toLowerCase().endsWith('.pdf') ? 'application/pdf' : 'image/jpeg';
+}
+
+export async function prepareForReading(file: File): Promise<ReadyFile> {
+  const type = typeOf(file);
+  const untouched = async () => ({ base64: await readAsBase64(file), type });
+  if (!type.startsWith('image/') || typeof createImageBitmap !== 'function') return untouched();
+
+  try {
+    // imageOrientation: a phone stores a rotated photo sideways with a note saying so; honour the note.
+    const bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' });
+    const size = fitWithin(bitmap.width, bitmap.height);
+    if (size.width === bitmap.width && file.size <= LEAVE_ALONE_BYTES) { bitmap.close(); return untouched(); }
+
+    const canvas = document.createElement('canvas');
+    canvas.width = size.width;
+    canvas.height = size.height;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) { bitmap.close(); return untouched(); }
+    ctx.drawImage(bitmap, 0, 0, size.width, size.height);
+    bitmap.close();
+
+    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/jpeg', JPEG_QUALITY));
+    // Keep the original if shrinking somehow made it bigger.
+    if (!blob || blob.size >= file.size) return untouched();
+    return { base64: await readAsBase64(blob), type: 'image/jpeg' };
+  } catch {
+    return untouched();
+  }
+}

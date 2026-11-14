@@ -94,7 +94,7 @@ export default function SplitFriendDetail() {
         note: 'Marked all settled',
       } as any);
     }
-    toast({ title: 'All splits marked settled ✅' });
+    toast({ title: 'All splits marked settled' });
     reload();
   };
 
@@ -114,7 +114,7 @@ export default function SplitFriendDetail() {
       note: payNote || '',
     } as any);
     setPayAmount(''); setPayNote(''); setShowPay(false);
-    toast({ title: 'Payment recorded ✅' });
+    toast({ title: 'Payment recorded' });
     reload();
   };
 
@@ -137,7 +137,7 @@ export default function SplitFriendDetail() {
       <div className="glass-card rounded-2xl p-5">
         <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium mb-1">Net balance</p>
         {Math.abs(net) < 0.5 ? (
-          <p className="text-xl font-bold text-foreground">All settled ✓</p>
+          <p className="text-xl font-bold text-foreground">All settled</p>
         ) : net > 0 ? (
           <p className="text-2xl font-bold text-success tabular-nums">
             ₹{net.toLocaleString('en-IN', { minimumFractionDigits: 2 })}

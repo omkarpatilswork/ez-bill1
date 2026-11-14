@@ -2,13 +2,18 @@
  * Sends every bill in eval/bills/ to the bill reader exactly as the app does,
  * and saves what comes back. It reads only: nothing is written to the database.
  *
- *   EVAL_EMAIL=... EVAL_PASSWORD=... node scripts/eval/run.mjs [label] [--force] [--delay=4500]
+ *   EVAL_EMAIL=... EVAL_PASSWORD=... node scripts/eval/run.mjs [label] [--force] [--delay=4500] [--only=photo-] [--max-edge=2000]
+ *
+ * --only=prefix    read only the files whose names start with the prefix
+ * --max-edge=N     shrink photos to at most N pixels on the long side first, as the app does
+ *                  before upload (needs ImageMagick's `convert`); used to measure that step
  *
  * Results land in eval/bills/runs/<label>/ (git-ignored, like the bills).
  * A bill that already has a result is skipped unless --force is given, so an
  * interrupted run can be continued. In the cloud container, start Node with
  * NODE_USE_ENV_PROXY=1 so requests go through the session's proxy.
  */
+import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -17,7 +22,10 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
 const args = process.argv.slice(2);
 const label = args.find((a) => !a.startsWith('--')) || 'baseline';
 const force = args.includes('--force');
-const delay = Number((args.find((a) => a.startsWith('--delay=')) || '').split('=')[1]) || 4500;
+const option = (name) => (args.find((a) => a.startsWith(`--${name}=`)) || '').split('=')[1];
+const delay = Number(option('delay')) || 4500;
+const only = option('only') || '';
+const maxEdge = Number(option('max-edge')) || 0;
 
 const env = readFileSync(path.join(root, '.env'), 'utf8');
 const read = (key) => (env.match(new RegExp(`${key}="?([^"\\n]+)"?`)) || [])[1];
@@ -33,7 +41,7 @@ mkdirSync(outDir, { recursive: true });
 export const TYPES = { '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png', '.webp': 'image/webp', '.pdf': 'application/pdf' };
 const TEXT = new Set(['.txt', '.eml', '.html', '.htm']);
 const files = existsSync(billsDir)
-  ? readdirSync(billsDir, { withFileTypes: true }).filter((f) => f.isFile() && !f.name.startsWith('.') && f.name !== 'answers.csv').map((f) => f.name).sort()
+  ? readdirSync(billsDir, { withFileTypes: true }).filter((f) => f.isFile() && !f.name.startsWith('.') && f.name !== 'answers.csv' && f.name.startsWith(only)).map((f) => f.name).sort()
   : [];
 if (files.length === 0) { console.error(`No bills in ${billsDir}.`); process.exit(1); }
 
@@ -55,7 +63,11 @@ for (const file of files) {
   if (existsSync(out) && !force) { skipped += 1; continue; }
   const ext = path.extname(file).toLowerCase();
   let body;
-  if (TYPES[ext]) body = { file_base64: readFileSync(path.join(billsDir, file)).toString('base64'), file_type: TYPES[ext] };
+  if (TYPES[ext] && maxEdge && ext !== '.pdf') {
+    // Same treatment as src/lib/image-prep.ts: fit inside maxEdge, JPEG at quality 85.
+    const shrunk = execFileSync('convert', [path.join(billsDir, file), '-auto-orient', '-resize', `${maxEdge}x${maxEdge}>`, '-quality', '85', 'jpg:-'], { maxBuffer: 64 * 1024 * 1024 });
+    body = { file_base64: shrunk.toString('base64'), file_type: 'image/jpeg' };
+  } else if (TYPES[ext]) body = { file_base64: readFileSync(path.join(billsDir, file)).toString('base64'), file_type: TYPES[ext] };
   else if (TEXT.has(ext)) body = { text_content: readFileSync(path.join(billsDir, file), 'utf8'), source_hint: 'email' };
   else { unsupported += 1; console.log(`skip  ${file} (the app cannot read ${ext || 'this'} files; convert it to JPG or PDF)`); continue; }
 

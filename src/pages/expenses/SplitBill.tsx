@@ -179,7 +179,7 @@ export default function SplitBill() {
     if (error) {
       toast({ title: 'Error', description: error.message, variant: 'destructive' });
     } else {
-      toast({ title: 'Split confirmed ✅' });
+      toast({ title: 'Split confirmed' });
       navigate(`/expenses/${id}`);
     }
     setSaving(false);

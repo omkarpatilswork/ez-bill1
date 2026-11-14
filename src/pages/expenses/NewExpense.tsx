@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { prepareForReading } from '@/lib/image-prep';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -200,14 +201,6 @@ export default function NewExpense() {
     }
   }, [mode]);
 
-  const fileToBase64 = (file: File): Promise<string> =>
-    new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve((reader.result as string).split(',')[1]);
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
-
   const handleFileSelected = async (originalFile: File) => {
     // Convert HEIC to JPEG for preview AND extraction (AI doesn't support HEIC MIME)
     const file = await convertHeicToJpeg(originalFile);
@@ -220,11 +213,11 @@ export default function NewExpense() {
 
     try {
       // Use converted file for extraction (HEIC not supported by AI gateway)
-      const base64 = await fileToBase64(file);
-      if (!base64) throw new Error('Could not read file');
-      const fileType = file.type || (file.name?.toLowerCase().endsWith('.pdf') ? 'application/pdf' : 'image/jpeg');
+      // Large phone photos are shrunk first: the reader rejects files over 7 MB.
+      const ready = await prepareForReading(file);
+      if (!ready.base64) throw new Error('Could not read file');
       const { data, error } = await supabase.functions.invoke('extract-receipt', {
-        body: { file_base64: base64, file_type: fileType },
+        body: { file_base64: ready.base64, file_type: ready.type },
       });
 
       if (error) {
@@ -278,7 +271,7 @@ export default function NewExpense() {
         }
       }
 
-      toast({ title: '✅ Bill scanned successfully', description: 'AI extracted all details. Review your E-Bill below.' });
+      toast({ title: 'Bill read', description: 'Check the details below before you save.' });
     } catch (err: any) {
       console.error('Extraction error:', err);
       toast({ title: 'Scan failed', description: err.message || 'Could not extract details.', variant: 'destructive' });

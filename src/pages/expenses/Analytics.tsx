@@ -45,10 +45,10 @@ function parseField(description: string | null | undefined, key: string): string
 
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const TIME_BUCKETS = [
-  { label: 'Morning', icon: '☀️', range: [5, 11] },
-  { label: 'Afternoon', icon: '🌤️', range: [12, 16] },
-  { label: 'Evening', icon: '🌆', range: [17, 21] },
-  { label: 'Late Night', icon: '🌙', range: [22, 28] }, // 22-23 + 0-4
+  { label: 'Morning', range: [5, 11] },
+  { label: 'Afternoon', range: [12, 16] },
+  { label: 'Evening', range: [17, 21] },
+  { label: 'Late Night', range: [22, 28] }, // 22-23 + 0-4
 ];
 
 export default function Analytics() {
@@ -641,7 +641,6 @@ export default function Analytics() {
                   <div key={b.label} className="space-y-1.5">
                     <div className="flex items-center justify-between text-sm">
                       <span className="font-medium flex items-center gap-2">
-                        <span className="text-base">{b.icon}</span>
                         {b.label}
                         {isLateNight && b.total > totalAmount * 0.15 && totalAmount > 0 && (
                           <AlertTriangle className="h-3 w-3 text-gold" />
@@ -1039,7 +1038,7 @@ export default function Analytics() {
                                 </div>
 
                                 <Badge variant="outline" className="text-[10px]">
-                                  {m.count >= 5 ? '🔥 Loyal customer' : m.count >= 3 ? '✨ Frequent visitor' : '👋 Occasional'}
+                                  {m.count >= 5 ? 'Loyal customer' : m.count >= 3 ? 'Frequent visitor' : 'Occasional'}
                                 </Badge>
                               </div>
                             )}

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { prepareForReading } from '@/lib/image-prep';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -52,15 +53,6 @@ function timeAgo(iso: string): string {
   return `${Math.round(mins / 60)}h ago`;
 }
 
-function fileToBase64(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve((reader.result as string).split(',')[1]);
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-}
-
 // Read the bill once, now, while staff are signed in, and store the result on the
 // pending bill. resolve-tag hands it to the guest who taps, so their page shows the
 // details without calling the AI before they sign in. Runs in the background: the
@@ -68,9 +60,9 @@ function fileToBase64(file: File): Promise<string> {
 // page reads the photo itself after they sign in.
 async function readBillForTap(pendingId: string, file: File) {
   try {
-    const base64 = await fileToBase64(file);
+    const ready = await prepareForReading(file);
     const { data, error } = await supabase.functions.invoke('extract-receipt', {
-      body: { file_base64: base64, file_type: file.type || 'image/jpeg' },
+      body: { file_base64: ready.base64, file_type: ready.type },
     });
     if (error || !data || data.error) return;
     await supabase.from('tag_pending_bills').update({ extracted: data }).eq('id', pendingId);

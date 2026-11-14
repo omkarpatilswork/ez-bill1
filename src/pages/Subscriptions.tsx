@@ -317,8 +317,8 @@ export default function Subscriptions() {
               return (
                 <div key={r.id} className="glass-card rounded-2xl p-3.5">
                   <div className="flex items-center gap-3">
-                    <div className="h-11 w-11 rounded-xl bg-primary/10 flex items-center justify-center shrink-0 text-xl">
-                      {svc?.emoji || '🔁'}
+                    <div className="h-11 w-11 rounded-xl bg-secondary flex items-center justify-center shrink-0 font-mono text-sm font-medium text-foreground">
+                      {(svc?.name || r.service_name || '?').charAt(0).toUpperCase()}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-2">
@@ -468,8 +468,8 @@ export default function Subscriptions() {
               return (
                 <div key={row.id} className="glass-card rounded-2xl p-3.5">
                   <div className="flex items-center gap-3">
-                    <div className="h-11 w-11 rounded-xl bg-primary/10 flex items-center justify-center shrink-0 text-xl">
-                      {svc?.emoji || '📩'}
+                    <div className="h-11 w-11 rounded-xl bg-secondary flex items-center justify-center shrink-0 font-mono text-sm font-medium text-foreground">
+                      {(svc?.name || row.service_name || '?').charAt(0).toUpperCase()}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-2">
@@ -713,7 +713,7 @@ function SubscriptionDialog({
                 {suggestions.map(s => (
                   <button key={s.key} type="button" onClick={() => pickPopular(s)}
                     className="text-[11px] px-2 py-1 rounded-full bg-secondary hover:bg-secondary/70 text-foreground flex items-center gap-1">
-                    <span>{s.emoji}</span>{s.name}
+                    {s.name}
                   </button>
                 ))}
               </div>

@@ -111,11 +111,6 @@ function SectionSkeleton() {
   );
 }
 
-const categoryIcons: Record<string, string> = {
-  electronics: '🔌', apparel: '👕', grocery: '🛒', restaurant: '🍽️',
-  fuel: '⛽', pharmacy: '💊', travel: '✈️', entertainment: '🎬',
-  utilities: '💡', services: '🔧', other: '🏪',
-};
 
 export default function MerchantSupport() {
   const { id } = useParams<{ id: string }>();
@@ -363,7 +358,7 @@ export default function MerchantSupport() {
         <div className="glass-card rounded-2xl p-5">
           <div className="flex items-center gap-4">
             <div className="h-16 w-16 rounded-2xl bg-primary/10 flex items-center justify-center shrink-0 text-2xl">
-              {categoryIcons[supportData.merchant.category] || '🏪'}
+              <Store className="h-7 w-7 text-primary" strokeWidth={1.5} />
             </div>
             <div className="min-w-0 flex-1">
               <h2 className="text-base font-bold text-foreground truncate">

@@ -174,7 +174,7 @@ export default function MoneyLeaks() {
       return;
     }
     setProfile({ ...data, money_profile_completed: true });
-    toast({ title: 'Money profile saved 🎯', description: 'Your personalized leak insights are ready.' });
+    toast({ title: 'Money profile saved', description: 'Your personalized leak insights are ready.' });
   };
 
   /* Persist survival-mode inputs silently */
@@ -196,7 +196,7 @@ export default function MoneyLeaks() {
     setAlertEnabled(next);
     await saveSurvivalField({ leak_alerts_enabled: next });
     toast({
-      title: next ? 'Leak alerts on 🔔' : 'Leak alerts off',
+      title: next ? 'Leak alerts on' : 'Leak alerts off',
       description: next ? "We'll nudge you here when a leak starts growing." : undefined,
     });
   };
@@ -270,7 +270,7 @@ export default function MoneyLeaks() {
         }
       }
     } catch {
-      setChatMessages([...allMsgs, { role: 'assistant', content: '⚠️ Advisor unavailable right now. Try again shortly.' }]);
+      setChatMessages([...allMsgs, { role: 'assistant', content: 'Advisor unavailable right now. Try again shortly.' }]);
     }
     setChatLoading(false);
   };
@@ -282,7 +282,7 @@ export default function MoneyLeaks() {
   const shareSummary = () => {
     if (!leakData) return;
     const grade = leakGrade(leakData.leakScore).label;
-    const text = `💧 Money leak check — ${monthLabel(selectedMonth)}\nLeaked: ${fmt(leakData.totalLeak)} (${leakData.leakPercent}% of spending)\nHealth: ${leakData.leakScore}/100 · ${grade}\nBiggest leak: ${leakData.perCategory[0]?.category || 'N/A'}\n\nTracked with EZZ BILL`;
+    const text = `Money leak check — ${monthLabel(selectedMonth)}\nLeaked: ${fmt(leakData.totalLeak)} (${leakData.leakPercent}% of spending)\nHealth: ${leakData.leakScore}/100 · ${grade}\nBiggest leak: ${leakData.perCategory[0]?.category || 'N/A'}\n\nTracked with EZZ BILL`;
     if (navigator.share) navigator.share({ text }).catch(() => {});
     else { navigator.clipboard.writeText(text); toast({ title: 'Copied to clipboard' }); }
   };
@@ -577,7 +577,7 @@ export default function MoneyLeaks() {
             <div className="flex items-center gap-3 mt-4">
               <Progress value={leakData.leakPercent} className="h-2 flex-1 bg-secondary [&>div]:bg-destructive" />
               <span className={`text-xs font-semibold tabular-nums ${leakData.leakPercent > 0 ? 'text-destructive' : 'text-success'}`}>
-                {leakData.leakPercent > 0 ? `${leakData.leakPercent}% of spending leaked` : 'No leaks this month 🎉'}
+                {leakData.leakPercent > 0 ? `${leakData.leakPercent}% of spending leaked` : 'No leaks this month'}
               </span>
             </div>
 

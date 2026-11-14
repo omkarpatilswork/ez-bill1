@@ -14,7 +14,6 @@ interface Step {
   key?: keyof MoneyProfile;
   kind: 'choices' | 'rent_emi';
   title: string;
-  emoji: string;
   sub?: string;
   options?: { value: string; label: string; sub?: string }[];
 }
@@ -22,7 +21,7 @@ interface Step {
 const STEPS: Step[] = [
   {
     kind: 'choices',
-    key: 'income_range', title: 'How much do you earn monthly?', emoji: '💸',
+    key: 'income_range', title: 'How much do you earn monthly?',
     options: [
       { value: '0-25k', label: 'Under ₹25K', sub: 'Just starting out' },
       { value: '25-50k', label: '₹25K – ₹50K' },
@@ -33,7 +32,7 @@ const STEPS: Step[] = [
   },
   {
     kind: 'choices',
-    key: 'age_group', title: 'Your age?', emoji: '🎂',
+    key: 'age_group', title: 'Your age?',
     options: [
       { value: '18-24', label: '18 – 24' },
       { value: '25-34', label: '25 – 34' },
@@ -43,7 +42,7 @@ const STEPS: Step[] = [
   },
   {
     kind: 'choices',
-    key: 'city_tier', title: 'Where do you live?', emoji: '🏙️',
+    key: 'city_tier', title: 'Where do you live?',
     options: [
       { value: 'tier_1', label: 'Tier 1', sub: 'Mumbai, Delhi, Bangalore…' },
       { value: 'tier_2', label: 'Tier 2', sub: 'Pune, Jaipur, Indore…' },
@@ -52,7 +51,7 @@ const STEPS: Step[] = [
   },
   {
     kind: 'choices',
-    key: 'living_situation', title: 'Living situation?', emoji: '🏠',
+    key: 'living_situation', title: 'Living situation?',
     options: [
       { value: 'family', label: 'With family', sub: 'Low food + rent' },
       { value: 'shared', label: 'Bachelor (shared)', sub: 'Splitting costs' },
@@ -61,7 +60,7 @@ const STEPS: Step[] = [
   },
   {
     kind: 'choices',
-    key: 'job_type', title: 'How do you work?', emoji: '💼',
+    key: 'job_type', title: 'How do you work?',
     options: [
       { value: 'remote', label: 'Remote', sub: 'Mostly home' },
       { value: 'office', label: 'Office', sub: 'Daily commute' },
@@ -70,7 +69,7 @@ const STEPS: Step[] = [
   },
   {
     kind: 'choices',
-    key: 'financial_goal', title: "What's the vibe?", emoji: '🎯',
+    key: 'financial_goal', title: 'What matters most right now?',
     options: [
       { value: 'save', label: 'Save aggressively', sub: 'Every rupee counts' },
       { value: 'balanced', label: 'Balanced', sub: 'Save + enjoy' },
@@ -79,7 +78,7 @@ const STEPS: Step[] = [
   },
   {
     kind: 'rent_emi',
-    title: 'Any fixed monthly commitments?', emoji: '🔑',
+    title: 'Any fixed monthly commitments?',
     sub: 'Rent and EMIs are carved out first, so your spending budget stays realistic. Optional.',
   },
 ];
@@ -148,7 +147,6 @@ export default function MoneyProfileQuiz({ initial, onSubmit }: Props) {
       )}
 
       <Card className="glass-card border-border/50 p-6 rounded-3xl">
-        <div className="text-5xl mb-3 leading-none">{current.emoji}</div>
         <h2 className="text-2xl font-bold text-foreground mb-1.5 leading-tight">{current.title}</h2>
         {current.sub && <p className="text-xs text-muted-foreground mb-5">{current.sub}</p>}
 

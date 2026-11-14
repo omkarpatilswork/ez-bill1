@@ -81,7 +81,7 @@ export default function Onboarding() {
       return;
     }
 
-    toast({ title: '🎉 Welcome to EZZ BILL!', description: 'Your account is all set.' });
+    toast({ title: 'Welcome to EZZ BILL!', description: 'Your account is all set.' });
     // Force a page reload to re-fetch profile
     window.location.href = '/';
   };

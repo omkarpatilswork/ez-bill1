@@ -59,7 +59,7 @@ export default function Security() {
       toast({ title: 'Could not change password', description: error.message, variant: 'destructive' });
     } else {
       setCurrentPassword(''); setNewPassword(''); setConfirmPassword('');
-      toast({ title: 'Password changed 🔒', description: 'Use your new password next time you sign in.' });
+      toast({ title: 'Password changed', description: 'Use your new password next time you sign in.' });
     }
   };
 
@@ -70,7 +70,7 @@ export default function Security() {
     if (error) {
       toast({ title: 'Could not send email', description: error.message, variant: 'destructive' });
     } else {
-      toast({ title: 'Verification email sent 📬', description: `Open the link we sent to ${email}.` });
+      toast({ title: 'Verification email sent', description: `Open the link we sent to ${email}.` });
     }
   };
 
@@ -93,7 +93,7 @@ export default function Security() {
     } else {
       setNewEmail('');
       toast({
-        title: 'Check both inboxes ✉️',
+        title: 'Check both inboxes',
         description: 'We sent a confirmation link to your new address. Click it to finish the change.',
       });
     }

@@ -114,7 +114,7 @@ export default function Profile() {
     if (error) {
       toast({ title: 'Error', description: error.message, variant: 'destructive' });
     } else {
-      toast({ title: 'Profile updated ✅' });
+      toast({ title: 'Profile updated' });
       setEditing(false);
     }
     setSaving(false);
@@ -141,7 +141,7 @@ export default function Profile() {
     if (error) {
       toast({ title: 'Error', description: error.message, variant: 'destructive' });
     } else {
-      toast({ title: 'Money profile updated 🎯', description: 'Your leak insights will reflect this.' });
+      toast({ title: 'Money profile updated', description: 'Your leak insights will reflect this.' });
       setEditingMoney(false);
     }
     setSavingMoney(false);
@@ -293,35 +293,31 @@ export default function Profile() {
           <div className="space-y-4">
             {/* Persona summary chip */}
             <div className="flex flex-wrap gap-1.5">
-              <PersonaChip emoji="🎯" text={labelOf(GOAL_OPTIONS, goal)} tone="primary" />
-              <PersonaChip emoji="🏙️" text={labelOf(CITY_OPTIONS, city).split(' (')[0]} />
-              <PersonaChip emoji="💼" text={labelOf(JOB_OPTIONS, job)} />
-              <PersonaChip emoji="🏠" text={labelOf(LIVING_OPTIONS, living)} />
+              <PersonaChip text={labelOf(GOAL_OPTIONS, goal)} tone="primary" />
+              <PersonaChip text={labelOf(CITY_OPTIONS, city).split(' (')[0]} />
+              <PersonaChip text={labelOf(JOB_OPTIONS, job)} />
+              <PersonaChip text={labelOf(LIVING_OPTIONS, living)} />
             </div>
 
             {/* Featured stat tiles */}
             <div className="grid grid-cols-2 gap-2.5">
               <StatTile
-                emoji="💸"
                 label="Monthly Income"
                 value={labelOf(INCOME_OPTIONS, income)}
                 accent
               />
               <StatTile
-                emoji="🎂"
                 label="Age Group"
                 value={labelOf(AGE_OPTIONS, age)}
               />
               {rent && (
                 <StatTile
-                  emoji="🏡"
                   label="Rent"
                   value={`₹${Number(rent).toLocaleString('en-IN')}`}
                 />
               )}
               {emi && (
                 <StatTile
-                  emoji="💳"
                   label="EMI"
                   value={`₹${Number(emi).toLocaleString('en-IN')}`}
                 />
@@ -395,7 +391,7 @@ function MoneyField({ label, value, onChange, options }: {
   );
 }
 
-function PersonaChip({ emoji, text, tone }: { emoji: string; text: string; tone?: 'primary' }) {
+function PersonaChip({ text, tone }: { text: string; tone?: 'primary' }) {
   if (!text || text === '—') return null;
   return (
     <span className={`inline-flex items-center gap-1 text-[11px] font-medium px-2 py-1 rounded-full border ${
@@ -403,13 +399,12 @@ function PersonaChip({ emoji, text, tone }: { emoji: string; text: string; tone?
         ? 'bg-primary/15 border-primary/30 text-primary'
         : 'bg-muted/40 border-border/60 text-foreground/80'
     }`}>
-      <span>{emoji}</span>
       <span className="truncate max-w-[120px]">{text}</span>
     </span>
   );
 }
 
-function StatTile({ emoji, label, value, accent }: { emoji: string; label: string; value: string; accent?: boolean }) {
+function StatTile({ label, value, accent }: { label: string; value: string; accent?: boolean }) {
   return (
     <div className={`rounded-xl p-3 border ${
       accent
@@ -417,7 +412,6 @@ function StatTile({ emoji, label, value, accent }: { emoji: string; label: strin
         : 'bg-card/60 border-border/50'
     }`}>
       <div className="flex items-center gap-1.5 mb-1">
-        <span className="text-sm">{emoji}</span>
         <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">{label}</p>
       </div>
       <p className={`text-sm font-semibold truncate ${accent ? 'text-accent' : 'text-foreground'}`}>{value}</p>

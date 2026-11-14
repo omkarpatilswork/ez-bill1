@@ -100,7 +100,7 @@ export default function Settings() {
     if (error) {
       toast({ title: 'Error', description: error.message, variant: 'destructive' });
     } else {
-      toast({ title: 'Profile saved ✅' });
+      toast({ title: 'Profile saved' });
     }
     setSavingProfile(false);
   };
@@ -130,7 +130,7 @@ export default function Settings() {
     if (error) {
       toast({ title: 'Error', description: error.message, variant: 'destructive' });
     } else {
-      toast({ title: 'Budget rules saved 🎯', description: 'Money Leaks and Monthly Summary now use these numbers.' });
+      toast({ title: 'Budget rules saved', description: 'Money Leaks and Monthly Summary now use these numbers.' });
     }
     setSavingMoney(false);
   };
@@ -150,7 +150,7 @@ export default function Settings() {
       setCategories(prev => [...(prev as any), data].sort((a: any, b: any) => a.name.localeCompare(b.name)));
       setNewCatName('');
       setNewCatDesc('');
-      toast({ title: `"${name}" added ✅` });
+      toast({ title: `"${name}" added ` });
     }
     setAddingCat(false);
   };

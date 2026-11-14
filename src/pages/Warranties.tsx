@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { format, differenceInDays, parseISO } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
+import { prepareForReading } from '@/lib/image-prep';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -68,18 +69,6 @@ const EMPTY_FORM: FormState = {
   retailer: '', notes: '', qr_url: '', support_url: '',
 };
 
-function fileToBase64(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      const result = reader.result as string;
-      resolve(result.split(',')[1] || '');
-    };
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-}
-
 function statusFor(expiry?: string | null) {
   if (!expiry) return { label: 'Unknown', color: 'bg-muted text-muted-foreground', icon: AlertTriangle };
   const days = differenceInDays(parseISO(expiry), new Date());
@@ -121,9 +110,9 @@ export default function Warranties() {
     setPendingFile(file);
     setScanning(true);
     try {
-      const base64 = await fileToBase64(file);
+      const ready = await prepareForReading(file);
       const { data, error } = await supabase.functions.invoke('extract-warranty', {
-        body: { file_base64: base64, file_type: file.type || 'image/jpeg' },
+        body: { file_base64: ready.base64, file_type: ready.type },
       });
       if (error) throw error;
       if (data?.fallback) {

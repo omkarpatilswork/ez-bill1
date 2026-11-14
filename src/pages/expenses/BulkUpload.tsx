@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { prepareForReading } from '@/lib/image-prep';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -53,15 +54,6 @@ async function convertHeicToJpeg(file: File): Promise<File> {
     console.error('HEIC conversion failed:', e);
     return file;
   }
-}
-
-function fileToBase64(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve((reader.result as string).split(',')[1]);
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
 }
 
 interface QueueItem {
@@ -120,9 +112,8 @@ export default function BulkUpload() {
       setQueue(prev => prev.map(i => i.id === item.id ? { ...i, status: 'processing' } : i));
 
       try {
-        const base64 = await fileToBase64(item.file);
-        const fileType = item.file.type || (item.file.name.toLowerCase().endsWith('.pdf') ? 'application/pdf' : 'image/jpeg');
-        const { data: ext, error } = await supabase.functions.invoke('extract-receipt', { body: { file_base64: base64, file_type: fileType } });
+        const ready = await prepareForReading(item.file);
+        const { data: ext, error } = await supabase.functions.invoke('extract-receipt', { body: { file_base64: ready.base64, file_type: ready.type } });
         if (error) throw new Error('Extraction failed');
         if (ext?.error) throw new Error(ext.error);
 
