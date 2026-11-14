@@ -27,7 +27,8 @@ inside it.
    ```
 
 3. Fill in `answers.csv`. Leave a cell empty when the bill does not show that
-   value. Items go in one cell as `2 x Cappuccino = 320; 1 x Almond Croissant = 92`.
+   value, and put `?` where the right answer is a matter of opinion (that
+   field is then not scored for that bill). Items go in one cell as `2 x Cappuccino = 320; 1 x Almond Croissant = 92`.
    If a bill is a second copy of another one, put the other file's name in
    `duplicate_of`.
 4. Read every bill with the current system and score it:

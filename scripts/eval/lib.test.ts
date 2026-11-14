@@ -31,6 +31,10 @@ describe('compareField', () => {
     expect(compareField('merchant', 'Swiggy', 'Zomato')).toBe('wrong');
     expect(compareField('merchant', 'Social', 'Socials Unlimited')).toBe('wrong');
   });
+  it('does not score a field the answer sheet marks with a question mark', () => {
+    expect(compareField('category', '?', 'Transportation')).toBe('skipped');
+    expect(compareField('tax', ' ? ', null)).toBe('skipped');
+  });
   it('compares dates by day and codes without punctuation or case', () => {
     expect(compareField('date', '2026-10-19', '2026-10-19 13:20:00')).toBe('correct');
     expect(compareField('date', '2026-10-19', '2026-10-18 23:59:00')).toBe('wrong');

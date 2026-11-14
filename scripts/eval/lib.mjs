@@ -88,8 +88,10 @@ const MONEY = new Set(['total', 'subtotal', 'tax', 'discount']);
  * missed    the bill has a value and the reader left it empty
  * invented  the bill has no such value and the reader gave one
  * empty-ok  the bill has no such value and the reader left it empty
+ * skipped   the answer sheet says "?": the right answer is a matter of opinion, so it is not scored
  */
 export function compareField(field, expected, got) {
+  if (String(expected ?? '').trim() === '?') return 'skipped';
   const want = MONEY.has(field) ? num(expected) : isEmpty(expected) ? null : String(expected).trim();
   const have = MONEY.has(field) ? num(got) : isEmpty(got) ? null : String(got).trim();
   // A discount or tax of zero is the same as none.
@@ -148,7 +150,7 @@ const pct = (a, b) => (b === 0 ? null : Math.round((a / b) * 1000) / 10);
  * Returns per-field counts, item recall, timing and the list of misses.
  */
 export function scoreRun(answers, results) {
-  const fields = Object.fromEntries(Object.keys(FIELDS).map((f) => [f, { correct: 0, wrong: 0, missed: 0, invented: 0, 'empty-ok': 0 }]));
+  const fields = Object.fromEntries(Object.keys(FIELDS).map((f) => [f, { correct: 0, wrong: 0, missed: 0, invented: 0, 'empty-ok': 0, skipped: 0 }]));
   const misses = [];
   const times = [];
   let read = 0, failed = 0, notRun = 0, keyFieldsRight = 0, itemsExpected = 0, itemsFound = 0, itemsExtra = 0;
@@ -169,6 +171,7 @@ export function scoreRun(answers, results) {
       }
     }
     if (keyRight) keyFieldsRight += 1;
+    if (String(answer.items ?? '').trim() === '?') continue;
     const items = compareItems(answer.items, result.response.line_items);
     itemsExpected += items.expected; itemsFound += items.found; itemsExtra += items.extra;
     if (items.found < items.expected || items.extra > 0) misses.push({ file: answer.file, field: 'items', outcome: 'items', expected: `${items.expected} on the bill`, got: `${items.found} found, ${items.extra} extra` });
