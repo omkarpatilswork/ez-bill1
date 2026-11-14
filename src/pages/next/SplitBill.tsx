@@ -62,7 +62,6 @@ export default function SplitBill() {
     }));
     setPeople(saved.length ? saved : [me]);
     setMode(saved.some((p) => p.items.length) ? 'custom' : 'equal');
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query.data]);
 
   const shares = useMemo(() => computeShares(people, items, totals, mode, taxMode), [people, items, totals, mode, taxMode]);

@@ -73,10 +73,14 @@ const TABLES = {
 
 const PIXEL = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64');
 
+// COUNT_REQUESTS=1 prints how many backend requests Home makes: a cheap watch on wasted round trips.
+const requestCounts = new Map();
+
 async function mockSupabase(context) {
   await context.route(/^https:\/\/[a-z0-9]+\.supabase\.co\//, async (route) => {
     const req = route.request();
     const url = new URL(req.url());
+    if (req.method() !== 'OPTIONS') requestCounts.set(url.pathname, (requestCounts.get(url.pathname) || 0) + 1);
     const json = (body, status = 200) => route.fulfill({ status, contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: JSON.stringify(body) });
 
     if (req.method() === 'OPTIONS') {
@@ -149,7 +153,12 @@ for (const theme of ['dark', 'light']) {
       if (full) await page.setViewportSize(viewport);
     };
 
+    requestCounts.clear();
     await shoot('home', '/');
+    if (process.env.COUNT_REQUESTS && theme === 'dark' && size === 'mobile') {
+      console.log(`Home made ${[...requestCounts.values()].reduce((a, b) => a + b, 0)} backend requests:`);
+      for (const [path, n] of [...requestCounts].sort((a, b) => b[1] - a[1])) console.log(`  ${n}  ${path}`);
+    }
     await shoot('bill', `/expenses/${BLUE_TOKAI_ID}`);
     await shoot('bills', '/expenses');
     await shoot('bills-search', '/expenses?q=cappuccino');
@@ -168,6 +177,8 @@ for (const theme of ['dark', 'light']) {
     await shoot('subscription-edit', '/subscriptions', { before: () => page.getByRole('button', { name: /Netflix/ }).click() });
     await shoot('documents', '/financial-docs');
     await shoot('ask-ai', '/ask-ai');
+    await shoot('settings', '/settings', { full: size === 'mobile' });
+    await shoot('security', '/security', { full: size === 'mobile' });
     await shoot('splits', '/splits');
     await shoot('split-friend', `/splits/friend/${friends[1].id}`);
     await shoot('split-bill', `/expenses/${BLUE_TOKAI_ID}/split`, { full: size === 'mobile', before: () => page.getByRole('tab', { name: 'Line by line' }).click() });
@@ -207,7 +218,7 @@ for (const theme of ['dark', 'light']) {
     }
     // --all: every other main screen too, to check the ones not rebuilt yet.
     if (ALL) {
-      for (const route of ['/email-bills', '/settings', '/profile', '/security', '/nfc-airdrop', '/staff']) {
+      for (const route of ['/email-bills', '/nfc-airdrop', '/staff']) {
         await shoot(`all${route.replaceAll('/', '-')}`, route);
       }
     }

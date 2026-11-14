@@ -5,6 +5,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/hooks/useTheme";
+import { AuthProvider } from "@/hooks/useAuth";
 import ProtectedRoute from "@/components/layout/ProtectedRoute";
 import LegacyScreen from "@/components/layout/AppLayout";
 import AppShell from "@/components/next/AppShell";
@@ -22,8 +23,7 @@ const SplitBill = lazy(() => import("./pages/next/SplitBill"));
 const Spending = lazy(() => import("./pages/next/Spending"));
 const AskAi = lazy(() => import("./pages/next/AskAi"));
 const EmailBills = lazy(() => import("./pages/expenses/EmailBills"));
-const Profile = lazy(() => import("./pages/Profile"));
-const Settings = lazy(() => import("./pages/Settings"));
+const Settings = lazy(() => import("./pages/next/Settings"));
 const Onboarding = lazy(() => import("./pages/Onboarding"));
 const TermsAndConditions = lazy(() => import("./pages/TermsAndConditions"));
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
@@ -31,7 +31,7 @@ const MoneyLeaks = lazy(() => import("./pages/next/MoneyLeaks"));
 const Subscriptions = lazy(() => import("./pages/next/Subscriptions"));
 const MonthlySummary = lazy(() => import("./pages/next/MonthlySummary"));
 const Documents = lazy(() => import("./pages/next/Documents"));
-const Security = lazy(() => import("./pages/Security"));
+const Security = lazy(() => import("./pages/next/Security"));
 const WarrantyVault = lazy(() => import("./pages/next/WarrantyVault"));
 const Splits = lazy(() => import("./pages/next/Splits"));
 const SplitFriend = lazy(() => import("./pages/next/SplitFriend"));
@@ -57,6 +57,7 @@ const App = () => {
   }, []);
   return (
   <QueryClientProvider client={queryClient}>
+    <AuthProvider>
     <ThemeProvider>
     <TooltipProvider>
       <Toaster />
@@ -84,6 +85,9 @@ const App = () => {
             <Route path="/expenses/new" element={<AddBill />} />
             <Route path="/bulk-upload" element={<Navigate to="/expenses/new?mode=upload" replace />} />
             <Route path="/ask-ai" element={<AskAi />} />
+            <Route path="/settings" element={<Settings />} />
+            <Route path="/profile" element={<Navigate to="/settings" replace />} />
+            <Route path="/security" element={<Security />} />
             <Route path="/expenses/:id/split" element={<SplitBill />} />
             <Route path="/splits" element={<Splits />} />
             <Route path="/splits/friend/:friendKey" element={<SplitFriend />} />
@@ -95,9 +99,6 @@ const App = () => {
             <Route element={<LegacyScreen />}>
               <Route path="/expenses/:id/support" element={<MerchantSupport />} />
               <Route path="/email-bills" element={<EmailBills />} />
-              <Route path="/profile" element={<Profile />} />
-              <Route path="/settings" element={<Settings />} />
-              <Route path="/security" element={<Security />} />
               <Route path="/support" element={<Support />} />
               <Route path="/staff" element={<StaffTables />} />
               <Route path="/nfc-airdrop" element={<NfcAirdrop />} />
@@ -111,6 +112,7 @@ const App = () => {
       </BrowserRouter>
     </TooltipProvider>
     </ThemeProvider>
+    </AuthProvider>
   </QueryClientProvider>
   );
 };

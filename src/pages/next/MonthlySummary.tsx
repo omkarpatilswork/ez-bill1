@@ -172,7 +172,7 @@ export default function MonthlySummary() {
             {view.income === null && (
               <p className="mt-6 text-[14px] text-dim">
                 Income is not set, so this shows what went out only.{' '}
-                <Link to="/profile" className="font-medium text-fg underline decoration-line underline-offset-4 hover:decoration-brand">Set it in Profile</Link>
+                <Link to="/settings" className="font-medium text-fg underline decoration-line underline-offset-4 hover:decoration-brand">Set it in Settings</Link>
               </p>
             )}
           </div>

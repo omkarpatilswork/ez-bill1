@@ -212,7 +212,7 @@ export default function MoneyLeaks() {
                 <p className="mt-2 text-[13px] text-faint">
                   Plan: {[GOAL[profile?.financial_goal || ''], CITY[profile?.city_tier || ''], LIVING[profile?.living_situation || '']].filter(Boolean).join(', ').toLowerCase()}
                   {plan.fixed > 0 && <>, {money(plan.fixed)} fixed each month</>}.{' '}
-                  <Link to="/profile" className="text-dim underline decoration-line underline-offset-4 hover:text-fg">Change</Link>
+                  <Link to="/settings" className="text-dim underline decoration-line underline-offset-4 hover:text-fg">Change</Link>
                 </p>
               </section>
 

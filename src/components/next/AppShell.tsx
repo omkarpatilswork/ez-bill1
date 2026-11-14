@@ -1,8 +1,7 @@
 import { Suspense, useState, type ReactNode } from 'react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import {
-  ArrowLeft, BarChart3, House, LockKeyhole, LogOut, Moon, Plus, ReceiptText, Search, Settings, ShieldCheck, Store, Sun, UserRound,
-  type LucideIcon,
+  ArrowLeft, BarChart3, House, LockKeyhole, LogOut, Moon, Plus, ReceiptText, Search, Settings, ShieldCheck, Store, Sun, type LucideIcon,
 } from 'lucide-react';
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
@@ -55,9 +54,6 @@ function AccountMenu({ children, side }: { children: ReactNode; side: 'top' | 'b
       <DropdownMenuTrigger asChild>{children}</DropdownMenuTrigger>
       <DropdownMenuContent side={side} align={side === 'top' ? 'start' : 'end'} sideOffset={8}
         className="ez-app w-56 rounded-2xl border-line bg-surface-2 p-1.5 text-fg shadow-[0_24px_60px_-20px_rgba(0,0,0,.6)]">
-        <DropdownMenuItem className={MENU_ITEM} onSelect={() => navigate('/profile')}>
-          <UserRound className="h-4 w-4 text-dim" /> Profile
-        </DropdownMenuItem>
         <DropdownMenuItem className={MENU_ITEM} onSelect={() => navigate('/settings')}>
           <Settings className="h-4 w-4 text-dim" /> Settings
         </DropdownMenuItem>
