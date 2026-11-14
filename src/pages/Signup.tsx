@@ -1,104 +1,73 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Receipt } from 'lucide-react';
+import AuthLayout, { AUTH_INPUT, Field, GoogleButton, OrDivider } from '@/components/next/AuthLayout';
 import SEO from '@/components/SEO';
 
-const DEPARTMENTS = ['Engineering', 'Marketing', 'Sales', 'Finance', 'HR', 'Operations', 'General'];
+const LINK = 'font-medium text-fg underline decoration-line underline-offset-4 hover:decoration-brand';
 
 export default function Signup() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
-  const [department, setDepartment] = useState('General');
-  const [isLoading, setIsLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [googleBusy, setGoogleBusy] = useState(false);
+  const [sent, setSent] = useState(false);
   const { signUp } = useAuth();
   const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
-    const { error } = await signUp(email, password, fullName, department);
-    setIsLoading(false);
-    if (error) {
-      toast({ title: 'Sign up failed', description: error.message, variant: 'destructive' });
-    } else {
-      setSuccess(true);
+    setBusy(true);
+    // "Department" is a leftover from the app's B2B past; the account still needs a value for it.
+    const { error } = await signUp(email, password, fullName, 'General');
+    setBusy(false);
+    if (error) toast({ title: 'Sign up failed', description: error.message, variant: 'destructive' });
+    else setSent(true);
+  };
+
+  const handleGoogle = async () => {
+    setGoogleBusy(true);
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin } });
+      if (error) toast({ title: 'Google sign up failed', description: error.message, variant: 'destructive' });
+    } catch {
+      toast({ title: 'Google sign up failed', description: 'Try again in a moment.', variant: 'destructive' });
+    } finally {
+      setGoogleBusy(false);
     }
   };
 
-  if (success) {
+  if (sent) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background px-4">
-        <Card className="w-full max-w-md glass-card border-0 rounded-2xl">
-          <CardHeader className="text-center">
-            <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-xl bg-success">
-              <Receipt className="h-6 w-6 text-success-foreground" />
-            </div>
-            <CardTitle className="text-2xl text-foreground">Check your email</CardTitle>
-            <CardDescription className="text-muted-foreground">We've sent a confirmation link to {email}. Please verify your email to continue.</CardDescription>
-          </CardHeader>
-          <CardFooter className="justify-center">
-            <Link to="/login" className="text-gold hover:underline text-sm">Back to sign in</Link>
-          </CardFooter>
-        </Card>
-      </div>
+      <AuthLayout label="One more step" title="Check your email." lead={`We sent a link to ${email}. Open it to confirm your address, then sign in.`}
+        foot={<Link to="/login" className={LINK}>Back to sign in</Link>}>
+        <SEO title="Check your email" description="Confirm your email address to finish creating your EZZ BILL account." path="/signup" />
+        <p className="text-[14.5px] text-dim">Nothing there after a few minutes? Look in spam, or sign up again with the same address.</p>
+      </AuthLayout>
     );
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <SEO title="Create your account" description="Sign up for EZZ BILL to automatically import bills from your inbox, track expenses, and split spending with friends." path="/signup" />
-      <Card className="w-full max-w-md glass-card border-0 rounded-2xl">
-        <CardHeader className="text-center">
-          <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-xl bg-primary">
-            <Receipt className="h-6 w-6 text-primary-foreground" />
-          </div>
-          <CardTitle className="text-2xl text-gold-gradient">Create Account</CardTitle>
-          <CardDescription className="text-muted-foreground">Join EZZ BILL to manage your expenses</CardDescription>
-        </CardHeader>
-        <form onSubmit={handleSubmit}>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="fullName" className="text-foreground">Full Name</Label>
-              <Input id="fullName" placeholder="John Doe" className="bg-secondary border-border/30 text-foreground" value={fullName} onChange={e => setFullName(e.target.value)} required />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="email" className="text-foreground">Email</Label>
-              <Input id="email" type="email" placeholder="you@example.com" className="bg-secondary border-border/30 text-foreground" value={email} onChange={e => setEmail(e.target.value)} required />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="password" className="text-foreground">Password</Label>
-              <Input id="password" type="password" placeholder="Min. 6 characters" className="bg-secondary border-border/30 text-foreground" value={password} onChange={e => setPassword(e.target.value)} required minLength={6} />
-            </div>
-            <div className="space-y-2">
-              <Label className="text-foreground">Department</Label>
-              <Select value={department} onValueChange={setDepartment}>
-                <SelectTrigger className="bg-secondary border-border/30 text-foreground"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {DEPARTMENTS.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-          </CardContent>
-          <CardFooter className="flex flex-col gap-4">
-            <Button type="submit" className="w-full rounded-xl" disabled={isLoading}>
-              {isLoading ? 'Creating account...' : 'Create Account'}
-            </Button>
-            <p className="text-sm text-muted-foreground">
-              Already have an account?{' '}
-              <Link to="/login" className="text-gold hover:underline">Sign in</Link>
-            </p>
-          </CardFooter>
-        </form>
-      </Card>
-    </div>
+    <AuthLayout label="Create account" title="Start with your next bill." lead="An account keeps every bill you add, on every device."
+      foot={<>Have an account? <Link to="/login" className={LINK}>Sign in</Link></>}>
+      <SEO title="Create your account" description="Create an EZZ BILL account to keep every bill in one place and see where the money goes." path="/signup" />
+      <GoogleButton onClick={handleGoogle} busy={googleBusy} />
+      <OrDivider />
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <Field id="fullName" label="Your name">
+          <input id="fullName" autoComplete="name" required className={AUTH_INPUT} value={fullName} onChange={(e) => setFullName(e.target.value)} />
+        </Field>
+        <Field id="email" label="Email">
+          <input id="email" type="email" autoComplete="email" required placeholder="you@example.com" className={AUTH_INPUT} value={email} onChange={(e) => setEmail(e.target.value)} />
+        </Field>
+        <Field id="password" label="Password">
+          <input id="password" type="password" autoComplete="new-password" required minLength={6} placeholder="6 characters or more" className={AUTH_INPUT} value={password} onChange={(e) => setPassword(e.target.value)} />
+        </Field>
+        <button type="submit" disabled={busy} className="ez-btn ez-btn--primary !mt-6 h-12 w-full disabled:opacity-60">{busy ? 'Creating your account' : 'Create account'}</button>
+      </form>
+    </AuthLayout>
   );
 }

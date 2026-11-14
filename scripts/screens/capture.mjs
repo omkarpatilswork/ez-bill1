@@ -163,6 +163,19 @@ for (const theme of ['dark', 'light']) {
       }
     }
     await context.close();
+
+    // Signed out: the sign-in and sign-up screens.
+    const guest = await browser.newContext({ viewport, deviceScaleFactor: 2, locale: 'en-IN', timezoneId: 'Asia/Kolkata', reducedMotion: 'reduce' });
+    await mockSupabase(guest);
+    await guest.addInitScript((t) => localStorage.setItem('ez-bill-theme', t), theme);
+    const door = await guest.newPage();
+    for (const route of ['/login', '/signup']) {
+      await door.goto(BASE + route, { waitUntil: 'networkidle' });
+      await door.evaluate(() => document.fonts.ready);
+      await door.waitForTimeout(350);
+      await door.screenshot({ path: path.join(OUT, `${route.slice(1)}-${size}-${theme}.png`) });
+    }
+    await guest.close();
   }
 }
 
