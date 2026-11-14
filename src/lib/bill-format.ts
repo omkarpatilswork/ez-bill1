@@ -7,9 +7,10 @@
  *   Category: Food & Dining | Invoice: 123 | Payment: UPI | 2 item(s) | Subtotal: 392.38
  *   | Tax: 19.62 | [scan] | free-text notes::ITEMS::[{...}]::END_ITEMS::
  *
- * Nine files each carry their own copy of this parsing. New screens read
- * through this module instead, so the day the real columns exist only this
- * file changes. It only reads; nothing here writes the format.
+ * Nine files each carry their own copy of this parsing. New screens read and
+ * write through this module instead (`parseBillDescription`,
+ * `buildBillDescription`), so the day the real columns exist only this file
+ * changes. Whatever one writes, the other reads back unchanged.
  */
 
 export interface BillLineItem {
@@ -136,6 +137,44 @@ export function parseBillDescription(description: string | null | undefined): Pa
     isSubscription: tags.has('subscription'),
     notes: notes.join(' | '),
   };
+}
+
+/** "|" separates the packed fields, so it cannot appear inside one. */
+const safe = (v: string) => v.replace(/\s*\|\s*/g, ' / ').replace(/::ITEMS::|::END_ITEMS::/g, '').trim();
+const amountText = (n: number | null | undefined) => (n != null && Number.isFinite(n) && n > 0 ? String(Math.round(n * 100) / 100) : '');
+
+/**
+ * Pack a bill's details into `expenses.description`. The inverse of
+ * `parseBillDescription`: every field given here is read back unchanged, and
+ * a field left out is simply not written.
+ */
+export function buildBillDescription(bill: Partial<ParsedBill>): string {
+  const parts: string[] = [];
+  const text = (label: string, value?: string | null) => { if (value && safe(value)) parts.push(`${label}: ${safe(value)}`); };
+  const items = (bill.items || []).filter((i) => i.name.trim());
+
+  text('Category', bill.category);
+  text('Aggregator', bill.aggregator);
+  text('Address', bill.address);
+  text('Invoice', bill.invoice);
+  text('Payment', bill.payment);
+  if (items.length) parts.push(`${items.length} item(s)`);
+  text('Subtotal', amountText(bill.subtotal));
+  text('Tax', amountText(bill.tax));
+  text('TaxDetails', bill.taxDetails);
+  text('Discount', amountText(bill.discount));
+  if (bill.source === 'nfc') parts.push(bill.table ? `Tapped at ${safe(bill.table)}` : '[nfc]');
+  else if (bill.source === 'scan' || bill.source === 'upload' || bill.source === 'manual') parts.push(`[${bill.source}]`);
+  else if (bill.source === 'email' && !bill.emailSubject) parts.push('[email]');
+  if (bill.notes && safe(bill.notes)) parts.push(safe(bill.notes));
+  // The email subject goes last: it is free text, and the reader lifts it off the end.
+  if (bill.emailSubject) parts.push(`From email: ${bill.emailSubject.replace(/::ITEMS::|::END_ITEMS::/g, '').trim()}`);
+  if (bill.isSubscription) parts.push('[Subscription]');
+
+  const head = parts.join(' | ');
+  if (!items.length) return head;
+  const packed = items.map((i) => ({ name: i.name.trim(), quantity: i.quantity || 1, unit_price: i.unit_price || 0, total_price: i.total_price || 0 }));
+  return `${head}${ITEMS_START}${JSON.stringify(packed)}${ITEMS_END}`;
 }
 
 /** What the app calls each way a bill can arrive. */
