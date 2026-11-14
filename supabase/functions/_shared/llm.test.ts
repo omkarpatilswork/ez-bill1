@@ -128,7 +128,7 @@ Deno.test("text, tools and streaming go to the OpenAI-compatible endpoint unchan
 
 Deno.test("explicit model overrides the tier; upstream errors pass through", async () => {
   const { calls, f } = recordingFetch(new Response('{"error":{"code":429}}', { status: 429 }));
-  const res = await chatCompletion({ ...photo, model: "gemini-pro-latest" }, { env: envOf({ LLM_API_KEY: "k" }), fetch: f });
+  const res = await chatCompletion({ ...photo, model: "gemini-pro-latest" }, { env: envOf({ LLM_API_KEY: "k", LLM_RETRY_ROUNDS: "0" }), fetch: f });
   assertEquals(calls[0].url.includes("/models/gemini-pro-latest:generateContent"), true);
   assertEquals(res.status, 429);
 });
@@ -162,16 +162,16 @@ Deno.test("a 400 (bad input) does not fall back; the last failure is returned", 
   assertEquals((await chatCompletion(textReq, { env: envOf({ LLM_API_KEY: "k" }), fetch: bad.f })).status, 400);
   assertEquals(bad.calls.length, 1);
   const all = sequenceFetch([503, 503, 503]);
-  assertEquals((await chatCompletion(textReq, { env: envOf({ LLM_API_KEY: "k" }), fetch: all.f })).status, 503);
+  assertEquals((await chatCompletion(textReq, { env: envOf({ LLM_API_KEY: "k", LLM_RETRY_ROUNDS: "0" }), fetch: all.f })).status, 503);
   assertEquals(all.calls.length, 3);
 });
 
 Deno.test("LLM_MODEL_FALLBACKS overrides or disables the chain; duplicates skipped", async () => {
   const off = sequenceFetch([503]);
-  await chatCompletion(textReq, { env: envOf({ LLM_API_KEY: "k", LLM_MODEL_FALLBACKS: "none" }), fetch: off.f });
+  await chatCompletion(textReq, { env: envOf({ LLM_API_KEY: "k", LLM_MODEL_FALLBACKS: "none", LLM_RETRY_ROUNDS: "0" }), fetch: off.f });
   assertEquals(off.calls, ["gemini-3.6-flash"]);
   const custom = sequenceFetch([503, 503]);
-  await chatCompletion(textReq, { env: envOf({ LLM_API_KEY: "k", LLM_MODEL: "a", LLM_MODEL_FALLBACKS: "a, b" }), fetch: custom.f });
+  await chatCompletion(textReq, { env: envOf({ LLM_API_KEY: "k", LLM_MODEL: "a", LLM_MODEL_FALLBACKS: "a, b", LLM_RETRY_ROUNDS: "0" }), fetch: custom.f });
   assertEquals(custom.calls, ["a", "b"]);
 });
 
@@ -179,4 +179,25 @@ Deno.test("temperature reaches both request shapes, and is left out when not ask
   const withMedia: ChatRequest = { tier: "vision", messages: [{ role: "user", content: [{ type: "image_url", image_url: { url: "data:image/png;base64,AAAA" } }] }] };
   assertEquals((toGeminiNative({ ...withMedia, temperature: 0, response_format: { type: "json_object" } }).generationConfig), { responseMimeType: "application/json", temperature: 0 });
   assertEquals(toGeminiNative(withMedia).generationConfig, undefined);
+});
+
+Deno.test("when every model is busy the whole list is tried again after a wait", async () => {
+  const waits: number[] = [];
+  const sleep = (ms: number) => { waits.push(ms); return Promise.resolve(); };
+  // Round 1: all three busy. Round 2: the third one answers.
+  const recovers = sequenceFetch([503, 503, 503, 503, 429, 200]);
+  const ok = await chatCompletion(textReq, { env: envOf({ LLM_API_KEY: "k" }), fetch: recovers.f, sleep });
+  assertEquals([ok.status, recovers.calls.length, waits], [200, 6, [1500]]);
+
+  // Still busy after the default two extra rounds: give up and pass the 503 on.
+  waits.length = 0;
+  const down = sequenceFetch(Array(12).fill(503));
+  const failed = await chatCompletion(textReq, { env: envOf({ LLM_API_KEY: "k" }), fetch: down.f, sleep });
+  assertEquals([failed.status, down.calls.length, waits], [503, 9, [1500, 3000]]);
+
+  // A rejected input is never retried, however many rounds are allowed.
+  waits.length = 0;
+  const bad = sequenceFetch([400]);
+  assertEquals((await chatCompletion(textReq, { env: envOf({ LLM_API_KEY: "k" }), fetch: bad.f, sleep })).status, 400);
+  assertEquals([bad.calls.length, waits], [1, []]);
 });

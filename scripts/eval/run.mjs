@@ -2,15 +2,16 @@
  * Sends every bill in eval/bills/ to the bill reader exactly as the app does,
  * and saves what comes back. It reads only: nothing is written to the database.
  *
- *   EVAL_EMAIL=... EVAL_PASSWORD=... node scripts/eval/run.mjs [label] [--force] [--delay=4500] [--only=photo-] [--max-edge=2000]
+ *   EVAL_EMAIL=... EVAL_PASSWORD=... node scripts/eval/run.mjs [label] [--force] [--delay=4500] [--only=photo-] [--max-edge=2400] [--function=name]
  *
  * --only=prefix    read only the files whose names start with the prefix
+ * --function=name  call another deployed reader, e.g. extract-receipt-next (default: extract-receipt)
  * --max-edge=N     shrink photos to at most N pixels on the long side first, as the app does
  *                  before upload (needs ImageMagick's `convert`); used to measure that step
  *
  * Results land in eval/bills/runs/<label>/ (git-ignored, like the bills).
- * A bill that already has a result is skipped unless --force is given, so an
- * interrupted run can be continued. In the cloud container, start Node with
+ * A bill that was already read is skipped unless --force is given, so an
+ * interrupted run can be continued and failed bills are retried. In the cloud container, start Node with
  * NODE_USE_ENV_PROXY=1 so requests go through the session's proxy.
  */
 import { execFileSync } from 'node:child_process';
@@ -26,6 +27,7 @@ const option = (name) => (args.find((a) => a.startsWith(`--${name}=`)) || '').sp
 const delay = Number(option('delay')) || 4500;
 const only = option('only') || '';
 const maxEdge = Number(option('max-edge')) || 0;
+const fn = option('function') || 'extract-receipt';
 
 const env = readFileSync(path.join(root, '.env'), 'utf8');
 const read = (key) => (env.match(new RegExp(`${key}="?([^"\\n]+)"?`)) || [])[1];
@@ -60,7 +62,8 @@ let done = 0, skipped = 0, unsupported = 0;
 
 for (const file of files) {
   const out = path.join(outDir, `${file}.json`);
-  if (existsSync(out) && !force) { skipped += 1; continue; }
+  // Done means read: a bill that failed last time (the provider was busy) is tried again.
+  if (existsSync(out) && !force && JSON.parse(readFileSync(out, 'utf8')).ok) { skipped += 1; continue; }
   const ext = path.extname(file).toLowerCase();
   let body;
   if (TYPES[ext] && maxEdge && ext !== '.pdf') {
@@ -71,7 +74,7 @@ for (const file of files) {
   else if (TEXT.has(ext)) body = { text_content: readFileSync(path.join(billsDir, file), 'utf8'), source_hint: 'email' };
   else { unsupported += 1; console.log(`skip  ${file} (the app cannot read ${ext || 'this'} files; convert it to JPG or PDF)`); continue; }
 
-  const call = () => fetch(`${URL_BASE}/functions/v1/extract-receipt`, {
+  const call = () => fetch(`${URL_BASE}/functions/v1/${fn}`, {
     method: 'POST', headers: { apikey: ANON, authorization: `Bearer ${token}`, 'content-type': 'application/json' }, body: JSON.stringify(body),
   });
   const started = Date.now();

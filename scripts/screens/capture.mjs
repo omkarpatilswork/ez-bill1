@@ -140,6 +140,7 @@ for (const theme of ['dark', 'light']) {
     await shoot('bills', '/expenses');
     await shoot('bills-search', '/expenses?q=cappuccino');
     await shoot('spending', '/analytics');
+    await shoot('money-leaks', '/money-leaks', { full: size === 'mobile' });
     await shoot('bills-select', '/expenses', { before: async () => {
       await page.getByRole('button', { name: 'Select', exact: true }).click();
       await page.getByRole('checkbox').nth(1).click();
@@ -158,7 +159,7 @@ for (const theme of ['dark', 'light']) {
     }
     // --all: every other main screen too, to check the ones not rebuilt yet.
     if (ALL) {
-      for (const route of ['/splits', '/money-leaks', '/summary', '/ask-ai', '/warranties', '/subscriptions',
+      for (const route of ['/splits', '/summary', '/ask-ai', '/warranties', '/subscriptions',
         '/financial-docs', '/expenses/new', '/bulk-upload', '/email-bills', '/settings', '/profile', '/security', '/nfc-airdrop', '/staff']) {
         await shoot(`all${route.replaceAll('/', '-')}`, route);
       }

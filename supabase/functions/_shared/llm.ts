@@ -18,6 +18,9 @@
  *                       Gemini default: "gemini-3.5-flash,gemini-flash-lite-latest" (the
  *                       last is Google's rolling alias, so something always resolves).
  *                       Set to "none" to switch fallbacks off.
+ *   LLM_RETRY_ROUNDS    how many more times to go through the whole list when every model
+ *                       in it was busy (429, 5xx), waiting 1.5 s then 3 s between rounds.
+ *                       Default 2. Set to 0 to fail at once.
  *   LLM_MODEL_TEXT      override for text-only extraction (email bodies, SMS, statements).
  *   LLM_MODEL_VISION    override for photos and PDFs of bills and warranty cards.
  *   LLM_MODEL_CHAT      override for Ask AI, merchant support and subscription pricing.
@@ -137,10 +140,13 @@ export function hasInlineMedia(messages: ChatMessage[]): boolean {
  */
 export async function chatCompletion(
   req: ChatRequest,
-  deps: { env?: Env; fetch?: typeof fetch } = {},
+  deps: { env?: Env; fetch?: typeof fetch; sleep?: (ms: number) => Promise<void> } = {},
 ): Promise<Response> {
-  const cfg = llmConfig(deps.env ?? denoEnv);
+  const env = deps.env ?? denoEnv;
+  const cfg = llmConfig(env);
   const doFetch = deps.fetch ?? fetch;
+  const sleep = deps.sleep ?? ((ms: number) => new Promise<void>((r) => setTimeout(r, ms)));
+  const rounds = Math.max(0, Math.min(4, Number(nonEmpty(env("LLM_RETRY_ROUNDS")) ?? 2) || 0));
   if (!cfg.apiKey) {
     return jsonError(500, "LLM_API_KEY is not configured");
   }
@@ -149,12 +155,22 @@ export async function chatCompletion(
   const candidates = req.model
     ? [req.model]
     : [...new Set([cfg.models[req.tier], ...cfg.fallbacks])];
+  // A busy provider usually clears within seconds, so when the whole list was busy the
+  // list is tried again after a short wait rather than failing the person's upload.
   let res: Response | undefined;
-  for (const [i, model] of candidates.entries()) {
-    res = await callModel(cfg, model, req, doFetch);
-    if (res.ok || !RETRY_STATUSES.has(res.status) || i === candidates.length - 1) return res;
-    console.warn(`llm: ${model} returned ${res.status}; trying ${candidates[i + 1]}`);
-    await res.body?.cancel();
+  for (let round = 0; round <= rounds; round += 1) {
+    if (round > 0) {
+      await res?.body?.cancel();
+      console.warn(`llm: every model was busy; waiting before round ${round + 1}`);
+      await sleep(1500 * round);
+    }
+    for (const [i, model] of candidates.entries()) {
+      res = await callModel(cfg, model, req, doFetch);
+      if (res.ok || !RETRY_STATUSES.has(res.status)) return res;
+      if (i === candidates.length - 1) break;
+      console.warn(`llm: ${model} returned ${res.status}; trying ${candidates[i + 1]}`);
+      await res.body?.cancel();
+    }
   }
   return res!;
 }

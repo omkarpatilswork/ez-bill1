@@ -28,7 +28,7 @@ const Settings = lazy(() => import("./pages/Settings"));
 const Onboarding = lazy(() => import("./pages/Onboarding"));
 const TermsAndConditions = lazy(() => import("./pages/TermsAndConditions"));
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
-const MoneyLeaks = lazy(() => import("./pages/MoneyLeaks"));
+const MoneyLeaks = lazy(() => import("./pages/next/MoneyLeaks"));
 const Subscriptions = lazy(() => import("./pages/Subscriptions"));
 const MonthlySummary = lazy(() => import("./pages/MonthlySummary"));
 const FinancialDocs = lazy(() => import("./pages/FinancialDocs"));
@@ -80,6 +80,7 @@ const App = () => {
             <Route path="/expenses" element={<Bills />} />
             <Route path="/expenses/:id" element={<BillDetail />} />
             <Route path="/analytics" element={<Spending />} />
+            <Route path="/money-leaks" element={<MoneyLeaks />} />
 
             {/* Not rebuilt yet: brand colours and fonts, old layouts */}
             <Route element={<LegacyScreen />}>
@@ -92,7 +93,6 @@ const App = () => {
               <Route path="/profile" element={<Profile />} />
               <Route path="/settings" element={<Settings />} />
               <Route path="/security" element={<Security />} />
-              <Route path="/money-leaks" element={<MoneyLeaks />} />
               <Route path="/subscriptions" element={<Subscriptions />} />
               <Route path="/summary" element={<MonthlySummary />} />
               <Route path="/financial-docs" element={<FinancialDocs />} />
