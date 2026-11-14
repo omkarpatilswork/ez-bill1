@@ -37,8 +37,8 @@ backups/
 *.pgdump
 *.sql.gz
 
-# Phase 2 evaluation bills (real bills; the repo is public)
-eval/bills/
+# Evaluation data: real bills, warranty cards, answer sheets and results (the repo is public)
+eval/
 
 # Secret values for `supabase secrets set --env-file` (also covered by *.local)
 .env.secrets*
