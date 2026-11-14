@@ -19,7 +19,7 @@ const Signup = lazy(() => import("./pages/Signup"));
 const NewExpense = lazy(() => import("./pages/expenses/NewExpense"));
 const MerchantSupport = lazy(() => import("./pages/expenses/MerchantSupport"));
 const SplitBill = lazy(() => import("./pages/expenses/SplitBill"));
-const Analytics = lazy(() => import("./pages/expenses/Analytics"));
+const Spending = lazy(() => import("./pages/next/Spending"));
 const AskAI = lazy(() => import("./pages/AskAI"));
 const EmailBills = lazy(() => import("./pages/expenses/EmailBills"));
 const BulkUpload = lazy(() => import("./pages/expenses/BulkUpload"));
@@ -79,13 +79,13 @@ const App = () => {
             <Route path="/" element={<Home />} />
             <Route path="/expenses" element={<Bills />} />
             <Route path="/expenses/:id" element={<BillDetail />} />
+            <Route path="/analytics" element={<Spending />} />
 
             {/* Not rebuilt yet: brand colours and fonts, old layouts */}
             <Route element={<LegacyScreen />}>
               <Route path="/expenses/new" element={<NewExpense />} />
               <Route path="/expenses/:id/support" element={<MerchantSupport />} />
               <Route path="/expenses/:id/split" element={<SplitBill />} />
-              <Route path="/analytics" element={<Analytics />} />
               <Route path="/email-bills" element={<EmailBills />} />
               <Route path="/bulk-upload" element={<BulkUpload />} />
               <Route path="/ask-ai" element={<AskAI />} />
