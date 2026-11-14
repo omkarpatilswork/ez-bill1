@@ -1,6 +1,7 @@
 import { serve } from "../_shared/cors.ts";
 import { getUser, unauthorized } from "../_shared/auth.ts";
 import { chatCompletion, fallbackModelFor, isLlmConfigured } from "../_shared/llm.ts";
+import { applyBillRules } from "../_shared/bill-rules.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Headers":
@@ -76,12 +77,14 @@ serve(async (req) => {
   "merchant_gstin": "string - GSTIN number if visible on Indian bills, or 'Not Found'",
   "amount": "number - total/grand total amount as float without currency symbols, or null",
   "subtotal": "number - subtotal before tax if visible, or null",
-  "tax_amount": "number - total tax (GST/CGST+SGST/IGST) as float, or null",
+  "tax_amount": "number - total of GST, CGST, SGST, IGST, VAT and cess ONLY, as float, or null. Service charge, packing, delivery and staff welfare fund are NOT tax",
+  "charges": "number - total of charges that are neither item prices nor tax: service charge, packing, delivery, handling, convenience fee, staff welfare fund. null if none",
   "tax_details": "string - tax breakdown e.g. 'CGST 2.5% + SGST 2.5%', or 'Not Found'",
-  "discount": "number - discount amount if any, or null",
+  "discount": "number - the total of ALL discount lines as one positive number, or null",
+  "date_printed": "string - the bill's date and time copied EXACTLY as printed, same digits, same order, same separators (e.g. '04/11/26 19:39', '1-5-2025', 'May 17 2025 11:36 PM'), or 'Not Found'",
   "date_time": "string - YYYY-MM-DD HH:MM:SS format, or 'Not Found'",
-  "bill_invoice_number": "string - invoice/receipt/bill number, or 'Not Found'",
-  "payment_method": "string - one of: UPI, Cash, Credit Card, Debit Card, Net Banking, Wallet, Other, or 'Not Found'",
+  "bill_invoice_number": "string - ONLY a number the bill labels as Invoice / Bill / Receipt / Memo / Transaction number, copied character by character, or 'Not Found'",
+  "payment_method": "string - one of: UPI, Cash, Credit Card, Debit Card, Net Banking, Wallet, Other, or 'Not Found'. ONLY when the bill says how it was paid",
   "category": "string - one of: Food & Dining, Grocery, Petrol & Fuel, Toll, Parking, Shopping, Utilities, Travel, Accommodation, Transportation, Office Supplies, Software, Medical, Entertainment, Education, Other",
   "line_items": [
     {
@@ -105,8 +108,12 @@ Rules:
 - If quantity is not shown, default to 1.
 - Category should be smartly inferred from merchant name, items, or bill type.
 - For Indian bills, look for GSTIN, FSSAI, and tax breakdowns (CGST/SGST/IGST).
-- Payment method: look for UPI ID, card last 4 digits, "CASH", "PAID BY" etc.
-- Normalize date to YYYY-MM-DD HH:MM:SS when possible.
+- Payment method: look for "Paid via UPI", "Payment Mode: Cash", a card slip, card last 4 digits, "PAID BY" etc. "Cash memo" and "Cash - 5785" are document titles and memo numbers, not a payment method. "Not Paid" means 'Not Found'.
+- Dates: Indian bills print the DAY first (DD/MM/YY, DD-MM-YYYY). "04/11/26" is 4 November 2026, never 11 April. Copy the printed text into date_printed without changing it, then normalize date_time to YYYY-MM-DD HH:MM:SS.
+- Invoice number: never use a vehicle number, table or token number, order sequence, card auth code, phone number, GSTIN or FSSAI number. Drop status words such as "Open" or "Duplicate". If no number is labelled as the bill's own, return 'Not Found'.
+- Discounts are not items: put their total in discount and do NOT list them in line_items.
+- A printed invoice from a marketplace (amazon.in, Flipkart, Myntra): merchant_name is the marketplace ("Amazon"); the seller named under "Sold by" goes in merchant_legal_name.
+- If the photo shows more than one printout of the same bill, read the intact, most recent one and ignore the torn or crossed-out one.
 - CURRENCY: Rs, ₹, or Rupees means INR. DHS or Dirham means AED. Always return 3-letter ISO code.
 - If the bill is from an Indian merchant (Swiggy, Zomato, Flipkart, etc.) the currency is ALWAYS INR regardless of any symbol shown.
 - Smart discount: if you see offers, coupons, or items with reduced/struck prices, extract the total discount amount.
@@ -126,13 +133,15 @@ Rules:
       { role: "system" as const, content: systemPrompt },
       { role: "user" as const, content: userContent },
     ];
-    let response = await chatCompletion({ tier, messages });
+    // temperature 0 and JSON mode: the same bill read twice gives the same, parseable answer.
+    const options = { temperature: 0, response_format: { type: "json_object" as const } };
+    let response = await chatCompletion({ tier, messages, ...options });
 
     // Fallback: if the model rejects the input, retry once with LLM_MODEL_FALLBACK (when set)
     const fallbackModel = fallbackModelFor(tier);
     if (!response.ok && response.status === 400 && fallbackModel) {
       console.log("Primary model failed, falling back to:", fallbackModel);
-      response = await chatCompletion({ tier, model: fallbackModel, messages });
+      response = await chatCompletion({ tier, model: fallbackModel, messages, ...options });
     }
 
     if (!response.ok) {
@@ -159,7 +168,13 @@ Rules:
       return unreadableFallback(content);
     }
 
-    return jsonResponse(extracted);
+    // An email that is not a bill comes back as {"amount": null}: pass it through untouched.
+    if (!extracted || typeof extracted !== "object" || Array.isArray(extracted)) return unreadableFallback(content);
+    if (Object.keys(extracted).length <= 1) return jsonResponse(extracted);
+
+    // Dates, invoice numbers and arithmetic are settled by rule, not left to the model.
+    // read_by: which model answered. The fallback chain can change it, and accuracy differs by model.
+    return jsonResponse({ ...applyBillRules(extracted), read_by: result.model ?? null });
   } catch (e) {
     console.error("extract-receipt error:", e);
     return jsonResponse({ error: e instanceof Error ? e.message : "Unknown error" }, 500);

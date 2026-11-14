@@ -174,3 +174,9 @@ Deno.test("LLM_MODEL_FALLBACKS overrides or disables the chain; duplicates skipp
   await chatCompletion(textReq, { env: envOf({ LLM_API_KEY: "k", LLM_MODEL: "a", LLM_MODEL_FALLBACKS: "a, b" }), fetch: custom.f });
   assertEquals(custom.calls, ["a", "b"]);
 });
+
+Deno.test("temperature reaches both request shapes, and is left out when not asked for", () => {
+  const withMedia: ChatRequest = { tier: "vision", messages: [{ role: "user", content: [{ type: "image_url", image_url: { url: "data:image/png;base64,AAAA" } }] }] };
+  assertEquals((toGeminiNative({ ...withMedia, temperature: 0, response_format: { type: "json_object" } }).generationConfig), { responseMimeType: "application/json", temperature: 0 });
+  assertEquals(toGeminiNative(withMedia).generationConfig, undefined);
+});

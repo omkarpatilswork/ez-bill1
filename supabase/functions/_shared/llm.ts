@@ -49,6 +49,8 @@ export interface ChatRequest {
   tools?: unknown[];
   tool_choice?: unknown;
   response_format?: { type: "json_object" | "text" };
+  /** 0 makes the model repeat itself: the same bill read twice gives the same answer. */
+  temperature?: number;
 }
 
 export type Provider = "gemini" | "openai-compatible";
@@ -187,6 +189,7 @@ async function callModel(cfg: LlmConfig, model: string, req: ChatRequest, doFetc
   if (req.tools) body.tools = req.tools;
   if (req.tool_choice) body.tool_choice = req.tool_choice;
   if (req.response_format) body.response_format = req.response_format;
+  if (typeof req.temperature === "number") body.temperature = req.temperature;
   return doFetch(`${cfg.baseUrl}/chat/completions`, {
     method: "POST",
     headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
@@ -228,9 +231,10 @@ export function toGeminiNative(req: ChatRequest): Record<string, unknown> {
       .map((m) => ({ role: m.role === "assistant" ? "model" : "user", parts: partsOf(m.content) })),
   };
   if (system) body.systemInstruction = { parts: [{ text: system }] };
-  if (req.response_format?.type === "json_object") {
-    body.generationConfig = { responseMimeType: "application/json" };
-  }
+  const generationConfig: Record<string, unknown> = {};
+  if (req.response_format?.type === "json_object") generationConfig.responseMimeType = "application/json";
+  if (typeof req.temperature === "number") generationConfig.temperature = req.temperature;
+  if (Object.keys(generationConfig).length) body.generationConfig = generationConfig;
   return body;
 }
 

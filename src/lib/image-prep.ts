@@ -10,7 +10,8 @@
  * on accuracy is measured rather than assumed.
  */
 
-export const MAX_EDGE = 2000;
+// 2400 keeps small print such as invoice numbers legible; a 12 MP photo becomes roughly 1 MB.
+export const MAX_EDGE = 2400;
 export const JPEG_QUALITY = 0.85;
 /** Small images are already fine: do not re-encode them. */
 const LEAVE_ALONE_BYTES = 900 * 1024;
