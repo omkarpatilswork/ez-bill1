@@ -166,3 +166,14 @@ export const warranties = [
 export const returnReminders = {
   [CROMA_ID]: { expense_id: CROMA_ID, merchant: 'Croma', purchase_date: '2026-10-16', return_window_days: 7, notify_days_before: 2, created_at: '2026-10-16T18:35:00+05:30' },
 };
+
+// Documents found in email. Amounts are made up for the demo, like everything else here.
+const doc = (n, fields) => ({ id: `f0000000-0000-4000-8000-00000000000${n}`, user_id: USER_ID, issuer: 'HDFC Bank', account_label: null, total_amount: null, min_due: null, due_date: null, period_start: null, period_end: null, statement_date: null, closing_balance: null, total_credits: null, total_debits: null, txn_date: null, txn_type: null, counterparty: null, trade_symbol: null, trade_side: null, trade_quantity: null, trade_price: null, trade_value: null, trade_date: null, broker: null, ...fields });
+export const documents = [
+  doc(1, { doc_type: 'credit_card_statement', account_label: '4821', total_amount: 18460, min_due: 923, due_date: '2026-10-24', statement_date: '2026-10-04', email_date: '2026-10-04T09:10:00+05:30' }),
+  doc(2, { doc_type: 'credit_card_statement', account_label: '4821', total_amount: 22915.5, min_due: 1146, due_date: '2026-09-24', statement_date: '2026-09-04', email_date: '2026-09-04T09:12:00+05:30' }),
+  doc(3, { doc_type: 'bank_statement', account_label: '7730', period_start: '2026-09-01', period_end: '2026-09-30', closing_balance: 84212.4, total_credits: 96000, total_debits: 71380.6, email_date: '2026-10-02T07:30:00+05:30' }),
+  doc(4, { doc_type: 'bank_transaction', txn_type: 'debit', counterparty: 'Blue Tokai Coffee', total_amount: 412, txn_date: '2026-10-19', email_date: '2026-10-19T13:21:00+05:30' }),
+  doc(5, { doc_type: 'bank_transaction', txn_type: 'credit', counterparty: 'Salary', total_amount: 96000, txn_date: '2026-10-01', email_date: '2026-10-01T10:02:00+05:30' }),
+  doc(6, { doc_type: 'trade', issuer: 'Zerodha', broker: 'Zerodha', trade_side: 'buy', trade_symbol: 'NIFTYBEES', trade_quantity: 20, trade_price: 268.4, trade_value: 5368, trade_date: '2026-10-12', email_date: '2026-10-12T16:05:00+05:30' }),
+];

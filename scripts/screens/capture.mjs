@@ -13,7 +13,7 @@ import { createRequire } from 'node:module';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
-  NOW, USER_ID, BLUE_TOKAI_ID, CROMA_ID, user, profile, bills, receipts, subscriptions, warranties, returnReminders,
+  NOW, USER_ID, BLUE_TOKAI_ID, CROMA_ID, user, profile, bills, receipts, subscriptions, warranties, documents, returnReminders,
 } from './demo-world.mjs';
 
 const require = createRequire(import.meta.url);
@@ -56,6 +56,7 @@ const TABLES = {
   expense_receipts: receipts,
   detected_subscriptions: subscriptions,
   warranties,
+  financial_documents: documents,
   bill_splits: [],
 };
 
@@ -147,6 +148,12 @@ for (const theme of ['dark', 'light']) {
       const [download] = await Promise.all([page.waitForEvent('download', { timeout: 30000 }), page.getByRole('button', { name: 'Save as PDF' }).click()]);
       await download.saveAs(path.join(OUT, 'monthly-summary.pdf'));
     }
+    await shoot('warranty-vault', '/warranties');
+    await shoot('warranty-open', '/warranties', { before: () => page.getByRole('button', { name: /Logitech/ }).click() });
+    await shoot('warranty-add', '/warranties', { before: () => page.getByRole('button', { name: 'Add a warranty' }).click() });
+    await shoot('subscriptions', '/subscriptions');
+    await shoot('subscription-edit', '/subscriptions', { before: () => page.getByRole('button', { name: /Netflix/ }).click() });
+    await shoot('documents', '/financial-docs');
     await shoot('bills-select', '/expenses', { before: async () => {
       await page.getByRole('button', { name: 'Select', exact: true }).click();
       await page.getByRole('checkbox').nth(1).click();
@@ -165,8 +172,7 @@ for (const theme of ['dark', 'light']) {
     }
     // --all: every other main screen too, to check the ones not rebuilt yet.
     if (ALL) {
-      for (const route of ['/splits', '/ask-ai', '/warranties', '/subscriptions',
-        '/financial-docs', '/expenses/new', '/bulk-upload', '/email-bills', '/settings', '/profile', '/security', '/nfc-airdrop', '/staff']) {
+      for (const route of ['/splits', '/ask-ai', '/expenses/new', '/bulk-upload', '/email-bills', '/settings', '/profile', '/security', '/nfc-airdrop', '/staff']) {
         await shoot(`all${route.replaceAll('/', '-')}`, route);
       }
     }

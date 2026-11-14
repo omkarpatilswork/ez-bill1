@@ -29,11 +29,11 @@ const Onboarding = lazy(() => import("./pages/Onboarding"));
 const TermsAndConditions = lazy(() => import("./pages/TermsAndConditions"));
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
 const MoneyLeaks = lazy(() => import("./pages/next/MoneyLeaks"));
-const Subscriptions = lazy(() => import("./pages/Subscriptions"));
+const Subscriptions = lazy(() => import("./pages/next/Subscriptions"));
 const MonthlySummary = lazy(() => import("./pages/next/MonthlySummary"));
-const FinancialDocs = lazy(() => import("./pages/FinancialDocs"));
+const Documents = lazy(() => import("./pages/next/Documents"));
 const Security = lazy(() => import("./pages/Security"));
-const Warranties = lazy(() => import("./pages/Warranties"));
+const WarrantyVault = lazy(() => import("./pages/next/WarrantyVault"));
 const Splits = lazy(() => import("./pages/Splits"));
 const SplitFriendDetail = lazy(() => import("./pages/SplitFriendDetail"));
 const Support = lazy(() => import("./pages/Support"));
@@ -82,6 +82,9 @@ const App = () => {
             <Route path="/analytics" element={<Spending />} />
             <Route path="/money-leaks" element={<MoneyLeaks />} />
             <Route path="/summary" element={<MonthlySummary />} />
+            <Route path="/warranties" element={<WarrantyVault />} />
+            <Route path="/subscriptions" element={<Subscriptions />} />
+            <Route path="/financial-docs" element={<Documents />} />
 
             {/* Not rebuilt yet: brand colours and fonts, old layouts */}
             <Route element={<LegacyScreen />}>
@@ -94,9 +97,6 @@ const App = () => {
               <Route path="/profile" element={<Profile />} />
               <Route path="/settings" element={<Settings />} />
               <Route path="/security" element={<Security />} />
-              <Route path="/subscriptions" element={<Subscriptions />} />
-              <Route path="/financial-docs" element={<FinancialDocs />} />
-              <Route path="/warranties" element={<Warranties />} />
               <Route path="/splits" element={<Splits />} />
               <Route path="/splits/friend/:friendKey" element={<SplitFriendDetail />} />
               <Route path="/support" element={<Support />} />
