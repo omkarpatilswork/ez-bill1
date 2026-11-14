@@ -18,9 +18,9 @@ const BillDetail = lazy(() => import("./pages/next/BillDetail"));
 const Signup = lazy(() => import("./pages/Signup"));
 const AddBill = lazy(() => import("./pages/next/AddBill"));
 const MerchantSupport = lazy(() => import("./pages/expenses/MerchantSupport"));
-const SplitBill = lazy(() => import("./pages/expenses/SplitBill"));
+const SplitBill = lazy(() => import("./pages/next/SplitBill"));
 const Spending = lazy(() => import("./pages/next/Spending"));
-const AskAI = lazy(() => import("./pages/AskAI"));
+const AskAi = lazy(() => import("./pages/next/AskAi"));
 const EmailBills = lazy(() => import("./pages/expenses/EmailBills"));
 const Profile = lazy(() => import("./pages/Profile"));
 const Settings = lazy(() => import("./pages/Settings"));
@@ -33,8 +33,8 @@ const MonthlySummary = lazy(() => import("./pages/next/MonthlySummary"));
 const Documents = lazy(() => import("./pages/next/Documents"));
 const Security = lazy(() => import("./pages/Security"));
 const WarrantyVault = lazy(() => import("./pages/next/WarrantyVault"));
-const Splits = lazy(() => import("./pages/Splits"));
-const SplitFriendDetail = lazy(() => import("./pages/SplitFriendDetail"));
+const Splits = lazy(() => import("./pages/next/Splits"));
+const SplitFriend = lazy(() => import("./pages/next/SplitFriend"));
 const Support = lazy(() => import("./pages/Support"));
 const ClaimTag = lazy(() => import("./pages/ClaimTag"));
 const StaffTables = lazy(() => import("./pages/StaffTables"));
@@ -83,6 +83,10 @@ const App = () => {
             <Route path="/summary" element={<MonthlySummary />} />
             <Route path="/expenses/new" element={<AddBill />} />
             <Route path="/bulk-upload" element={<Navigate to="/expenses/new?mode=upload" replace />} />
+            <Route path="/ask-ai" element={<AskAi />} />
+            <Route path="/expenses/:id/split" element={<SplitBill />} />
+            <Route path="/splits" element={<Splits />} />
+            <Route path="/splits/friend/:friendKey" element={<SplitFriend />} />
             <Route path="/warranties" element={<WarrantyVault />} />
             <Route path="/subscriptions" element={<Subscriptions />} />
             <Route path="/financial-docs" element={<Documents />} />
@@ -90,14 +94,10 @@ const App = () => {
             {/* Not rebuilt yet: brand colours and fonts, old layouts */}
             <Route element={<LegacyScreen />}>
               <Route path="/expenses/:id/support" element={<MerchantSupport />} />
-              <Route path="/expenses/:id/split" element={<SplitBill />} />
               <Route path="/email-bills" element={<EmailBills />} />
-              <Route path="/ask-ai" element={<AskAI />} />
               <Route path="/profile" element={<Profile />} />
               <Route path="/settings" element={<Settings />} />
               <Route path="/security" element={<Security />} />
-              <Route path="/splits" element={<Splits />} />
-              <Route path="/splits/friend/:friendKey" element={<SplitFriendDetail />} />
               <Route path="/support" element={<Support />} />
               <Route path="/staff" element={<StaffTables />} />
               <Route path="/nfc-airdrop" element={<NfcAirdrop />} />

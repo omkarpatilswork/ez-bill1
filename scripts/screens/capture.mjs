@@ -13,7 +13,7 @@ import { createRequire } from 'node:module';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
-  NOW, USER_ID, BLUE_TOKAI_ID, CROMA_ID, user, profile, bills, receipts, subscriptions, warranties, documents, returnReminders,
+  NOW, USER_ID, BLUE_TOKAI_ID, CROMA_ID, user, profile, bills, receipts, subscriptions, warranties, documents, returnReminders, friends, billSplits, splitPayments,
 } from './demo-world.mjs';
 
 const require = createRequire(import.meta.url);
@@ -66,7 +66,9 @@ const TABLES = {
   detected_subscriptions: subscriptions,
   warranties,
   financial_documents: documents,
-  bill_splits: [],
+  bill_splits: billSplits,
+  split_payments: splitPayments,
+  friends,
 };
 
 const PIXEL = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64');
@@ -165,6 +167,10 @@ for (const theme of ['dark', 'light']) {
     await shoot('subscriptions', '/subscriptions');
     await shoot('subscription-edit', '/subscriptions', { before: () => page.getByRole('button', { name: /Netflix/ }).click() });
     await shoot('documents', '/financial-docs');
+    await shoot('ask-ai', '/ask-ai');
+    await shoot('splits', '/splits');
+    await shoot('split-friend', `/splits/friend/${friends[1].id}`);
+    await shoot('split-bill', `/expenses/${BLUE_TOKAI_ID}/split`, { full: size === 'mobile', before: () => page.getByRole('tab', { name: 'Line by line' }).click() });
     // Add a bill: the demo bill's own slip stands in for the photo, and a pretend reader answers.
     await page.goto(`${BASE}/expenses/${BLUE_TOKAI_ID}`, { waitUntil: 'networkidle' });
     const photo = await page.locator('.ez-slip-wrap').first().screenshot();
@@ -201,7 +207,7 @@ for (const theme of ['dark', 'light']) {
     }
     // --all: every other main screen too, to check the ones not rebuilt yet.
     if (ALL) {
-      for (const route of ['/splits', '/ask-ai', '/email-bills', '/settings', '/profile', '/security', '/nfc-airdrop', '/staff']) {
+      for (const route of ['/email-bills', '/settings', '/profile', '/security', '/nfc-airdrop', '/staff']) {
         await shoot(`all${route.replaceAll('/', '-')}`, route);
       }
     }

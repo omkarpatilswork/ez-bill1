@@ -177,3 +177,20 @@ export const documents = [
   doc(5, { doc_type: 'bank_transaction', txn_type: 'credit', counterparty: 'Salary', total_amount: 96000, txn_date: '2026-10-01', email_date: '2026-10-01T10:02:00+05:30' }),
   doc(6, { doc_type: 'trade', issuer: 'Zerodha', broker: 'Zerodha', trade_side: 'buy', trade_symbol: 'NIFTYBEES', trade_quantity: 20, trade_price: 268.4, trade_value: 5368, trade_date: '2026-10-12', email_date: '2026-10-12T16:05:00+05:30' }),
 ];
+
+// Splits. Riya shared today's coffee; Kabir shared an earlier dinner and has paid part of it back.
+const dinner = bills.find((b) => b.merchant === 'Swiggy');
+export const friends = [
+  { id: 'a0000000-0000-4000-8000-000000000001', user_id: USER_ID, name: 'Riya Kapoor' },
+  { id: 'a0000000-0000-4000-8000-000000000002', user_id: USER_ID, name: 'Kabir Shah' },
+];
+const share = (n, expense_id, friend, amount, extra = {}) => ({ id: `a1000000-0000-4000-8000-00000000000${n}`, user_id: USER_ID, expense_id, friend_id: friend?.id ?? null, friend_name: friend?.name ?? 'You', amount, items: [], is_self: !friend, status: 'pending', created_at: '2026-10-19T13:25:00+05:30', ...extra });
+export const billSplits = [
+  share(1, BLUE_TOKAI_ID, null, 206),
+  share(2, BLUE_TOKAI_ID, friends[0], 206),
+  share(3, dinner.id, null, Math.round(dinner.amount / 2)),
+  share(4, dinner.id, friends[1], dinner.amount - Math.round(dinner.amount / 2), { created_at: `${dinner.expense_date}T22:10:00+05:30` }),
+];
+export const splitPayments = [
+  { id: 'a2000000-0000-4000-8000-000000000001', user_id: USER_ID, friend_id: friends[1].id, friend_name: friends[1].name, amount: 100, direction: 'received', note: 'UPI', paid_at: '2026-10-18T09:30:00+05:30' },
+];

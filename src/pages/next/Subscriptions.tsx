@@ -163,7 +163,7 @@ export default function Subscriptions() {
               <section className="mt-8 flex flex-wrap items-end gap-x-10 gap-y-5">
                 <div>
                   <p className="ez-label">A month</p>
-                  <DisplayAmount amount={view.monthly} symbol={symbol} className="mt-4 text-[56px] lg:text-[72px]" />
+                  <DisplayAmount amount={view.monthly} symbol={symbol} className="mt-5 text-[56px] lg:mt-6 lg:text-[72px]" />
                 </div>
                 <dl className="mb-1.5 space-y-1 text-[14.5px] text-dim lg:mb-3">
                   <div className="flex gap-2"><dt>A year</dt><dd className="ez-num text-fg">{symbol}{Math.round(view.monthly * 12).toLocaleString('en-IN')}</dd></div>
