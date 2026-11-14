@@ -164,6 +164,8 @@
       linear-gradient(#000 0 0) top / 100% calc(100% - var(--tooth-h)) no-repeat,
       conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) bottom / var(--tooth-w) var(--tooth-h) repeat-x;
   }
+  /* For a PDF capture: no torn foot (the capture library cannot draw masks). */
+  .ez-slip--flat { -webkit-mask: none; mask: none; padding-bottom: 22px; }
   .ez-slip__merchant { text-align: center; font-weight: 500; font-size: 14px; letter-spacing: .1em; text-transform: uppercase; }
   .ez-slip__sub { text-align: center; color: rgb(var(--ez-paper-dim)); font-size: 12px; }
   .ez-slip__rule { border: 0; border-top: 1.5px dashed rgb(var(--ez-paper-rule)); margin: 14px 0; }

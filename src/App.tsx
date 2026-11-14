@@ -30,7 +30,7 @@ const TermsAndConditions = lazy(() => import("./pages/TermsAndConditions"));
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
 const MoneyLeaks = lazy(() => import("./pages/next/MoneyLeaks"));
 const Subscriptions = lazy(() => import("./pages/Subscriptions"));
-const MonthlySummary = lazy(() => import("./pages/MonthlySummary"));
+const MonthlySummary = lazy(() => import("./pages/next/MonthlySummary"));
 const FinancialDocs = lazy(() => import("./pages/FinancialDocs"));
 const Security = lazy(() => import("./pages/Security"));
 const Warranties = lazy(() => import("./pages/Warranties"));
@@ -81,6 +81,7 @@ const App = () => {
             <Route path="/expenses/:id" element={<BillDetail />} />
             <Route path="/analytics" element={<Spending />} />
             <Route path="/money-leaks" element={<MoneyLeaks />} />
+            <Route path="/summary" element={<MonthlySummary />} />
 
             {/* Not rebuilt yet: brand colours and fonts, old layouts */}
             <Route element={<LegacyScreen />}>
@@ -94,7 +95,6 @@ const App = () => {
               <Route path="/settings" element={<Settings />} />
               <Route path="/security" element={<Security />} />
               <Route path="/subscriptions" element={<Subscriptions />} />
-              <Route path="/summary" element={<MonthlySummary />} />
               <Route path="/financial-docs" element={<FinancialDocs />} />
               <Route path="/warranties" element={<Warranties />} />
               <Route path="/splits" element={<Splits />} />
