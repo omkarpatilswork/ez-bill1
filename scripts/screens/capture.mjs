@@ -262,6 +262,7 @@ for (const theme of ['dark', 'light']) {
     const resetLink = `/reset-password#access_token=${session.access_token}&expires_at=1900000000&expires_in=3600&refresh_token=demo&token_type=bearer&type=recovery`;
     const doors = [
       ['login', '/login'], ['signup', '/signup'], ['tap', '/t/t3'],
+      ['terms', '/terms'], ['privacy', '/privacy'], ['not-found', '/no-such-page'],
       ['forgot-password', '/forgot-password'],
       ['forgot-password-sent', '/forgot-password', async () => {
         await door.getByLabel('Email').fill(user.email);
