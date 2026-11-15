@@ -186,6 +186,7 @@ for (const theme of ['dark', 'light']) {
     await shoot('settings', '/settings', { full: size === 'mobile' });
     await shoot('security', '/security', { full: size === 'mobile' });
     await shoot('smart-support', `/expenses/${CROMA_ID}/support`, { full: size === 'mobile' }); // the demo bill already has a return reminder
+    await shoot('import', '/email-bills', { full: size === 'mobile' });
     await shoot('nfc-airdrop', '/nfc-airdrop');
     await shoot('staff', '/staff');
     await shoot('splits', '/splits');

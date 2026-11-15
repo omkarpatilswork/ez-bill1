@@ -31,7 +31,7 @@ export default function CaptureSheet({ open, onOpenChange }: { open: boolean; on
         { label: 'Scan', hint: 'Point the camera at a paper bill.', icon: ScanLine, input: picker('scan') },
         { label: 'Upload', hint: 'Photos or PDFs. One or many.', icon: Upload, input: picker('upload') },
         { label: 'Gmail', hint: 'Bills and receipts in your inbox.', icon: Mail, onSelect: () => go('/email-bills') },
-        { label: 'SMS', hint: 'UPI and card messages.', icon: MessageSquareText, onSelect: () => go('/email-bills') },
+        { label: 'SMS', hint: 'UPI and card messages.', icon: MessageSquareText, onSelect: () => go('/email-bills?tab=upi') },
         { label: 'Tap', hint: 'NFC tag or QR code at the table.', icon: Nfc, onSelect: () => go('/nfc-airdrop') },
       ]} />
       <button type="button" onClick={() => go('/expenses/new', true)} className="mt-3 w-full rounded-full py-2.5 text-[14px] font-medium text-dim hover:text-fg">

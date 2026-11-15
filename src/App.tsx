@@ -7,7 +7,6 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/hooks/useTheme";
 import { AuthProvider } from "@/hooks/useAuth";
 import ProtectedRoute from "@/components/layout/ProtectedRoute";
-import LegacyScreen from "@/components/layout/AppLayout";
 import AppShell from "@/components/next/AppShell";
 import Login from "./pages/Login";
 import Home from "./pages/next/Home";
@@ -22,7 +21,7 @@ const SmartSupport = lazy(() => import("./pages/next/SmartSupport"));
 const SplitBill = lazy(() => import("./pages/next/SplitBill"));
 const Spending = lazy(() => import("./pages/next/Spending"));
 const AskAi = lazy(() => import("./pages/next/AskAi"));
-const EmailBills = lazy(() => import("./pages/expenses/EmailBills"));
+const ImportBills = lazy(() => import("./pages/next/ImportBills"));
 const Settings = lazy(() => import("./pages/next/Settings"));
 const Onboarding = lazy(() => import("./pages/next/Onboarding"));
 const TermsAndConditions = lazy(() => import("./pages/TermsAndConditions"));
@@ -75,7 +74,6 @@ const App = () => {
 
           {/* Signed-in screens share one shell: Home, Bills, Insights, Vault and Add a bill */}
           <Route element={<ProtectedRoute><AppShell /></ProtectedRoute>}>
-            {/* Rebuilt in the Ink & Paper design */}
             <Route path="/" element={<Home />} />
             <Route path="/expenses" element={<Bills />} />
             <Route path="/expenses/:id" element={<BillDetail />} />
@@ -96,13 +94,9 @@ const App = () => {
             <Route path="/financial-docs" element={<Documents />} />
             <Route path="/expenses/:id/support" element={<SmartSupport />} />
             <Route path="/support" element={<SupportIndex />} />
+            <Route path="/email-bills" element={<ImportBills />} />
             <Route path="/staff" element={<StaffTables />} />
             <Route path="/nfc-airdrop" element={<NfcAirdrop />} />
-
-            {/* Not rebuilt yet: brand colours and fonts, old layouts */}
-            <Route element={<LegacyScreen />}>
-              <Route path="/email-bills" element={<EmailBills />} />
-            </Route>
           </Route>
 
           <Route path="/next" element={<Navigate to="/" replace />} />
