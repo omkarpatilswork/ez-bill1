@@ -603,12 +603,15 @@ export default function EmailBills() {
 
   const gmail = (
     <section key="gmail" className="mt-9">
-      <h2 className="ez-label !text-dim">Gmail</h2>
+      <h2 className="flex items-center gap-2.5"><span className="ez-label !text-dim">Gmail</span><Tag>Invite-only beta</Tag></h2>
       <div className="ez-card mt-3 p-4 lg:p-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="min-w-0">
             {isConnected ? <p className="flex flex-wrap items-center gap-2.5 text-[15.5px] text-fg"><span className="min-w-0 break-all">{connectedEmail}</span><Tag>Connected</Tag></p>
-              : <p className="max-w-[460px] text-[14.5px] text-dim">Connect Gmail and EZZ BILL finds the bills, subscriptions and warranties in it. It only reads your mail: it never sends, changes or deletes anything.</p>}
+              : <div className="max-w-[460px] space-y-2 text-[14.5px] text-dim">
+                  <p>Connect Gmail and EZZ BILL finds the bills, subscriptions and warranties in it. It only reads your mail: it never sends, changes or deletes anything.</p>
+                  <p className="text-[13.5px] text-faint">Until Google has reviewed EZZ BILL, only invited accounts can connect. Not invited? Scan or upload your bills instead.</p>
+                </div>}
           </div>
           {isConnected ? <button type="button" className="ez-btn ez-btn--ghost ez-btn--sm" onClick={disconnectGmail} disabled={working}>Disconnect</button>
             : <button type="button" className="ez-btn ez-btn--primary" onClick={connectGmail}>Connect Gmail</button>}

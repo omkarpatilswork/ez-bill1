@@ -5,7 +5,7 @@ import SEO from '@/components/SEO';
 /** Terms and Conditions, open to everyone. The wording is the legal text as published; change it only with Omi's say. */
 export default function TermsAndConditions() {
   return (
-    <LegalPage label="The agreement between us" title="Terms at EZZ BILL" updated="29 October 2026"
+    <LegalPage label="The agreement between us" title="Terms at EZZ BILL" updated="15 November 2026"
       lead="What you can expect from us, what we expect from you, and how each feature works under the hood.">
       <SEO title="Terms at EZZ BILL" description="What you can expect from us, what we expect from you, and how each feature works under the hood." path="/terms" />
       <LegalSection title="Using the service">
@@ -17,7 +17,7 @@ export default function TermsAndConditions() {
           items={[
             <>You must create an account with accurate details and keep your sign-in credentials safe.</>,
             <>You are responsible for everything that happens under your account, including the bills saved to it.</>,
-            <>Scans and AI features run only when you start them, and each run uses your app credits.</>,
+            <>Scans and AI features run only when you start them.</>,
           ]}
         />
       </LegalSection>

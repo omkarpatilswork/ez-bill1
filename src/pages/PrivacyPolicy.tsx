@@ -5,7 +5,7 @@ import SEO from '@/components/SEO';
 /** Privacy Policy, open to everyone. The wording is the legal text as published; change it only with Omi's say. */
 export default function PrivacyPolicy() {
   return (
-    <LegalPage label="Your data, your rules" title="Privacy at EZZ BILL" updated="29 October 2026"
+    <LegalPage label="Your data, your rules" title="Privacy at EZZ BILL" updated="15 November 2026"
       lead="How your bills, NFC taps, emails and receipts are stored, who can see them, and how you stay in control.">
       <SEO title="Privacy at EZZ BILL" description="How your bills, NFC taps, emails and receipts are stored, who can see them, and how you stay in control." path="/privacy" />
       <LegalSection title="Bills & receipts you add">
@@ -57,7 +57,7 @@ export default function PrivacyPolicy() {
       <LegalSection title="AI reading of your bills">
         <p>
           To turn a photo, PDF or email attachment into structured bill data, the document is processed by
-          AI reading services.
+          Google's Gemini AI service on EZZ BILL's behalf.
         </p>
         <Bullets
           items={[
@@ -88,7 +88,7 @@ export default function PrivacyPolicy() {
             <>We never sell your personal or financial data — to anyone, ever.</>,
             <>We never use your data to advertise to you or build profiles for other companies.</>,
             <>We never read emails unrelated to bills, subscriptions or warranties.</>,
-            <>We never share your data with merchants, banks or third parties unless you explicitly use a feature that does (like contacting a merchant from the Support Hub).</>,
+            <>We never share your data with merchants, banks or third parties, except the services that run EZZ BILL for us (Google reads the bills you add), or when you explicitly use a feature that does (like contacting a merchant from Smart Support).</>,
           ]}
         />
       </LegalSection>

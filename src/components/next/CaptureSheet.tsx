@@ -30,7 +30,7 @@ export default function CaptureSheet({ open, onOpenChange }: { open: boolean; on
       <SheetChoices choices={[
         { label: 'Scan', hint: 'Point the camera at a paper bill.', icon: ScanLine, input: picker('scan') },
         { label: 'Upload', hint: 'Photos or PDFs. One or many.', icon: Upload, input: picker('upload') },
-        { label: 'Gmail', hint: 'Bills and receipts in your inbox.', icon: Mail, onSelect: () => go('/email-bills') },
+        { label: 'Gmail', hint: 'Bills in your inbox. Invite-only beta.', icon: Mail, onSelect: () => go('/email-bills') },
         { label: 'SMS', hint: 'UPI and card messages.', icon: MessageSquareText, onSelect: () => go('/email-bills?tab=upi') },
         { label: 'Tap', hint: 'NFC tag or QR code at the table.', icon: Nfc, onSelect: () => go('/nfc-airdrop') },
       ]} />
