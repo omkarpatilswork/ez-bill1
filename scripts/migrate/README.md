@@ -25,3 +25,14 @@ profiles), replaces the categories and NFC tags that migrations seed with the ex
 ones (bills point at their ids), and compares row counts afterwards.
 
 `test-restore.sh` rehearses steps 2 to 4 on a local Postgres with made-up data.
+
+## Moving between two Supabase projects (e.g. Seoul to Mumbai)
+
+`copy-project.mjs <from-ref> <to-ref> [--files]` copies every row of `public`, plus
+`auth.users` and `auth.identities`, from one project to another that already has the
+schema (`apply-migrations.mjs` first), and with `--files` every stored file. It reads the
+source only, refuses a target that has users or bills, loads in one transaction with
+triggers off, and compares row counts. `--dry-run` with `-` as the target reads the source
+and prints what it would copy. Secrets (function secrets, the Google provider secret) are
+stored hashed and cannot be copied: they are entered again in the new project.
+
