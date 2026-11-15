@@ -37,8 +37,8 @@ const Splits = lazy(() => import("./pages/next/Splits"));
 const SplitFriend = lazy(() => import("./pages/next/SplitFriend"));
 const Support = lazy(() => import("./pages/Support"));
 const ClaimTag = lazy(() => import("./pages/next/ClaimTag"));
-const StaffTables = lazy(() => import("./pages/StaffTables"));
-const NfcAirdrop = lazy(() => import("./pages/NfcAirdrop"));
+const StaffTables = lazy(() => import("./pages/next/StaffTables"));
+const NfcAirdrop = lazy(() => import("./pages/next/NfcAirdrop"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
@@ -94,14 +94,14 @@ const App = () => {
             <Route path="/warranties" element={<WarrantyVault />} />
             <Route path="/subscriptions" element={<Subscriptions />} />
             <Route path="/financial-docs" element={<Documents />} />
+            <Route path="/staff" element={<StaffTables />} />
+            <Route path="/nfc-airdrop" element={<NfcAirdrop />} />
 
             {/* Not rebuilt yet: brand colours and fonts, old layouts */}
             <Route element={<LegacyScreen />}>
               <Route path="/expenses/:id/support" element={<MerchantSupport />} />
               <Route path="/email-bills" element={<EmailBills />} />
               <Route path="/support" element={<Support />} />
-              <Route path="/staff" element={<StaffTables />} />
-              <Route path="/nfc-airdrop" element={<NfcAirdrop />} />
             </Route>
           </Route>
 

@@ -68,6 +68,8 @@ const TABLES = {
   financial_documents: documents,
   bill_splits: billSplits,
   split_payments: splitPayments,
+  bill_tags: [1, 2, 3, 4].map((n) => ({ tag_id: `t${n}`, label: `Table ${n}`, merchant_name: 'Blue Tokai Coffee' })),
+  tag_pending_bills: [{ id: 'a3000000-0000-4000-8000-000000000001', tag_id: 't3', amount: 412, created_at: '2026-10-19T13:18:00+05:30', claimed_at: null }],
   friends,
 };
 
@@ -183,6 +185,8 @@ for (const theme of ['dark', 'light']) {
     await shoot('ask-ai', '/ask-ai');
     await shoot('settings', '/settings', { full: size === 'mobile' });
     await shoot('security', '/security', { full: size === 'mobile' });
+    await shoot('nfc-airdrop', '/nfc-airdrop');
+    await shoot('staff', '/staff');
     await shoot('splits', '/splits');
     await shoot('split-friend', `/splits/friend/${friends[1].id}`);
     await shoot('split-bill', `/expenses/${BLUE_TOKAI_ID}/split`, { full: size === 'mobile', before: () => page.getByRole('tab', { name: 'Line by line' }).click() });
@@ -222,7 +226,7 @@ for (const theme of ['dark', 'light']) {
     }
     // --all: every other main screen too, to check the ones not rebuilt yet.
     if (ALL) {
-      for (const route of ['/email-bills', '/nfc-airdrop', '/staff']) {
+      for (const route of ['/email-bills', '/support']) {
         await shoot(`all${route.replaceAll('/', '-')}`, route);
       }
     }

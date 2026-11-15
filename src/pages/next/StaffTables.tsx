@@ -1,17 +1,13 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- the send and clear logic is carried over unchanged from the Phase 1 work; only the layout below was redesigned */
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Camera } from 'lucide-react';
+import SEO from '@/components/SEO';
+import { EmptyState, Field, INPUT, ScreenHeader, Sheet } from '@/components/next/Sheet';
 import { supabase } from '@/integrations/supabase/client';
 import { prepareForReading } from '@/lib/image-prep';
 import { useAuth } from '@/hooks/useAuth';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import {
-  Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter,
-} from '@/components/ui/sheet';
 import { useToast } from '@/hooks/use-toast';
-import { Camera, Loader2, CheckCircle2, Wifi, X, RotateCcw } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 // Tier-1 pilot staff screen: no POS integration, just "enter the total,
 // photograph the closed bill, send it" — this is what makes a table's NFC
@@ -209,112 +205,61 @@ export default function StaffTables() {
   };
 
   return (
-    <div className="max-w-xl mx-auto space-y-4 pb-24">
-      <div className="flex items-center gap-2">
-        <Wifi className="h-5 w-5 text-primary" />
-        <h1 className="text-lg font-bold text-foreground">NFC Tables — Staff</h1>
-      </div>
-      <p className="text-xs text-muted-foreground">
-        Enter the total and snap the closed bill — the table's tag / QR code hands that receipt to whoever taps it.
-        {tags.length > 0 && (
-          <> {' '}·{' '}<span className="text-foreground font-medium">{readyCount} of {tags.length}</span> ready now</>
-        )}
-      </p>
+    <>
+      <SEO title="Staff tables" description="Send a closed bill to a table's NFC tag." path="/staff" />
+      <div className="max-w-[760px] pb-8">
+        <ScreenHeader title="Staff tables" summary={tags.length > 0 ? <><span className="text-fg">{readyCount} of {tags.length}</span> tables have a bill waiting to be tapped.</> : undefined} />
 
-      <div className="space-y-3">
-        {sortedTags.map(tag => {
-          const row = pending[tag.tag_id];
-          return (
-            <Card
-              key={tag.tag_id}
-              className={`border-0 glass-card rounded-2xl transition-colors ${row ? 'ring-1 ring-green-500/40 bg-green-500/[0.03]' : ''}`}
-            >
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm flex items-center justify-between gap-2">
-                  {tag.label}
-                  {row ? (
-                    <Badge variant="outline" className="border-green-500/40 text-green-500 gap-1 font-normal shrink-0">
-                      <CheckCircle2 className="h-3 w-3" />
-                      {row.amount != null ? `₹${row.amount.toLocaleString('en-IN')}` : 'Ready'} · {timeAgo(row.created_at)}
-                    </Badge>
-                  ) : (
-                    <Badge variant="outline" className="text-muted-foreground font-normal shrink-0">Open</Badge>
-                  )}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="flex gap-2">
-                <Button size="sm" variant={row ? 'outline' : 'default'} className="flex-1 min-h-[40px]" onClick={() => openSheet(tag)}>
-                  <Camera className="h-4 w-4 mr-1.5" /> {row ? 'Send new bill' : 'Send bill'}
-                </Button>
-                {row && (
-                  <Button
-                    size="sm" variant="ghost" className="min-h-[40px] w-10 px-0 text-muted-foreground"
-                    disabled={clearingId === row.id} onClick={() => clearTable(tag)} aria-label={`Clear ${tag.label}`}
-                  >
-                    {clearingId === row.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <X className="h-4 w-4" />}
-                  </Button>
-                )}
-              </CardContent>
-            </Card>
-          );
-        })}
-        {!loadingTags && tags.length === 0 && (
-          <p className="text-xs text-muted-foreground text-center py-8">No tags provisioned yet — add rows to bill_tags in Supabase.</p>
+        {loadingTags ? (
+          <div className="mt-8 space-y-3" aria-busy="true" aria-label="Loading">{[0, 1, 2].map((i) => <div key={i} className="h-[74px] rounded-[18px] bg-surface-2" />)}</div>
+        ) : tags.length === 0 ? (
+          <EmptyState title="No tables set up." body="Tags are added for each venue during setup. Once a table has a tag, it appears here." />
+        ) : (
+          <ul className="ez-card mt-8 divide-y divide-line-soft overflow-hidden">
+            {sortedTags.map((tag) => {
+              const row = pending[tag.tag_id];
+              return (
+                <li key={tag.tag_id} className="flex flex-wrap items-center gap-x-4 gap-y-3 px-4 py-3.5 lg:px-5">
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-[16px] font-semibold leading-snug text-fg">{tag.label}</p>
+                    <p className="text-[13.5px] text-dim">
+                      {row ? <><span className="text-brand-text">Bill waiting</span>{row.amount != null && <> · <span className="ez-num">₹{row.amount.toLocaleString('en-IN')}</span></>} · sent {timeAgo(row.created_at)}</> : 'No bill sent'}
+                    </p>
+                  </div>
+                  <div className="flex gap-2">
+                    {row && <button type="button" className="ez-btn ez-btn--ghost ez-btn--sm" disabled={clearingId === row.id} onClick={() => clearTable(tag)}>{clearingId === row.id ? 'Clearing' : 'Clear'}</button>}
+                    <button type="button" className={cn('ez-btn ez-btn--sm', row ? 'ez-btn--ghost' : 'ez-btn--primary')} onClick={() => openSheet(tag)}>{row ? 'Send a new bill' : 'Send bill'}</button>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
         )}
+        <p className="mt-5 max-w-[560px] text-[13.5px] text-faint">A bill stays on its table for {GRACE_WINDOW_MINUTES} minutes or until a guest saves it. Whoever taps the tag in that time sees this bill, so clear a table when the guests have left.</p>
       </div>
 
-      <Sheet open={!!sheetTag} onOpenChange={open => !open && closeSheet()}>
-        <SheetContent side="bottom" className="rounded-t-2xl max-w-xl mx-auto space-y-5">
-          <SheetHeader className="text-left">
-            <SheetTitle>{sheetTag?.label}</SheetTitle>
-            <SheetDescription>Enter the total, then attach the printed bill.</SheetDescription>
-          </SheetHeader>
-
-          <div className="space-y-1.5">
-            <Label className="text-xs">Total</Label>
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-lg text-muted-foreground">₹</span>
-              <Input
-                type="number" inputMode="decimal" step="0.01" autoFocus
-                value={amount} onChange={e => setAmount(e.target.value)} placeholder="0.00"
-                className="h-14 pl-8 text-2xl font-semibold tabular-nums bg-secondary/30 border-border/30"
-              />
+      <Sheet open={!!sheetTag} onOpenChange={(o) => { if (!o) closeSheet(); }} label="Send a bill" title={sheetTag?.label || ''}>
+        <div className="space-y-4">
+          <Field id="staff-total" label="Bill total" hint="The guest sees this at once, while the photo is read.">
+            <input id="staff-total" type="number" min="0" step="0.01" inputMode="decimal" className={cn(INPUT, 'ez-num')} value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="412" autoFocus />
+          </Field>
+          {preview ? (
+            <div>
+              <img src={preview} alt="The bill you photographed" className="max-h-56 w-full rounded-[14px] border border-line-soft bg-surface object-contain" />
+              <button type="button" className="mt-2 text-[14px] font-medium text-dim underline decoration-line underline-offset-4 hover:text-fg" onClick={() => pickFile(null)}>Take it again</button>
             </div>
+          ) : (
+            <label className="flex h-32 cursor-pointer flex-col items-center justify-center gap-2 rounded-[14px] border border-dashed border-line text-[14.5px] font-medium text-dim hover:border-brand hover:text-fg">
+              <input type="file" accept="image/*" capture="environment" className="sr-only" onChange={(e) => pickFile(e.target.files?.[0] || null)} />
+              <Camera className="h-5 w-5" strokeWidth={1.75} /> Photograph the printed bill
+            </label>
+          )}
+          <div className="flex justify-end gap-2.5 pt-1">
+            <button type="button" className="ez-btn ez-btn--ghost" onClick={closeSheet}>Cancel</button>
+            <button type="button" className="ez-btn ez-btn--primary disabled:opacity-40" disabled={!file || !amount || submitting} onClick={sendBill}>{submitting ? 'Sending' : 'Send to the table'}</button>
           </div>
-
-          <div className="space-y-1.5">
-            <Label className="text-xs">Bill photo</Label>
-            {preview ? (
-              <div className="relative">
-                <img src={preview} alt="Bill preview" className="w-full max-h-48 object-contain rounded-lg bg-muted/30 border border-border/30" />
-                <Button type="button" size="sm" variant="secondary" className="absolute bottom-2 right-2 h-8" onClick={() => pickFile(null)}>
-                  <RotateCcw className="h-3.5 w-3.5 mr-1.5" /> Retake
-                </Button>
-              </div>
-            ) : (
-              <label className="flex flex-col items-center justify-center gap-2 h-28 rounded-lg border border-dashed border-border/50 bg-secondary/20 text-muted-foreground cursor-pointer">
-                <Camera className="h-5 w-5" />
-                <span className="text-xs">Tap to photograph the bill</span>
-                <input
-                  type="file" accept="image/*,.pdf" capture="environment" className="hidden"
-                  onChange={e => pickFile(e.target.files?.[0] || null)}
-                />
-              </label>
-            )}
-          </div>
-
-          <SheetFooter className="flex-row gap-2 sm:justify-stretch">
-            <Button variant="ghost" className="flex-1 min-h-[44px]" onClick={closeSheet}>Cancel</Button>
-            <Button className="flex-1 min-h-[44px]" disabled={!file || !amount || submitting} onClick={sendBill}>
-              {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Send to table'}
-            </Button>
-          </SheetFooter>
-        </SheetContent>
+        </div>
       </Sheet>
-    </div>
+    </>
   );
 }
-
-// One-time Supabase setup for the live-sync piece above (safe to skip — the
-// 60s poll covers it either way, this just makes updates instant):
-//   alter publication supabase_realtime add table public.tag_pending_bills;
