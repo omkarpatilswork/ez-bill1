@@ -16,6 +16,8 @@ import { checkDueReminders } from "@/lib/return-reminders";
 const Bills = lazy(() => import("./pages/next/Bills"));
 const BillDetail = lazy(() => import("./pages/next/BillDetail"));
 const Signup = lazy(() => import("./pages/Signup"));
+const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const AddBill = lazy(() => import("./pages/next/AddBill"));
 const SmartSupport = lazy(() => import("./pages/next/SmartSupport"));
 const SplitBill = lazy(() => import("./pages/next/SplitBill"));
@@ -67,6 +69,8 @@ const App = () => {
           {/* Outside the app shell */}
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
           <Route path="/terms" element={<TermsAndConditions />} />
           <Route path="/privacy" element={<PrivacyPolicy />} />

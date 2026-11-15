@@ -88,6 +88,7 @@ async function mockSupabase(context) {
     if (req.method() === 'OPTIONS') {
       return route.fulfill({ status: 204, headers: { 'access-control-allow-origin': '*', 'access-control-allow-headers': '*', 'access-control-allow-methods': '*' } });
     }
+    if (url.pathname === '/auth/v1/recover') return json({}); // "Forgot password": the reset email is accepted, nothing is sent
     if (url.pathname.startsWith('/auth/v1/user')) return json(user);
     if (url.pathname.startsWith('/auth/v1/token')) return json(session);
     if (url.pathname.startsWith('/storage/v1/object/sign/')) return json({ signedURL: `${url.pathname.replace('/storage/v1', '')}?token=demo` });
@@ -251,11 +252,26 @@ for (const theme of ['dark', 'light']) {
     await mockSupabase(guest);
     await guest.addInitScript((t) => localStorage.setItem('ez-bill-theme', t), theme);
     const door = await guest.newPage();
-    for (const route of ['/login', '/signup', '/t/t3']) {
+    door.on('pageerror', (e) => problems.push(`${theme}/${size} ${String(e).slice(0, 200)}`));
+    // The reset link signs the person in, so it comes last.
+    const resetLink = `/reset-password#access_token=${session.access_token}&expires_at=1900000000&expires_in=3600&refresh_token=demo&token_type=bearer&type=recovery`;
+    const doors = [
+      ['login', '/login'], ['signup', '/signup'], ['tap', '/t/t3'],
+      ['forgot-password', '/forgot-password'],
+      ['forgot-password-sent', '/forgot-password', async () => {
+        await door.getByLabel('Email').fill(user.email);
+        await door.getByRole('button', { name: 'Send the link' }).click();
+        await door.getByRole('heading', { name: 'Check your email.' }).waitFor();
+      }],
+      ['reset-expired', '/reset-password#error=access_denied&error_code=otp_expired&error_description=Email+link+is+invalid+or+has+expired'],
+      ['reset-password', resetLink, () => door.getByRole('heading', { name: 'Choose a new password.' }).waitFor()],
+    ];
+    for (const [name, route, before] of doors) {
       await door.goto(BASE + route, { waitUntil: 'networkidle' });
       await door.evaluate(() => document.fonts.ready);
+      if (before) await before();
       await door.waitForTimeout(350);
-      await door.screenshot({ path: path.join(OUT, `${route === '/t/t3' ? 'tap' : route.slice(1)}-${size}-${theme}.png`) });
+      await door.screenshot({ path: path.join(OUT, `${name}-${size}-${theme}.png`) });
     }
     await guest.close();
   }

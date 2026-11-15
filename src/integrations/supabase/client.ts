@@ -1,3 +1,5 @@
+// Must run before the client below is created: it reads the password-reset link from the address.
+import '@/lib/reset-link';
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 

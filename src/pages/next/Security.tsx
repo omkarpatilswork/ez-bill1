@@ -97,7 +97,7 @@ export default function Security() {
           <h2 className="ez-label !text-dim">Password</h2>
           <form onSubmit={changePassword} className="ez-card mt-3 space-y-4 p-4 lg:p-5">
             {google && !hasPassword && <p className="text-[14px] text-dim">You sign in with Google and have no password here. Set one to also sign in with your email.</p>}
-            {hasPassword && <Field id="sec-current" label="Current password"><input id="sec-current" type="password" className={INPUT} value={current} onChange={(e) => setCurrent(e.target.value)} autoComplete="current-password" /></Field>}
+            {hasPassword && <Field id="sec-current" label="Current password" hint={<>Forgot it? <Link to="/forgot-password" state={{ email }} className="font-medium text-dim underline decoration-line underline-offset-4 hover:text-fg">Get a reset link by email</Link></>}><input id="sec-current" type="password" className={INPUT} value={current} onChange={(e) => setCurrent(e.target.value)} autoComplete="current-password" /></Field>}
             <Field id="sec-new" label="New password" hint="At least 8 characters."><input id="sec-new" type="password" className={INPUT} value={next} onChange={(e) => setNext(e.target.value)} autoComplete="new-password" /></Field>
             <Field id="sec-again" label="New password again"><input id="sec-again" type="password" className={INPUT} value={again} onChange={(e) => setAgain(e.target.value)} autoComplete="new-password" /></Field>
             <div className="flex justify-end"><button type="submit" disabled={busy === 'password' || !next || (hasPassword && !current)} className="ez-btn ez-btn--primary disabled:opacity-50">{busy === 'password' ? 'Saving' : hasPassword ? 'Change password' : 'Set password'}</button></div>

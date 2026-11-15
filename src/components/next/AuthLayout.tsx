@@ -53,10 +53,17 @@ export default function AuthLayout({ label, title, lead, children, foot }: {
 
 export const AUTH_INPUT = 'h-12 w-full rounded-full border border-line bg-surface-2 px-5 text-[15.5px] text-fg outline-none placeholder:text-faint focus:border-brand focus:shadow-[0_0_0_4px_rgb(var(--ez-brand)/.12)]';
 
-export function Field({ id, label, children }: { id: string; label: string; children: ReactNode }) {
+/** Text links on the sign-in screens: quiet, underlined, emerald on hover. */
+export const AUTH_LINK = 'font-medium text-fg underline decoration-line underline-offset-4 hover:decoration-brand';
+
+/** A labelled input. `aside` sits at the right end of the label row, e.g. "Forgot password?". */
+export function Field({ id, label, aside, children }: { id: string; label: string; aside?: ReactNode; children: ReactNode }) {
   return (
     <div>
-      <label htmlFor={id} className="mb-2 block text-[13.5px] font-medium text-dim">{label}</label>
+      <div className="mb-2 flex items-baseline justify-between gap-3">
+        <label htmlFor={id} className="block text-[13.5px] font-medium text-dim">{label}</label>
+        {aside && <span className="text-[13.5px]">{aside}</span>}
+      </div>
       {children}
     </div>
   );

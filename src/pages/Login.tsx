@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import AuthLayout, { AUTH_INPUT, Field, GoogleButton, OrDivider } from '@/components/next/AuthLayout';
+import AuthLayout, { AUTH_INPUT, AUTH_LINK, Field, GoogleButton, OrDivider } from '@/components/next/AuthLayout';
 import SEO from '@/components/SEO';
 
 export default function Login() {
@@ -42,7 +42,7 @@ export default function Login() {
 
   return (
     <AuthLayout label="Sign in" title="Every bill, in one place." lead="Sign in to see where the money went."
-      foot={<>New here? <Link to="/signup" className="font-medium text-fg underline decoration-line underline-offset-4 hover:decoration-brand">Create an account</Link></>}>
+      foot={<>New here? <Link to="/signup" className={AUTH_LINK}>Create an account</Link></>}>
       <SEO title="Sign in" description="Sign in to EZZ BILL to see every bill in one place and where the money went." path="/login" />
       <GoogleButton onClick={handleGoogle} busy={googleBusy} />
       <OrDivider />
@@ -50,7 +50,7 @@ export default function Login() {
         <Field id="email" label="Email">
           <input id="email" type="email" autoComplete="email" required placeholder="you@example.com" className={AUTH_INPUT} value={email} onChange={(e) => setEmail(e.target.value)} />
         </Field>
-        <Field id="password" label="Password">
+        <Field id="password" label="Password" aside={<Link to="/forgot-password" state={{ email: email.trim() }} className={AUTH_LINK}>Forgot password?</Link>}>
           <input id="password" type="password" autoComplete="current-password" required className={AUTH_INPUT} value={password} onChange={(e) => setPassword(e.target.value)} />
         </Field>
         <button type="submit" disabled={busy} className="ez-btn ez-btn--primary !mt-6 h-12 w-full disabled:opacity-60">{busy ? 'Signing in' : 'Sign in'}</button>

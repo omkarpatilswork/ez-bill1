@@ -107,7 +107,7 @@ export function Confirm({ open, onOpenChange, title, body, action, onConfirm, bu
 /** Form pieces for sheets and settings screens. */
 export const INPUT = 'h-11 w-full rounded-xl border border-line bg-surface px-3.5 text-[15px] text-fg outline-none placeholder:text-faint focus:border-brand focus:shadow-[0_0_0_4px_rgb(var(--ez-brand)/.12)] disabled:opacity-60';
 
-export function Field({ id, label, hint, children, className }: { id: string; label: string; hint?: string; children: ReactNode; className?: string }) {
+export function Field({ id, label, hint, children, className }: { id: string; label: string; hint?: ReactNode; children: ReactNode; className?: string }) {
   return (
     <div className={className}>
       <label htmlFor={id} className="mb-1.5 block text-[13px] font-medium text-dim">{label}</label>

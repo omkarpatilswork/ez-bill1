@@ -3,10 +3,8 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import AuthLayout, { AUTH_INPUT, Field, GoogleButton, OrDivider } from '@/components/next/AuthLayout';
+import AuthLayout, { AUTH_INPUT, AUTH_LINK as LINK, Field, GoogleButton, OrDivider } from '@/components/next/AuthLayout';
 import SEO from '@/components/SEO';
-
-const LINK = 'font-medium text-fg underline decoration-line underline-offset-4 hover:decoration-brand';
 
 export default function Signup() {
   const [email, setEmail] = useState('');
@@ -64,7 +62,7 @@ export default function Signup() {
           <input id="email" type="email" autoComplete="email" required placeholder="you@example.com" className={AUTH_INPUT} value={email} onChange={(e) => setEmail(e.target.value)} />
         </Field>
         <Field id="password" label="Password">
-          <input id="password" type="password" autoComplete="new-password" required minLength={6} placeholder="6 characters or more" className={AUTH_INPUT} value={password} onChange={(e) => setPassword(e.target.value)} />
+          <input id="password" type="password" autoComplete="new-password" required minLength={8} placeholder="8 characters or more" className={AUTH_INPUT} value={password} onChange={(e) => setPassword(e.target.value)} />
         </Field>
         <button type="submit" disabled={busy} className="ez-btn ez-btn--primary !mt-6 h-12 w-full disabled:opacity-60">{busy ? 'Creating your account' : 'Create account'}</button>
       </form>
