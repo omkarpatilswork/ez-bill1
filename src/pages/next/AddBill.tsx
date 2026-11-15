@@ -142,7 +142,7 @@ export default function AddBill() {
 
   const verdict = useCallback((entry: Entry) => {
     const total = toNumber(entry.draft.amount);
-    const math = checkBillMath({ items: draftItems(entry.draft), tax: toNumber(entry.draft.tax) || null, discount: toNumber(entry.draft.discount) || null }, total);
+    const math = checkBillMath({ items: draftItems(entry.draft), tax: toNumber(entry.draft.tax) || null, discount: toNumber(entry.draft.discount) || null, charges: toNumber(entry.draft.charges) || null, subtotal: toNumber(entry.draft.subtotal) || null }, total);
     const duplicate = total > 0 ? findLikelyDuplicate({ merchant: entry.draft.merchant, amount: total, date: entry.draft.date, invoice: entry.draft.invoice, ignoreId: editId }, bills) : null;
     const problems = draftProblems(entry.draft);
     return { math, duplicate, problems, clean: !problems.length && math.status !== 'mismatch' && !duplicate && !entry.unread };
@@ -390,19 +390,21 @@ function Review({ entry, verdict, fromFile, onChange, footer }: {
           <Plus className="h-4 w-4" /> Add a line
         </button>
 
-        <div className="mt-5 grid grid-cols-3 gap-3 border-t border-line-soft pt-4">
+        <div className="mt-5 grid grid-cols-2 gap-3 border-t border-line-soft pt-4 sm:grid-cols-4">
           <Field id="b-subtotal" label="Subtotal"><input id="b-subtotal" type="number" min="0" step="0.01" inputMode="decimal" className={cn(INPUT, 'ez-num')} value={d.subtotal} onChange={set('subtotal')} /></Field>
           <Field id="b-tax" label="Tax"><input id="b-tax" type="number" min="0" step="0.01" inputMode="decimal" className={cn(INPUT, 'ez-num')} value={d.tax} onChange={set('tax')} /></Field>
+          <Field id="b-charges" label="Other charges"><input id="b-charges" type="number" min="0" step="0.01" inputMode="decimal" className={cn(INPUT, 'ez-num')} value={d.charges} onChange={set('charges')} /></Field>
           <Field id="b-discount" label="Discount"><input id="b-discount" type="number" min="0" step="0.01" inputMode="decimal" className={cn(INPUT, 'ez-num')} value={d.discount} onChange={set('discount')} /></Field>
         </div>
+        <p className="mt-2 text-[12.5px] text-faint">Other charges: service charge, packing, delivery or a tip.</p>
 
         {math.status === 'ok' && (
-          <p className="mt-4 flex items-center gap-2 text-[14px] text-dim"><Check className="h-4 w-4 text-brand-text" /> The lines add up to the total{math.viaTax ? ', with tax and discount' : ''}.</p>
+          <p className="mt-4 flex items-center gap-2 text-[14px] text-dim"><Check className="h-4 w-4 text-brand-text" /> The numbers add up to the total{math.viaTax ? ', with tax, charges and discount' : ''}.</p>
         )}
         {math.status === 'mismatch' && (
           <p className="mt-4 rounded-[14px] border border-line bg-surface px-4 py-3 text-[14.5px] text-fg" role="status">
             The lines come to <span className="ez-num text-gilt">{formatAmount(math.itemsSum, { symbol, paise: true })}</span>
-            {Math.abs(math.expected - math.diff - math.itemsSum) > 0.005 && <> (<span className="ez-num">{formatAmount(math.expected - math.diff, { symbol, paise: true })}</span> with tax and discount)</>}
+            {Math.abs(math.expected - math.diff - math.itemsSum) > 0.005 && <> (<span className="ez-num">{formatAmount(math.expected - math.diff, { symbol, paise: true })}</span> with tax, charges and discount)</>}
             , the total says <span className="ez-num text-gilt">{formatAmount(math.expected, { symbol, paise: true })}</span>.
             {' '}<span className="text-dim">One of them was probably misread. Compare with the bill, then save.</span>
           </p>

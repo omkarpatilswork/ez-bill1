@@ -23,6 +23,8 @@ export interface BillDraft {
   tax: string;
   taxDetails: string;
   discount: string;
+  /** Service charge, packing, delivery, a tip: on the bill, but neither a line nor tax. */
+  charges: string;
   currency: string;
   aggregator: string;
   address: string;
@@ -48,7 +50,7 @@ export const toNumber = (v: string): number => {
 export function emptyDraft(currency = 'INR', date = ''): BillDraft {
   return {
     merchant: '', amount: '', date, category: 'Other', payment: '', invoice: '', subtotal: '', tax: '', taxDetails: '',
-    discount: '', currency, aggregator: '', address: '', notes: '', items: [],
+    discount: '', charges: '', currency, aggregator: '', address: '', notes: '', items: [],
   };
 }
 
@@ -73,6 +75,7 @@ export function draftFromReading(data: Record<string, unknown> | null | undefine
     tax: money(d.tax_amount),
     taxDetails: found(d.tax_details),
     discount: money(d.discount),
+    charges: money(d.charges),
     currency: /^[A-Z]{3}$/.test(currency) ? currency : fallbackCurrency,
     aggregator: found(d.aggregator),
     address: found(d.merchant_address),
@@ -109,6 +112,7 @@ export function draftFromBill(bill: StoredBill): BillDraft {
     tax: text(parsed.tax),
     taxDetails: parsed.taxDetails || '',
     discount: text(parsed.discount),
+    charges: text(parsed.charges),
     currency: bill.currency || 'INR',
     aggregator: parsed.aggregator || '',
     address: parsed.address || '',
@@ -157,7 +161,7 @@ export function draftToRow(draft: BillDraft, source: BillSource, keep: Partial<P
       category, source,
       aggregator: draft.aggregator, address: draft.address, invoice, payment: draft.payment,
       subtotal: toNumber(draft.subtotal) || null, tax: toNumber(draft.tax) || null, taxDetails: draft.taxDetails,
-      discount: toNumber(draft.discount) || null, notes: draft.notes, items,
+      discount: toNumber(draft.discount) || null, charges: toNumber(draft.charges) || null, notes: draft.notes, items,
     }),
     status: 'draft', // every bill is a "draft": a leftover name, see AGENTS.md
   };

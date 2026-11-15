@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildBillDescription, parseBillDescription } from './bill-format';
+import { buildBillDescription, checkBillMath, parseBillDescription } from './bill-format';
 import { draftFromBill, draftFromReading, draftProblems, draftToRow, emptyDraft } from './bill-draft';
 import { findLikelyDuplicate } from './duplicates';
 
@@ -23,6 +23,12 @@ describe('buildBillDescription', () => {
     const email = parseBillDescription(buildBillDescription({ source: 'email', emailSubject: 'Your order | Swiggy', isSubscription: true, invoice: '9' }));
     expect(email).toMatchObject({ source: 'email', emailSubject: 'Your order | Swiggy', isSubscription: true, invoice: '9' });
     expect(parseBillDescription(buildBillDescription({ source: 'nfc', table: 'Table 3' }))).toMatchObject({ source: 'nfc', table: 'Table 3' });
+  });
+  it('keeps a service charge apart from tax, and the check counts it', () => {
+    const back = parseBillDescription(buildBillDescription({ tax: 50, charges: 50, source: 'scan', items: [{ name: 'Thali', quantity: 2, unit_price: 500, total_price: 1000 }] }));
+    expect(back).toMatchObject({ tax: 50, charges: 50 });
+    expect(checkBillMath(back, 1100).status).toBe('ok');
+    expect(checkBillMath({ ...back, charges: null }, 1100).status).toBe('mismatch');
   });
   it('cannot be broken by a "|" typed into a field', () => {
     const back = parseBillDescription(buildBillDescription({ invoice: 'A|B', notes: 'x | Tax: 999', source: 'manual' }));

@@ -173,7 +173,7 @@ export default function BillDetail() {
         <div className="mt-7 lg:col-start-1 lg:row-span-2 lg:row-start-1 lg:mt-0">
           <div className="mx-auto max-w-[372px] lg:sticky lg:top-[108px] lg:max-w-none">
             <Slip print detailed merchant={merchant} sub={place || null} items={parsed.items}
-              subtotal={parsed.subtotal} tax={parsed.tax} taxDetails={parsed.taxDetails} discount={parsed.discount}
+              subtotal={parsed.subtotal} tax={parsed.tax} taxDetails={parsed.taxDetails} discount={parsed.discount} charges={parsed.charges}
               total={total} symbol={symbol}
               foot={<>{payment ? `Paid via ${payment}` : null}{payment && parsed.invoice ? <br /> : null}{parsed.invoice ? `Invoice ${parsed.invoice}` : null}</>} />
 

@@ -13,6 +13,8 @@ interface SlipProps {
   tax?: number | null;
   taxDetails?: string | null;
   discount?: number | null;
+  /** Service charge, packing, delivery, a tip. */
+  charges?: number | null;
   total: number;
   symbol?: string;
   /** Last line on the paper, e.g. "Paid via UPI". */
@@ -31,12 +33,12 @@ const plain = (n: number) => n.toLocaleString('en-IN', { minimumFractionDigits: 
  * way it was printed, in mono on paper, with a torn zig-zag foot.
  */
 export default function Slip({
-  merchant, sub, items, maxItems, subtotal, tax, taxDetails, discount, total,
+  merchant, sub, items, maxItems, subtotal, tax, taxDetails, discount, charges, total,
   symbol = '₹', foot, detailed = false, print = false, className,
 }: SlipProps) {
   const shown = maxItems ? items.slice(0, maxItems) : items;
   const hidden = items.length - shown.length;
-  const hasBreakdown = Boolean(subtotal || tax || discount);
+  const hasBreakdown = Boolean(subtotal || tax || discount || charges);
 
   return (
     <div className={cn('ez-slip-wrap', print && 'ez-print', className)}>
@@ -73,6 +75,7 @@ export default function Slip({
           <div className="mb-3 space-y-0.5">
             {subtotal ? <div className="ez-slip__row ez-slip__dim"><span>Subtotal</span><span>{plain(subtotal)}</span></div> : null}
             {tax ? <div className="ez-slip__row ez-slip__dim"><span>{taxDetails ? `GST (${taxDetails})` : 'Tax'}</span><span>{plain(tax)}</span></div> : null}
+            {charges ? <div className="ez-slip__row ez-slip__dim"><span>Other charges</span><span>{plain(charges)}</span></div> : null}
             {discount ? <div className="ez-slip__row ez-slip__dim"><span>Discount</span><span>-{plain(discount)}</span></div> : null}
           </div>
         )}

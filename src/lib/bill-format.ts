@@ -31,6 +31,8 @@ export interface ParsedBill {
   tax: number | null;
   taxDetails: string | null;
   discount: number | null;
+  /** Charges that are neither a line nor tax: service charge, packing, delivery, a tip. */
+  charges: number | null;
   aggregator: string | null;
   address: string | null;
   /** Subject line of the email this bill was read from. */
@@ -100,7 +102,7 @@ export function parseBillDescription(description: string | null | undefined): Pa
   let table: string | null = null;
 
   for (const part of parts) {
-    const field = part.match(/^(Category|Invoice|Payment|Subtotal|Tax|TaxDetails|Discount|Aggregator|Address):\s*(.*)$/);
+    const field = part.match(/^(Category|Invoice|Payment|Subtotal|Tax|TaxDetails|Discount|Charges|Aggregator|Address):\s*(.*)$/);
     if (field) { fields[field[1]] = field[2].trim(); continue; }
     const tag = part.match(/^\[(nfc|scan|upload|manual|email|Subscription)\]$/i);
     if (tag) { tags.add(tag[1].toLowerCase()); continue; }
@@ -129,6 +131,7 @@ export function parseBillDescription(description: string | null | undefined): Pa
     tax: positive(text('Tax')),
     taxDetails: text('TaxDetails'),
     discount: positive(text('Discount')),
+    charges: positive(text('Charges')),
     aggregator: text('Aggregator'),
     address: text('Address'),
     emailSubject,
@@ -163,6 +166,7 @@ export function buildBillDescription(bill: Partial<ParsedBill>): string {
   text('Tax', amountText(bill.tax));
   text('TaxDetails', bill.taxDetails);
   text('Discount', amountText(bill.discount));
+  text('Charges', amountText(bill.charges));
   if (bill.source === 'nfc') parts.push(bill.table ? `Tapped at ${safe(bill.table)}` : '[nfc]');
   else if (bill.source === 'scan' || bill.source === 'upload' || bill.source === 'manual') parts.push(`[${bill.source}]`);
   else if (bill.source === 'email' && !bill.emailSubject) parts.push('[email]');
@@ -195,22 +199,32 @@ export type BillMath =
 const round2 = (n: number) => Math.round(n * 100) / 100;
 
 /**
- * Do the numbers on this bill agree with each other?
- * Items alone may equal the total (tax-inclusive prices), or items plus tax
- * minus discount may. Anything else is a mismatch the person should see,
+ * Do the numbers on this bill agree with each other? The same rule the reader
+ * applies on the server (`checkArithmetic` in supabase/functions/_shared/bill-rules.ts):
+ * bills print their sums in several layouts, so the total may equal the lines
+ * (or the printed subtotal) alone, or with any of tax, other charges and
+ * discount applied. Anything else is a mismatch the person should see,
  * because one of the numbers was probably misread.
  */
 export function checkBillMath(
-  bill: Pick<ParsedBill, 'items' | 'tax' | 'discount'>,
+  bill: Pick<ParsedBill, 'items' | 'tax' | 'discount'> & { charges?: number | null; subtotal?: number | null },
   total: number,
-  tolerance = 1,
+  tolerance = 1.5,
 ): BillMath {
   if (!bill.items.length || !(total > 0)) return { status: 'none' };
   const itemsSum = round2(bill.items.reduce((s, i) => s + (i.total_price || 0), 0));
   if (Math.abs(itemsSum - total) <= tolerance) return { status: 'ok', itemsSum, viaTax: false };
-  const withTax = round2(itemsSum + (bill.tax || 0) - (bill.discount || 0));
-  if ((bill.tax || bill.discount) && Math.abs(withTax - total) <= tolerance) return { status: 'ok', itemsSum, viaTax: true };
-  return { status: 'mismatch', itemsSum, expected: total, diff: round2(total - withTax) };
+  const tax = bill.tax || 0, charges = bill.charges || 0, discount = Math.abs(bill.discount || 0);
+  const candidates: number[] = [];
+  for (const base of [itemsSum, bill.subtotal || null]) {
+    if (base === null) continue;
+    for (const less of [0, discount]) candidates.push(base - less, base - less + tax, base - less + tax + charges, base - less + charges);
+  }
+  const closest = candidates.reduce((best, c) => (Math.abs(total - c) < Math.abs(total - best) ? c : best), candidates[0]);
+  if (Math.abs(total - closest) <= tolerance) return { status: 'ok', itemsSum, viaTax: true };
+  // What the lines come to once tax, charges and discount are applied, against the total printed.
+  const withAll = round2(itemsSum + tax + charges - discount);
+  return { status: 'mismatch', itemsSum, expected: total, diff: round2(total - withAll) };
 }
 
 /** True when quantity x unit price equals the line total, so the unit price is safe to show. */
