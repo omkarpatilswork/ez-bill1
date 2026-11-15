@@ -1,19 +1,22 @@
 # EZZ BILL
 
-> EZZ BILL is a smart personal expense manager that automatically imports bills from your email, tracks spending, splits expenses, and surfaces money leaks.
+> EZZ BILL keeps every bill in one place. Scan a receipt, upload a PDF, paste a payment text or tap an NFC tag at a restaurant table; EZZ BILL reads the shop, date, items, tax and total, and shows where the money went.
 
-EZZ BILL connects to Gmail (read-only) to extract bills and receipts, lets you scan or upload receipts, organizes recurring subscriptions, and provides AI-powered insights about your spending.
+Built for India: rupees first, GST bills, UPI payments. What is printed on a bill is shown as fact; anything the app estimates is labelled.
 
 ## Pages
 
-- [Sign in](/login): Log in to your EZZ BILL account.
-- [Sign up](/signup): Create a new EZZ BILL account.
-- [Terms and Conditions](/terms): Terms governing use of EZZ BILL.
-- [Privacy Policy](/privacy): How EZZ BILL handles user data and Gmail access.
+- [Sign in](/login): Sign in to your EZZ BILL account.
+- [Sign up](/signup): Create an EZZ BILL account.
+- [Reset your password](/forgot-password): Get a link to set a new password.
+- [Terms and Conditions](/terms): The terms for using EZZ BILL.
+- [Privacy Policy](/privacy): How EZZ BILL handles your data, including Gmail access.
 
 ## Optional
 
-- [Dashboard](/): Personal dashboard (requires sign in).
-- [All Bills](/expenses): Bill history (requires sign in).
-- [Analytics](/analytics): Spending insights (requires sign in).
-- [Subscriptions](/subscriptions): Track recurring subscriptions (requires sign in).
+- [Home](/): This month's spending and recent bills (requires sign in).
+- [Bills](/expenses): Every bill, searchable by shop and item (requires sign in).
+- [Spending](/analytics): Spending by category and shop (requires sign in).
+- [Money Leaks](/money-leaks): Spending against a personal ideal budget (requires sign in).
+- [Subscriptions](/subscriptions): Recurring charges and the next renewal (requires sign in).
+- [Warranty vault](/warranties): Warranties and when cover ends (requires sign in).
