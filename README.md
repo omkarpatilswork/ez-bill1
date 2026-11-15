@@ -12,7 +12,7 @@
 ![Vite](https://img.shields.io/badge/Vite-5-646CFF?style=flat-square&logo=vite&logoColor=white)
 ![Supabase](https://img.shields.io/badge/Supabase-Postgres%20%2B%20Edge-3ECF8E?style=flat-square&logo=supabase&logoColor=white)
 ![Capacitor](https://img.shields.io/badge/Capacitor-Android%20%2F%20iOS-119EFF?style=flat-square&logo=capacitor&logoColor=white)
-![Gemini](https://img.shields.io/badge/AI-Gemini%20%C2%B7%20GPT--5--mini-8E75B2?style=flat-square&logo=googlegemini&logoColor=white)
+![Gemini](https://img.shields.io/badge/AI-Gemini-8E75B2?style=flat-square&logo=googlegemini&logoColor=white)
 
 **[The problem](#01--the-problem)** ·
 **[The product](#02--the-product)** ·
@@ -49,24 +49,24 @@ EZZ BILL makes capture automatic, so the insights are there when you need them.
 |---|---|---|
 | Gmail import, read-only | **Money Leaks** against your own ideal budget | Split a bill item by item with friends |
 | UPI SMS parsing (Android) | **Subscription radar**: unused, low-use and duplicate plans | Warranty and return-window reminders |
-| AI receipt scanning and bulk upload | Spending by category and merchant | Merchant support contacts in one tap |
+| AI receipt scanning and bulk upload | Spending by category and merchant | Smart Support: the shop's contacts from the bill |
 | Tap an NFC or QR table tag for the restaurant bill | Ask AI about your own spending | Statements sorted into a Financial Docs hub |
 
 ### Screens
 
 <table>
 <tr>
-<td width="25%"><img src="docs/screenshots/home.webp" alt="Home: spend this month, money leaks card, quick actions and recent bills"/><br/><sub><b>Home.</b> This month's spend, the biggest leak, quick actions and recent bills.</sub></td>
+<td width="25%"><img src="docs/screenshots/home.webp" alt="Home: spending over the last 30 days by category, and the latest bill as a paper slip"/><br/><sub><b>Home.</b> The last 30 days by category, and the latest bill.</sub></td>
 <td width="25%"><img src="docs/screenshots/money-leaks.webp" alt="Money Leaks: amount leaked this month and the categories over budget"/><br/><sub><b>Money Leaks.</b> Each category against your ideal budget, with the gap in rupees.</sub></td>
-<td width="25%"><img src="docs/screenshots/subscriptions.webp" alt="Subscription radar listing active, low-use and duplicate subscriptions"/><br/><sub><b>Subscription radar.</b> Recurring charges found by cadence, flagged unused, low-use or duplicate.</sub></td>
-<td width="25%"><img src="docs/screenshots/splits.webp" alt="Smart Split with a friends ledger"/><br/><sub><b>Smart Split.</b> Split by item or equally, with tax shared out and a friends ledger.</sub></td>
+<td width="25%"><img src="docs/screenshots/subscriptions.webp" alt="Subscriptions with their monthly cost and next charge"/><br/><sub><b>Subscriptions.</b> What each plan costs a month and when it charges next.</sub></td>
+<td width="25%"><img src="docs/screenshots/splits.webp" alt="Smart Split, line by line, with each friend's share"/><br/><sub><b>Smart Split.</b> Split by item or equally, with tax shared out and a friends ledger.</sub></td>
 </tr>
 </table>
 
 <table>
 <tr>
-<td width="50%"><img src="docs/screenshots/desktop-home.webp" alt="Desktop dashboard"/><br/><sub><b>Desktop dashboard.</b> The same app at full width.</sub></td>
-<td width="50%"><img src="docs/screenshots/desktop-analytics.webp" alt="Desktop analytics by category and merchant"/><br/><sub><b>Analytics.</b> Spending by category and merchant over time.</sub></td>
+<td width="50%"><img src="docs/screenshots/desktop-home.webp" alt="Home on a desktop browser"/><br/><sub><b>Desktop.</b> The same app at full width.</sub></td>
+<td width="50%"><img src="docs/screenshots/desktop-analytics.webp" alt="Spending by category and shop on a desktop browser"/><br/><sub><b>Spending.</b> By category and shop, month by month.</sub></td>
 </tr>
 </table>
 
@@ -75,7 +75,7 @@ EZZ BILL makes capture automatic, so the insights are there when you need them.
 | Channel | How it works |
 |---|---|
 | **Gmail** | Read-only OAuth (`gmail.readonly`). Separate scans look for bills, subscriptions, warranties and financial statements. Content hashes, a processed-email log and sync locks stop anything being imported twice. |
-| **Receipts** | Upload a photo, PDF or HEIC. The model is picked by input type (Gemini 2.5 Flash for images and text, GPT-5-mini for PDFs, with fallback) and extracts merchant, amount, date, category and **line items**. |
+| **Receipts** | Scan or upload a photo, PDF or HEIC. Photos are shrunk on the phone first. Gemini reads merchant, date, **line items**, tax, charges, discount and total in a fixed format, with a fallback model when the first is busy. The app checks that the lines add up to the total and marks a bill for review when they do not; an empty field is preferred to a guessed one. |
 | **UPI SMS** | In the Android app, transaction texts from GPay, PhonePe, Paytm, BHIM and banks are filtered on the device and parsed into expenses. |
 | **NFC / QR table tag** | The restaurant pilot below. |
 
@@ -125,7 +125,7 @@ Split a bill item by item or equally. Tax and discounts are shared out proportio
 <summary><b>Warranties, returns and merchant support</b></summary>
 <br/>
 
-Warranty cards found in email are extracted automatically, with a reminder before a return window closes. Merchant Support finds the official phone, email, help centre and order-tracking link for a merchant on a bill, each with a confidence score.
+Warranty cards found in email are extracted automatically, with a reminder before a return window closes. Smart Support shows the shop's phone, email and address as printed on the bill. Anything else is looked up only when you ask, and is marked Unverified.
 </details>
 
 <details>
@@ -138,13 +138,13 @@ Ask questions like "What did I spend on food last month?" and get answers ground
 ## 05 · How it works
 
 <div align="center">
-<img src="docs/assets/architecture.svg" alt="Bills come in from Gmail, receipts, UPI SMS and NFC tags; Supabase Edge Functions and an LLM gateway process them; Postgres with row-level security stores them; the app shows Money Leaks, Subscription radar, Smart Split and Ask AI" width="100%"/>
+<img src="docs/assets/architecture.svg" alt="Bills come in from Gmail, receipts, UPI SMS and NFC tags; Supabase Edge Functions and Gemini process them; Postgres with row-level security stores them; the app shows Money Leaks, Subscription radar, Smart Split and Ask AI" width="100%"/>
 </div>
 
 **Design choices**
 
 - **Pure-function engines.** Leak, subscription and split logic are side-effect-free TypeScript modules (`src/lib/*-engine.ts`). They run instantly on the device and are easy to test.
-- **Edge Functions for anything sensitive.** OAuth tokens, Gmail calls and LLM keys never reach the browser. There are 12 functions in [`supabase/functions/`](supabase/functions).
+- **Edge Functions for anything sensitive.** OAuth tokens, Gmail calls and AI keys never reach the browser. There are 13 functions in [`supabase/functions/`](supabase/functions); the AI model is chosen in one place, [`_shared/llm.ts`](supabase/functions/_shared/llm.ts).
 - **Row-level security on every table.** Each user can read only their own rows. Public NFC lookups go through a service-role function that returns only a short-lived signed URL.
 - **Idempotent imports.** SHA-256 content hashes, a `processed_emails` log and `sync_locks` prevent duplicates when several syncs run at once.
 
@@ -154,12 +154,12 @@ Ask questions like "What did I spend on food last month?" and get answers ground
 
 | Layer | What's used |
 |---|---|
-| **Frontend** | React 18, TypeScript, Vite, Tailwind CSS, shadcn/ui, TanStack Query, Recharts |
+| **Frontend** | React 18, TypeScript, Vite, Tailwind CSS, Radix primitives, TanStack Query |
 | **Mobile** | Capacitor (Android and iOS), on-device SMS inbox on Android |
 | **Backend** | Supabase: Postgres, Auth, Storage, Realtime, Edge Functions (Deno) |
-| **AI** | Gemini 2.5 Flash / Pro, Gemini 3 Flash and GPT-5-mini through an LLM gateway |
+| **AI** | Gemini Flash models, called from the Edge Functions, with a fallback chain |
 | **Integrations** | Gmail API (read-only), Google OAuth |
-| **Testing** | Vitest and Playwright |
+| **Testing** | Vitest for the app, Deno tests for the Edge Functions, Playwright for scripted screenshots |
 
 </details>
 
@@ -180,9 +180,9 @@ Ask questions like "What did I spend on food last month?" and get answers ground
 | **Status** | Web app live at [ezbill.live](https://ezbill.live). Marketing and investor site at [ezzbill.com](https://ezzbill.com) ([repo](https://github.com/omkarpatilswork/ezzbill-site)). |
 | **Mobile** | Capacitor Android and iOS builds exist. Not on the Play Store or App Store yet. |
 | **NFC Airdrop** | Pilot. Works end to end; no restaurant rollout yet. |
-| **Backend** | 12 Edge Functions and 29 database migrations. |
-| **Tests** | Unit tests cover the Money Leaks engine (9 cases). Vitest and Playwright are set up, but most of the app has no automated tests yet. |
-| **How it's built** | AI-first, with Lovable and Supabase. 700+ commits. |
+| **Backend** | 13 Edge Functions and 34 database migrations. |
+| **Tests** | Unit tests cover the bill format, totals and currencies, duplicates, splits, dates and the Money Leaks engine; Deno tests cover the bill-reading rules and the AI client. Screens are checked with scripted screenshots against a mocked backend. |
+| **How it's built** | AI-first, on Supabase. 700+ commits. |
 
 **How it got here.** EZZ BILL started as **ExpenseDesk**, a B2B tool for employee expense claims with approvals and audit trails. The painful step turned out not to be approval but **capture**, and individuals feel that every day, not just at month end. So the product was repositioned for consumers: the OCR pipeline and expense model stayed, and everything else was rebuilt around automatic capture and money insights.
 
@@ -209,7 +209,7 @@ Ask questions like "What did I spend on food last month?" and get answers ground
 
 ## 10 · Run it yourself
 
-You'll need Node 20+ and a Supabase project.
+You'll need Node 22 and a Supabase project.
 
 ```bash
 git clone https://github.com/omkarpatilswork/ez-bill1.git
@@ -231,15 +231,18 @@ Edge Functions live in `supabase/functions/` and the schema in `supabase/migrati
 ```
 ez-bill1/
 ├── src/
-│   ├── pages/              Dashboard, MoneyLeaks, Subscriptions, Splits, AskAI,
-│   │                       FinancialDocs, Warranties, NfcAirdrop, StaffTables, …
-│   ├── components/         UI, bills, charts
-│   ├── lib/                leak-, subscription- and split-engine (pure functions)
+│   ├── pages/next/         Home, Bills, BillDetail, AddBill, Spending, MoneyLeaks,
+│   │                       MonthlySummary, AskAi, WarrantyVault, Subscriptions, Splits, …
+│   ├── components/next/    the app shell, the paper slip, sheets and fields
+│   ├── styles/ink.css      the Ink & Paper design tokens
+│   ├── lib/                bill format, totals, duplicates and the leak, subscription
+│   │                       and split engines (pure functions, unit-tested)
 │   └── integrations/       Supabase client
 ├── supabase/
-│   ├── functions/          12 Edge Functions: gmail-*, extract-receipt, parse-upi-sms,
+│   ├── functions/          13 Edge Functions: extract-receipt, gmail-*, parse-upi-sms,
 │   │                       ask-ai, merchant-support, resolve-tag, …
-│   └── migrations/         29 Postgres migrations with row-level security
+│   └── migrations/         34 Postgres migrations with row-level security
+├── scripts/                screenshots, bill-reading evaluation, migration tools
 ├── capacitor.config.ts     Android and iOS shells
 └── docs/                   screenshots and README diagrams
 ```
