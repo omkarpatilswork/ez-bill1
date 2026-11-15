@@ -10,6 +10,7 @@ import { useBills, type Bill } from '@/hooks/useBills';
 import { billCategory, type BroadCategory } from '@/lib/bill-category';
 import { formatAmount, parseBillDescription } from '@/lib/bill-format';
 import { getCurrencySymbol } from '@/lib/countries';
+import { homeCurrency, inCurrency, othersNote } from '@/lib/currency';
 import { cn } from '@/lib/utils';
 
 type PeriodKey = 'this-month' | 'last-month' | '3-months' | 'year' | 'all';
@@ -47,10 +48,9 @@ export default function Spending() {
   const [period, setPeriod] = useState<PeriodKey>('this-month');
 
   // Rupees and dollars cannot be added together, so the page speaks one currency.
-  const currency = profile?.default_currency || 'INR';
+  const currency = homeCurrency(profile);
   const symbol = getCurrencySymbol(currency);
-  const mine = useMemo(() => bills.filter((b) => (b.currency || 'INR') === currency), [bills, currency]);
-  const otherCurrencies = bills.length - mine.length;
+  const { mine, others: otherCurrencies } = useMemo(() => inCurrency(bills, currency), [bills, currency]);
 
   const view = useMemo(() => {
     const { from, to, before } = rangeOf(period, now);
@@ -146,7 +146,7 @@ export default function Spending() {
                 {view.change !== null && <> · <span className={cn('ez-num', view.change <= 0 ? 'text-brand-text' : 'text-fg')}>{view.change > 0 ? '+' : ''}{view.change}%</span> against the period before</>}
               </p>
               {otherCurrencies > 0 && (
-                <p className="mt-2 text-[13px] text-faint">{otherCurrencies} {otherCurrencies === 1 ? 'bill is' : 'bills are'} in another currency and not counted here.</p>
+                <p className="mt-2 text-[13px] text-faint">{othersNote(otherCurrencies)}</p>
               )}
             </section>
 

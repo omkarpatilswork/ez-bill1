@@ -7,6 +7,7 @@ import { useBills } from '@/hooks/useBills';
 import { useToast } from '@/hooks/use-toast';
 import { billCategory, type BroadCategory } from '@/lib/bill-category';
 import { getCurrencySymbol } from '@/lib/countries';
+import { homeCurrency, inCurrency } from '@/lib/currency';
 import { incomeMidpoint, type IncomeRange } from '@/lib/leak-engine';
 import { cn } from '@/lib/utils';
 
@@ -32,21 +33,21 @@ export default function MonthlySummary() {
   const [month, setMonth] = useState(thisMonth);
   const [exporting, setExporting] = useState(false);
 
-  const currency = profile?.default_currency || 'INR';
+  const currency = homeCurrency(profile);
   const symbol = getCurrencySymbol(currency);
   const money = (n: number) => `${symbol}${Math.round(n).toLocaleString('en-IN')}`;
 
   const view = useMemo(() => {
     const key = monthKey(month);
     const all = bills.filter((b) => b.expense_date.slice(0, 7) === key);
-    const mine = all.filter((b) => (b.currency || 'INR') === currency);
+    const { mine, others } = inCurrency(all, currency);
     const spend = mine.reduce((s, b) => s + Number(b.amount), 0);
     const byCategory = new Map<BroadCategory, number>();
     for (const b of mine) byCategory.set(billCategory(b), (byCategory.get(billCategory(b)) || 0) + Number(b.amount));
     const range = (profile?.income_range || null) as IncomeRange | null;
     const income = range ? incomeMidpoint(range) : null;
     return {
-      mine, spend, others: all.length - mine.length,
+      mine, spend, others,
       categories: [...byCategory.entries()].map(([name, amount]) => ({ name, amount })).sort((a, b) => b.amount - a.amount),
       income, net: income === null ? null : income - spend,
     };

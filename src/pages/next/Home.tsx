@@ -13,6 +13,7 @@ import SEO from '@/components/SEO';
 import { billCategory, type BroadCategory } from '@/lib/bill-category';
 import { formatAmount, parseBillDescription, SOURCE_LABEL } from '@/lib/bill-format';
 import { getCurrencySymbol } from '@/lib/countries';
+import { homeCurrency, inCurrency, othersNote } from '@/lib/currency';
 import { computeLeaks, leakGrade, type MoneyProfile } from '@/lib/leak-engine';
 import { listReminders, reminderEndDate } from '@/lib/return-reminders';
 import { cn } from '@/lib/utils';
@@ -80,11 +81,17 @@ export default function Home() {
     },
   });
 
+  // Totals count only the person's own currency; the latest bill and the list still show every bill.
+  const currency = homeCurrency(profile);
+  const symbol = getCurrencySymbol(currency);
+  const { mine } = useMemo(() => inCurrency(bills, currency), [bills, currency]);
+
   const spend = useMemo(() => {
     const from = startOfDay(new Date(now.getTime() - 30 * DAY));
     const before = startOfDay(new Date(now.getTime() - 60 * DAY));
-    const last30 = bills.filter((b) => billDay(b.expense_date) >= from);
-    const prev30 = bills.filter((b) => { const d = billDay(b.expense_date); return d >= before && d < from; });
+    const inLast30 = bills.filter((b) => billDay(b.expense_date) >= from);
+    const { mine: last30, others } = inCurrency(inLast30, currency);
+    const prev30 = mine.filter((b) => { const d = billDay(b.expense_date); return d >= before && d < from; });
     const total = last30.reduce((s, b) => s + Number(b.amount), 0);
     const prevTotal = prev30.reduce((s, b) => s + Number(b.amount), 0);
     const change = prevTotal > 0 ? Math.round(((total - prevTotal) / prevTotal) * 100) : null;
@@ -94,8 +101,8 @@ export default function Home() {
     const ranked = [...byCategory.entries()].sort((a, b) => b[1] - a[1]);
     const top = ranked.slice(0, 4).map(([name, amount]) => ({ name: name as string, amount }));
     const rest = ranked.slice(4).reduce((s, [, amount]) => s + amount, 0);
-    return { total, change, count: last30.length, shares: rest > 0 ? [...top, { name: 'Everything else', amount: rest }] : top };
-  }, [bills, now]);
+    return { total, change, count: inLast30.length, others, shares: rest > 0 ? [...top, { name: 'Everything else', amount: rest }] : top };
+  }, [bills, mine, currency, now]);
 
   const latest = bills[0];
   const recent = useMemo(() => {
@@ -143,10 +150,10 @@ export default function Home() {
       category_name: b.expense_categories?.name, merchant: b.merchant, cost_center: b.cost_center,
     });
     // Fed exactly as the Money Leaks page feeds it, so both show the same number.
-    const thisMonth = bills.filter((b) => new Date(b.expense_date) >= monthStart).map(lite);
-    const lastMonth = bills.filter((b) => { const d = new Date(b.expense_date); return d >= prevStart && d < monthStart; }).map(lite);
+    const thisMonth = mine.filter((b) => new Date(b.expense_date) >= monthStart).map(lite);
+    const lastMonth = mine.filter((b) => { const d = new Date(b.expense_date); return d >= prevStart && d < monthStart; }).map(lite);
     return computeLeaks(thisMonth, lastMonth, p, monthStart);
-  }, [bills, profile, now]);
+  }, [mine, profile, now]);
 
   const monthName = now.toLocaleDateString('en-IN', { month: 'long' });
 
@@ -170,7 +177,7 @@ export default function Home() {
               <p id="spend-label" className="ez-label">Last 30 days</p>
               <Link to="/expenses" className="ez-num text-[12.5px] text-dim hover:text-fg">{spend.count} {spend.count === 1 ? 'bill' : 'bills'}</Link>
             </div>
-            <p className="mt-4 lg:mt-5"><DisplayAmount amount={spend.total} className="text-[64px] text-fg lg:text-[92px]" /></p>
+            <p className="mt-4 lg:mt-5"><DisplayAmount amount={spend.total} symbol={symbol} className="text-[64px] text-fg lg:text-[92px]" /></p>
             {spend.change !== null && (
               <p className="mt-3 flex items-center gap-1.5 text-[14.5px] text-dim lg:mt-4">
                 <span className={cn('ez-num inline-flex items-center gap-0.5', spend.change <= 0 ? 'text-brand-text' : 'text-fg')}>
@@ -180,6 +187,7 @@ export default function Home() {
                 against the 30 days before
               </p>
             )}
+            {spend.others > 0 && <p className="mt-2 text-[13px] text-faint">{othersNote(spend.others)}</p>}
 
             {spend.total > 0 && (
               <>
@@ -194,7 +202,7 @@ export default function Home() {
                     <li key={s.name} className="flex items-center gap-2 text-[14px]">
                       <span className={cn('h-2 w-2 shrink-0 rounded-full', SHARE_TONES[i] ?? 'bg-line')} />
                       <span className="min-w-0 flex-1 truncate text-dim">{s.name}</span>
-                      <span className="ez-num text-[13px] text-fg">{formatAmount(s.amount, { paise: false })}</span>
+                      <span className="ez-num text-[13px] text-fg">{formatAmount(s.amount, { paise: false, symbol })}</span>
                     </li>
                   ))}
                 </ul>
@@ -236,8 +244,8 @@ export default function Home() {
                 </div>
                 {leaks ? (
                   <>
-                    <p className="mt-5"><DisplayAmount amount={leaks.totalLeak} className={cn('text-[46px]', leaks.totalLeak > 0 ? 'text-leak' : 'text-fg')} /></p>
-                    <p className="mt-2.5 text-[14.5px] text-dim">{leakLine(leaks)}</p>
+                    <p className="mt-5"><DisplayAmount amount={leaks.totalLeak} symbol={symbol} className={cn('text-[46px]', leaks.totalLeak > 0 ? 'text-leak' : 'text-fg')} /></p>
+                    <p className="mt-2.5 text-[14.5px] text-dim">{leakLine(leaks, symbol)}</p>
                   </>
                 ) : (
                   <>
@@ -273,10 +281,10 @@ export default function Home() {
   );
 }
 
-function leakLine(leaks: NonNullable<ReturnType<typeof computeLeaks>>) {
+function leakLine(leaks: NonNullable<ReturnType<typeof computeLeaks>>, symbol: string) {
   if (leaks.totalLeak <= 0) return `Nothing over plan so far. ${leakGrade(leaks.leakScore).label}.`;
   const top = leaks.perCategory[0];
-  const over = `${top.category} is ${formatAmount(top.leak, { paise: false })} over plan`;
+  const over = `${top.category} is ${formatAmount(top.leak, { paise: false, symbol })} over plan`;
   return top.topMerchant ? `leaked so far. ${over}, mostly ${top.topMerchant}.` : `leaked so far. ${over}.`;
 }
 

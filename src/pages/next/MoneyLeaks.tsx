@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { ChevronDown, ChevronLeft, ChevronRight, Share2 } from 'lucide-react';
@@ -9,6 +9,8 @@ import LeakAdvisor from '@/components/next/LeakAdvisor';
 import MoneyProfileQuiz from '@/components/money-leaks/MoneyProfileQuiz';
 import SEO from '@/components/SEO';
 import { useAuth } from '@/hooks/useAuth';
+import { getCurrencySymbol } from '@/lib/countries';
+import { homeCurrency, inCurrency, othersNote } from '@/lib/currency';
 import { useBills, type Bill } from '@/hooks/useBills';
 import { useToast } from '@/hooks/use-toast';
 import { formatAmount } from '@/lib/bill-format';
@@ -19,7 +21,6 @@ import {
 import { detectSubscriptions } from '@/lib/subscription-engine';
 import { cn } from '@/lib/utils';
 
-const money = (n: number) => formatAmount(n, { paise: false });
 const monthLabel = (d: Date) => d.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
 const shiftMonth = (d: Date, by: number) => new Date(d.getFullYear(), d.getMonth() + by, 1);
 /** The same text the leak engine reads to decide a bill's category. */
@@ -46,6 +47,11 @@ export default function MoneyLeaks() {
     },
   });
   const row = profileQuery.data;
+  // Only bills in the person's own currency count, as on Home: rupees and dollars cannot be added together.
+  const currency = homeCurrency(row);
+  const symbol = getCurrencySymbol(currency);
+  const money = useCallback((n: number) => formatAmount(n, { paise: false, symbol }), [symbol]);
+  const { mine } = useMemo(() => inCurrency(bills, currency), [bills, currency]);
   const profile = useMemo<MoneyProfile | null>(() => (row ? {
     income_range: row.income_range as MoneyProfile['income_range'],
     age_group: row.age_group as MoneyProfile['age_group'],
@@ -76,8 +82,12 @@ export default function MoneyLeaks() {
   const inMonth = useMemo(() => {
     const end = shiftMonth(month, 1), prev = shiftMonth(month, -1);
     const within = (b: Bill, a: Date, z: Date) => { const d = new Date(b.expense_date); return d >= a && d < z; };
-    return { current: bills.filter((b) => within(b, month, end)), previous: bills.filter((b) => within(b, prev, month)) };
-  }, [bills, month]);
+    return {
+      current: mine.filter((b) => within(b, month, end)),
+      previous: mine.filter((b) => within(b, prev, month)),
+      others: inCurrency(bills.filter((b) => within(b, month, end)), currency).others,
+    };
+  }, [bills, mine, currency, month]);
 
   // Fed exactly as Home feeds it, so the two screens always show the same number.
   const leaks = useMemo(() => {
@@ -90,9 +100,9 @@ export default function MoneyLeaks() {
   }, [inMonth, profile, month]);
 
   const plan = useMemo(() => (profile ? computeIdealBudget(profile) : null), [profile]);
-  const subs = useMemo(() => detectSubscriptions(bills.map((b) => ({
+  const subs = useMemo(() => detectSubscriptions(mine.map((b) => ({
     id: b.id, amount: Number(b.amount), expense_date: b.expense_date, merchant: b.merchant, title: b.title,
-  }))), [bills]);
+  }))), [mine]);
 
   const balanceNumber = Number(balance) || 0;
   const today = new Date().getDate();
@@ -148,9 +158,10 @@ export default function MoneyLeaks() {
       'Categories:',
       ...leaks.perCategory.filter((c) => c.actual > 0).map((c) => `- ${c.category}: spent ${money(c.actual)} vs plan ${money(c.ideal)}${c.leak > 0 ? ` (leak ${money(c.leak)}, mostly ${c.topMerchant || 'various'})` : ''}`),
       leaks.patterns.length ? `Patterns: ${leaks.patterns.join(' | ')}` : '',
-      'Format amounts in ₹ (Indian Rupees, never $). Use only the numbers given here and in the bills. Keep replies under 4 lines with specific numbers and one concrete action. No emoji.',
+      currency === 'INR' ? 'Format amounts in ₹ (Indian Rupees, never $).' : `Format amounts in ${currency}.`,
+      'Use only the numbers given here and in the bills. Keep replies under 4 lines with specific numbers and one concrete action. No emoji.',
     ].filter(Boolean).join('\n');
-  }, [leaks, profile, month, balanceNumber, perDay, daysToPayday]);
+  }, [leaks, profile, month, balanceNumber, perDay, daysToPayday, currency, money]);
 
   const loading = !billsQuery.ready || profileQuery.isLoading;
   const failed = billsQuery.isError || profileQuery.isError;
@@ -202,13 +213,14 @@ export default function MoneyLeaks() {
                   <p className="ez-label">Leaked in {month.toLocaleDateString('en-IN', { month: 'long' })}</p>
                   <span className="ez-num rounded-full border border-line px-2.5 py-1 text-[11.5px] text-dim">Leak Score {leaks.leakScore} · {leakGrade(leaks.leakScore).label}</span>
                 </div>
-                <p className="mt-4"><DisplayAmount amount={leaks.totalLeak} className={cn('text-[56px] lg:text-[76px]', leaks.totalLeak > 0 ? 'text-leak' : 'text-fg')} /></p>
+                <p className="mt-4"><DisplayAmount amount={leaks.totalLeak} symbol={symbol} className={cn('text-[56px] lg:text-[76px]', leaks.totalLeak > 0 ? 'text-leak' : 'text-fg')} /></p>
                 <p className="mt-3 text-[14.5px] text-dim">
                   {leaks.totalActual > 0
                     ? <>Spent <span className="ez-num text-fg">{money(leaks.totalActual)}</span> against a plan of <span className="ez-num text-fg">{money(leaks.totalIdeal)}</span>.</>
                     : 'No bills in this month yet.'}
                   {isCurrent && leaks.pacing && leaks.totalActual > 0 && <> On pace for <span className="ez-num text-fg">{money(leaks.pacing.projectedMonthEnd)}</span> by month end.</>}
                 </p>
+                {inMonth.others > 0 && <p className="mt-2 text-[13px] text-faint">{othersNote(inMonth.others)}</p>}
                 <p className="mt-2 text-[13px] text-faint">
                   Plan: {[GOAL[profile?.financial_goal || ''], CITY[profile?.city_tier || ''], LIVING[profile?.living_situation || '']].filter(Boolean).join(', ').toLowerCase()}
                   {plan.fixed > 0 && <>, {money(plan.fixed)} fixed each month</>}.{' '}

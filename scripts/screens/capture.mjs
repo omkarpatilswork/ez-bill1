@@ -58,6 +58,8 @@ const DUPLICATES = [
   { ...swiggy, id: 'b111e000-0000-4000-8000-0000000000d2', created_at: `${swiggy.expense_date}T22:05:00+05:30` },
 ];
 
+const USD_BILL = { ...bills[0], id: 'b111e000-0000-4000-8000-0000000000f1', merchant: 'Apple Store', title: 'Apple Store', amount: 1299, currency: 'USD', expense_date: '2026-10-17', created_at: '2026-10-17T20:00:00+05:30', description: 'Payment: Credit Card' };
+
 const TABLES = {
   expenses: bills,
   profiles: [profile],
@@ -218,6 +220,9 @@ for (const theme of ['dark', 'light']) {
     } });
     extraBills = DUPLICATES;
     await shoot('bills-duplicates', '/expenses?checkDupes=1');
+    // A bill in dollars: Home's total stays in rupees and says one bill was left out.
+    extraBills = [USD_BILL];
+    await shoot('home-two-currencies', '/');
     extraBills = [];
     if (size === 'mobile') {
       await shoot('home-full', '/', { full: true });

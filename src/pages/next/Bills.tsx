@@ -7,11 +7,14 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import BillListRow from '@/components/next/BillListRow';
 import { useCapture } from '@/components/next/capture-context';
 import SEO from '@/components/SEO';
+import { useAuth } from '@/hooks/useAuth';
 import { useBills, type Bill } from '@/hooks/useBills';
 import { useToast } from '@/hooks/use-toast';
 import { deleteBills } from '@/lib/bill-actions';
 import { billCategory, type BroadCategory } from '@/lib/bill-category';
 import { formatAmount, parseBillDescription, SOURCE_LABEL, type BillSource } from '@/lib/bill-format';
+import { getCurrencySymbol } from '@/lib/countries';
+import { billCurrency, homeCurrency } from '@/lib/currency';
 import { findDuplicateGroups, type DuplicateGroup } from '@/lib/duplicates';
 import { cn } from '@/lib/utils';
 
@@ -41,6 +44,9 @@ interface Indexed {
 const monthKey = (iso: string) => iso.slice(0, 7);
 const monthLabel = (key: string) => new Date(`${key}-01T00:00:00`).toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
 const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
+
+/** What a bill adds to a total in `currency`: its amount, or nothing when it is in another currency. */
+const counted = (b: Bill, currency: string) => (billCurrency(b) === currency ? Number(b.amount) : 0);
 
 export default function Bills() {
   const billsQuery = useBills();
@@ -106,7 +112,12 @@ export default function Bills() {
     return rows.sort(by[sort]);
   }, [indexed, query, category, source, sort]);
 
-  const total = results.reduce((s, r) => s + Number(r.bill.amount), 0);
+  // Totals add up only the person's own currency; bills in another one are listed but not summed.
+  const { profile } = useAuth();
+  const currency = homeCurrency(profile);
+  const symbol = getCurrencySymbol(currency);
+  const total = results.reduce((s, r) => s + counted(r.bill, currency), 0);
+  const others = results.filter((r) => billCurrency(r.bill) !== currency).length;
   const filtered = Boolean(query.trim() || category || source);
 
   /* By date, bills sit under their month with the month's total. Other sorts are one flat list. */
@@ -116,10 +127,10 @@ export default function Bills() {
     for (const row of results) {
       const key = monthKey(row.bill.expense_date);
       const last = out[out.length - 1];
-      if (last && last.key === key) { last.rows.push(row); last.total += Number(row.bill.amount); } else out.push({ key, rows: [row], total: Number(row.bill.amount) });
+      if (last && last.key === key) { last.rows.push(row); last.total += counted(row.bill, currency); } else out.push({ key, rows: [row], total: counted(row.bill, currency) });
     }
     return out;
-  }, [results, sort]);
+  }, [results, sort, currency]);
 
   const duplicates = useMemo(() => findDuplicateGroups(bills), [bills]);
 
@@ -172,7 +183,8 @@ export default function Bills() {
           <h1 className="ez-display text-[38px] text-fg lg:text-[54px]">Bills</h1>
           {bills.length > 0 && (
             <p className="ez-num pb-1.5 text-[13px] text-dim lg:pb-3">
-              {plural(results.length, 'bill')} · <span className="text-fg">{formatAmount(total, { paise: false })}</span>
+              {plural(results.length, 'bill')} · <span className="text-fg">{formatAmount(total, { paise: false, symbol })}</span>
+              {others > 0 && <span title="Bills in another currency are listed but not added to the total."> · {others} in another currency</span>}
             </p>
           )}
         </header>
@@ -266,7 +278,7 @@ export default function Bills() {
                   {g.key && (
                     <div className="flex items-baseline justify-between border-b border-line-soft pb-2.5">
                       <h2 className="ez-label ez-label--quiet">{monthLabel(g.key)}</h2>
-                      <p className="ez-num text-[12.5px] text-dim">{formatAmount(g.total, { paise: false })}</p>
+                      <p className="ez-num text-[12.5px] text-dim">{formatAmount(g.total, { paise: false, symbol })}</p>
                     </div>
                   )}
                   <div className="mt-1.5">
