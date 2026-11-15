@@ -255,7 +255,8 @@ for (const theme of ['dark', 'light']) {
     // Signed out: the sign-in and sign-up screens.
     const guest = await browser.newContext({ viewport, deviceScaleFactor: 2, locale: 'en-IN', timezoneId: 'Asia/Kolkata', reducedMotion: 'reduce' });
     await mockSupabase(guest);
-    await guest.addInitScript((t) => localStorage.setItem('ez-bill-theme', t), theme);
+    // Guarded: the init script also runs on about:blank, where storage is off limits.
+    await guest.addInitScript((t) => { try { localStorage.setItem('ez-bill-theme', t); } catch { /* about:blank */ } }, theme);
     const door = await guest.newPage();
     door.on('pageerror', (e) => problems.push(`${theme}/${size} ${String(e).slice(0, 200)}`));
     // The reset link signs the person in, so it comes last.
@@ -273,6 +274,8 @@ for (const theme of ['dark', 'light']) {
       ['reset-password', resetLink, () => door.getByRole('heading', { name: 'Choose a new password.' }).waitFor()],
     ];
     for (const [name, route, before] of doors) {
+      // A fresh page load each time: two reset links differ only after '#', which would not reload the app.
+      await door.goto('about:blank');
       await door.goto(BASE + route, { waitUntil: 'networkidle' });
       await door.evaluate(() => document.fonts.ready);
       if (before) await before();
