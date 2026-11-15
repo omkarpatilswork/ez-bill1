@@ -92,6 +92,10 @@ async function mockSupabase(context) {
     if (url.pathname.startsWith('/storage/v1/')) return route.fulfill({ status: 200, contentType: 'image/png', body: PIXEL });
 
     if (url.pathname === '/functions/v1/extract-receipt' && reading) return json(reading);
+    // NFC Airdrop: the table's tag answers with the demo bill, already read when the staff sent it.
+    if (url.pathname === '/functions/v1/resolve-tag') {
+      return json({ found: true, table_label: 'Table 3', status: 'ready', bill: { pending_bill_id: 'a3000000-0000-4000-8000-000000000001', merchant_name: 'Blue Tokai Coffee', amount: 412, signed_url: null, extracted: BLUE_TOKAI_READING } });
+    }
 
     if (url.pathname.startsWith('/rest/v1/') && req.method() === 'GET') {
       const table = url.pathname.slice('/rest/v1/'.length);
@@ -224,16 +228,28 @@ for (const theme of ['dark', 'light']) {
     }
     await context.close();
 
+    // First run: the same person before they have set up.
+    const fresh = await browser.newContext({ viewport, deviceScaleFactor: 2, locale: 'en-IN', timezoneId: 'Asia/Kolkata', reducedMotion: 'reduce' });
+    await mockSupabase(fresh);
+    await fresh.route(/\/rest\/v1\/profiles/, (route) => route.fulfill({ status: 200, contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: JSON.stringify({ ...profile, onboarding_completed: false }) }));
+    await fresh.addInitScript(({ key, session, theme }) => { localStorage.setItem(key, JSON.stringify(session)); localStorage.setItem('ez-bill-theme', theme); }, { key: `sb-${projectRef}-auth-token`, session, theme });
+    const first = await fresh.newPage();
+    await first.goto(`${BASE}/`, { waitUntil: 'networkidle' });
+    await first.evaluate(() => document.fonts.ready);
+    await first.waitForTimeout(350);
+    await first.screenshot({ path: path.join(OUT, `onboarding-${size}-${theme}.png`) });
+    await fresh.close();
+
     // Signed out: the sign-in and sign-up screens.
     const guest = await browser.newContext({ viewport, deviceScaleFactor: 2, locale: 'en-IN', timezoneId: 'Asia/Kolkata', reducedMotion: 'reduce' });
     await mockSupabase(guest);
     await guest.addInitScript((t) => localStorage.setItem('ez-bill-theme', t), theme);
     const door = await guest.newPage();
-    for (const route of ['/login', '/signup']) {
+    for (const route of ['/login', '/signup', '/t/t3']) {
       await door.goto(BASE + route, { waitUntil: 'networkidle' });
       await door.evaluate(() => document.fonts.ready);
       await door.waitForTimeout(350);
-      await door.screenshot({ path: path.join(OUT, `${route.slice(1)}-${size}-${theme}.png`) });
+      await door.screenshot({ path: path.join(OUT, `${route === '/t/t3' ? 'tap' : route.slice(1)}-${size}-${theme}.png`) });
     }
     await guest.close();
   }

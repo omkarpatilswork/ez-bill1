@@ -7,8 +7,8 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+      <div className="ez-app grid min-h-screen place-items-center" aria-busy="true" aria-label="Loading">
+        <span className="ez-label ez-label--quiet">EZZ BILL</span>
       </div>
     );
   }

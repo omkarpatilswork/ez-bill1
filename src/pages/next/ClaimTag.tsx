@@ -1,14 +1,13 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- the claim logic is carried over unchanged from the Phase 1 work; only the layout below was redesigned */
 import { useEffect, useRef, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Receipt, CheckCircle2, Store, Wifi } from 'lucide-react';
 import SEO from '@/components/SEO';
+import { AUTH_INPUT, GoogleButton, OrDivider } from '@/components/next/AuthLayout';
+import { Wordmark } from '@/components/next/Logo';
+import Slip from '@/components/next/Slip';
 
 // Public landing page for an NFC tap / QR scan: https://ezbill.live/t/:tagId
 // No ProtectedRoute wrapper on purpose — a tapper may not be signed in yet.
@@ -231,131 +230,75 @@ export default function ClaimTag() {
   };
 
   // ─────────────────────────── RENDER ───────────────────────────
+  // What the guest sees after a tap: their bill, on paper, before anything is asked of them.
+  const total = Number(extracted?.amount ?? fallbackAmount ?? 0);
+  const lines = (extracted?.line_items || []).filter((i) => i?.name).map((i) => ({
+    name: i.name, quantity: Number(i.quantity) || 1, unit_price: Number(i.unit_price) || 0, total_price: Number(i.total_price) || 0,
+  }));
+  const note = (title: string, body: string) => (
+    <div className="ez-rise mx-auto max-w-[340px] py-10 text-center">
+      <h1 className="ez-display text-[32px] leading-tight text-fg">{title}</h1>
+      <p className="mt-3 text-[15px] text-dim">{body}</p>
+    </div>
+  );
+
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center px-4 py-10">
-      <SEO title="Your bill" description="Tap-to-receive receipt from EZZ BILL." path={`/t/${tagId}`} />
-      <div className="w-full max-w-md space-y-4">
-        <div className="flex items-center justify-center gap-2 text-muted-foreground text-sm">
-          <Wifi className="h-4 w-4" /> EZZ BILL NFC Airdrop
-        </div>
+    <main className="ez-app flex min-h-screen flex-col items-center px-5 pb-12 pt-6">
+      <SEO title="Your bill" description="Your bill, sent to your phone by NFC Airdrop." path={`/t/${tagId}`} />
+      <Wordmark />
+      <p className="ez-label mt-8">NFC Airdrop{tableLabel && status !== 'not_found' ? ` · ${tableLabel}` : ''}</p>
 
-        {status === 'loading' && (
-          <Card className="border-0 glass-card rounded-2xl">
-            <CardContent className="py-14 flex flex-col items-center gap-3">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              <p className="text-sm text-muted-foreground">Reading this table's tag…</p>
-            </CardContent>
-          </Card>
-        )}
+      <div className="flex w-full max-w-[380px] flex-1 flex-col justify-center">
+        {status === 'loading' && <p className="ez-num py-16 text-center text-[13px] text-faint" aria-busy="true">Fetching your bill</p>}
 
-        {status === 'not_found' && (
-          <Card className="border-0 glass-card rounded-2xl">
-            <CardContent className="py-14 flex flex-col items-center gap-2 text-center">
-              <Receipt className="h-8 w-8 text-muted-foreground opacity-50" />
-              <p className="text-sm font-medium text-foreground">This tag isn't recognized</p>
-              <p className="text-xs text-muted-foreground">Ask your server for help.</p>
-            </CardContent>
-          </Card>
-        )}
+        {status === 'not_found' && note('This tag is not set up.', 'Ask the staff for your bill.')}
 
-        {status === 'idle' && (
-          <Card className="border-0 glass-card rounded-2xl">
-            <CardContent className="py-14 flex flex-col items-center gap-2 text-center">
-              <Store className="h-8 w-8 text-muted-foreground opacity-50" />
-              <p className="text-sm font-medium text-foreground">No bill open at {tableLabel || 'this table'} yet</p>
-              <p className="text-xs text-muted-foreground max-w-xs">Once your bill closes out, tap again — the receipt will be right here.</p>
-            </CardContent>
-          </Card>
-        )}
+        {status === 'idle' && note(`No bill at ${tableLabel || 'this table'} yet.`, 'When the bill is ready, tap again and it will be here.')}
 
         {status === 'ready' && !savedExpenseId && (
-          <Card className="border-0 glass-card rounded-2xl overflow-hidden">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg">{merchantName || tableLabel}</CardTitle>
-              <CardDescription>{tableLabel}</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {signedUrl && (
-                <img src={signedUrl} alt="Your receipt" className="w-full max-h-56 object-contain rounded-lg bg-muted/30" />
-              )}
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Total</span>
-                {extracting && fallbackAmount == null ? (
-                  // No staff-entered amount to show yet — this only happens for
-                  // bills sent before the staff page required a total.
-                  <span className="text-sm text-muted-foreground flex items-center gap-1">
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" /> Reading bill…
-                  </span>
-                ) : (
-                  // Show the real number immediately (staff enters it up front now),
-                  // with a small spinner alongside while OCR confirms/refines it —
-                  // instead of making the customer wait behind a spinner for a total
-                  // staff already knew.
-                  <span className="text-lg font-bold text-gold flex items-center gap-1.5">
-                    ₹{Number(extracted?.amount ?? fallbackAmount ?? 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                    {extracting && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />}
-                  </span>
-                )}
-              </div>
+          <>
+            <div className="mt-6">
+              <Slip print detailed merchant={merchantName || tableLabel || 'Your bill'} sub={merchantName ? tableLabel : null} items={lines} total={total}
+                foot={extracting ? 'Reading the lines' : signedUrl ? <a href={signedUrl} target="_blank" rel="noreferrer" className="underline underline-offset-4">See the printed bill</a> : null} />
+            </div>
 
+            <div className="mt-9">
               {user ? (
-                <div className="flex items-center justify-center gap-2 py-2 text-sm text-muted-foreground">
-                  <Loader2 className="h-4 w-4 animate-spin" /> Saving to your EZZ BILL…
-                </div>
+                <p className="ez-num text-center text-[13px] text-dim" aria-busy="true">Saving to your EZZ BILL</p>
               ) : awaitingEmailConfirm ? (
-                <p className="text-xs text-center text-muted-foreground">
-                  Check your email to confirm your account, then reopen this exact link — your receipt will be waiting.
-                </p>
+                <p className="text-center text-[14.5px] text-dim">Confirm your account from the email you were just sent, then open this link again. Your bill will be waiting.</p>
               ) : (
-                <div className="space-y-3 pt-1 border-t border-border/30">
-                  <p className="text-xs text-muted-foreground text-center pt-3">Sign in to save this to your EZZ BILL</p>
-                  <Button type="button" variant="outline" className="w-full min-h-[44px]" onClick={handleGoogle} disabled={authSubmitting}>
-                    <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
-                      <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4" />
-                      <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
-                      <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
-                      <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
-                    </svg>
-                    Continue with Google
-                  </Button>
-                  <form onSubmit={handleAuthSubmit} className="space-y-2">
-                    {authMode === 'signup' && (
-                      <Input placeholder="Full name" value={fullName} onChange={e => setFullName(e.target.value)}
-                        className="min-h-[40px] bg-secondary/30 border-border/30 text-sm" required />
-                    )}
-                    <Input type="email" placeholder="you@email.com" value={email} onChange={e => setEmail(e.target.value)}
-                      className="min-h-[40px] bg-secondary/30 border-border/30 text-sm" required />
-                    <Input type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)}
-                      className="min-h-[40px] bg-secondary/30 border-border/30 text-sm" minLength={6} required />
-                    <Button type="submit" className="w-full min-h-[40px] text-sm" disabled={authSubmitting}>
-                      {authSubmitting ? 'Please wait…' : authMode === 'signin' ? 'Sign in' : 'Create account & save'}
-                    </Button>
+                <>
+                  <p className="mb-4 text-center text-[15px] text-fg">Keep this bill. Sign in to save it.</p>
+                  <GoogleButton onClick={handleGoogle} busy={authSubmitting} />
+                  <OrDivider />
+                  <form onSubmit={handleAuthSubmit} className="space-y-3">
+                    {authMode === 'signup' && <input aria-label="Your name" placeholder="Your name" value={fullName} onChange={(e) => setFullName(e.target.value)} className={AUTH_INPUT} autoComplete="name" required />}
+                    <input aria-label="Email" type="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} className={AUTH_INPUT} autoComplete="email" required />
+                    <input aria-label="Password" type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} className={AUTH_INPUT} minLength={6} autoComplete={authMode === 'signin' ? 'current-password' : 'new-password'} required />
+                    <button type="submit" disabled={authSubmitting} className="ez-btn ez-btn--primary h-12 w-full disabled:opacity-50">
+                      {authSubmitting ? 'One moment' : authMode === 'signin' ? 'Sign in and save' : 'Create account and save'}
+                    </button>
                   </form>
-                  <button type="button" className="text-xs text-gold hover:underline w-full text-center"
-                    onClick={() => setAuthMode(m => m === 'signin' ? 'signup' : 'signin')}>
-                    {authMode === 'signin' ? "New here? Create an account" : 'Already have an account? Sign in'}
+                  <button type="button" className="mt-4 w-full text-center text-[14px] font-medium text-dim underline decoration-line underline-offset-4 hover:text-fg"
+                    onClick={() => setAuthMode((m) => (m === 'signin' ? 'signup' : 'signin'))}>
+                    {authMode === 'signin' ? 'New here? Create an account' : 'Have an account? Sign in'}
                   </button>
-                </div>
+                </>
               )}
-            </CardContent>
-          </Card>
+            </div>
+          </>
         )}
 
         {savedExpenseId && (
-          <Card className="border-0 glass-card rounded-2xl">
-            <CardContent className="py-12 flex flex-col items-center gap-3 text-center">
-              <div className="h-16 w-16 rounded-full bg-green-500/20 flex items-center justify-center">
-                <CheckCircle2 className="h-8 w-8 text-green-500" />
-              </div>
-              <p className="text-base font-semibold text-foreground">Saved to your EZZ BILL</p>
-              <p className="text-xs text-muted-foreground">{merchantName || tableLabel}</p>
-              <Button asChild className="mt-2 min-h-[44px] w-full max-w-[220px]">
-                <Link to={`/expenses/${savedExpenseId}`}>View your bill</Link>
-              </Button>
-            </CardContent>
-          </Card>
+          <div className="ez-rise py-10 text-center">
+            <p className="ez-label">Bill received</p>
+            <h1 className="ez-display mt-4 text-[36px] leading-tight text-fg">Saved to your EZZ BILL.</h1>
+            <p className="mt-3 text-[15px] text-dim">{merchantName || tableLabel}{total > 0 && <> · <span className="ez-num text-fg">₹{total.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span></>}</p>
+            <Link to={`/expenses/${savedExpenseId}`} className="ez-btn ez-btn--primary mt-8">Open your bill</Link>
+          </div>
         )}
       </div>
-    </div>
+    </main>
   );
 }
