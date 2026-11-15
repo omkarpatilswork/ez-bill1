@@ -18,7 +18,7 @@ const Bills = lazy(() => import("./pages/next/Bills"));
 const BillDetail = lazy(() => import("./pages/next/BillDetail"));
 const Signup = lazy(() => import("./pages/Signup"));
 const AddBill = lazy(() => import("./pages/next/AddBill"));
-const MerchantSupport = lazy(() => import("./pages/expenses/MerchantSupport"));
+const SmartSupport = lazy(() => import("./pages/next/SmartSupport"));
 const SplitBill = lazy(() => import("./pages/next/SplitBill"));
 const Spending = lazy(() => import("./pages/next/Spending"));
 const AskAi = lazy(() => import("./pages/next/AskAi"));
@@ -35,7 +35,7 @@ const Security = lazy(() => import("./pages/next/Security"));
 const WarrantyVault = lazy(() => import("./pages/next/WarrantyVault"));
 const Splits = lazy(() => import("./pages/next/Splits"));
 const SplitFriend = lazy(() => import("./pages/next/SplitFriend"));
-const Support = lazy(() => import("./pages/Support"));
+const SupportIndex = lazy(() => import("./pages/next/SupportIndex"));
 const ClaimTag = lazy(() => import("./pages/next/ClaimTag"));
 const StaffTables = lazy(() => import("./pages/next/StaffTables"));
 const NfcAirdrop = lazy(() => import("./pages/next/NfcAirdrop"));
@@ -94,14 +94,14 @@ const App = () => {
             <Route path="/warranties" element={<WarrantyVault />} />
             <Route path="/subscriptions" element={<Subscriptions />} />
             <Route path="/financial-docs" element={<Documents />} />
+            <Route path="/expenses/:id/support" element={<SmartSupport />} />
+            <Route path="/support" element={<SupportIndex />} />
             <Route path="/staff" element={<StaffTables />} />
             <Route path="/nfc-airdrop" element={<NfcAirdrop />} />
 
             {/* Not rebuilt yet: brand colours and fonts, old layouts */}
             <Route element={<LegacyScreen />}>
-              <Route path="/expenses/:id/support" element={<MerchantSupport />} />
               <Route path="/email-bills" element={<EmailBills />} />
-              <Route path="/support" element={<Support />} />
             </Route>
           </Route>
 

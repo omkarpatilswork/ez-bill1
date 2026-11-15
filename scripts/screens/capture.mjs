@@ -185,6 +185,7 @@ for (const theme of ['dark', 'light']) {
     await shoot('ask-ai', '/ask-ai');
     await shoot('settings', '/settings', { full: size === 'mobile' });
     await shoot('security', '/security', { full: size === 'mobile' });
+    await shoot('smart-support', `/expenses/${CROMA_ID}/support`, { full: size === 'mobile' }); // the demo bill already has a return reminder
     await shoot('nfc-airdrop', '/nfc-airdrop');
     await shoot('staff', '/staff');
     await shoot('splits', '/splits');
@@ -226,7 +227,7 @@ for (const theme of ['dark', 'light']) {
     }
     // --all: every other main screen too, to check the ones not rebuilt yet.
     if (ALL) {
-      for (const route of ['/email-bills', '/support']) {
+      for (const route of ['/email-bills']) {
         await shoot(`all${route.replaceAll('/', '-')}`, route);
       }
     }
